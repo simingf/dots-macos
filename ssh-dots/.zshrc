@@ -31,29 +31,8 @@ alias grep='grep --color=auto'
 alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
 
-# Vendored zsh plugins (pushed via scripts/push-ssh-dots.sh; silently no-op if missing)
-ZSH_PLUGINS=~/.local/share
-
-# zsh-completions: extra completion defs — must add src/ to fpath BEFORE compinit
-[[ -f $ZSH_PLUGINS/zsh-completions/zsh-completions.plugin.zsh ]] \
-    && source $ZSH_PLUGINS/zsh-completions/zsh-completions.plugin.zsh
-
 # Completions
 autoload -Uz compinit && compinit
-
-# fzf-tab: tab-completion fzf UI — must come after compinit
-[[ -f $ZSH_PLUGINS/fzf-tab/fzf-tab.plugin.zsh ]] && source $ZSH_PLUGINS/fzf-tab/fzf-tab.plugin.zsh
-
-# zsh-autosuggestions: fish-style ghost suggestions from history
-[[ -f $ZSH_PLUGINS/zsh-autosuggestions/zsh-autosuggestions.zsh ]] \
-    && source $ZSH_PLUGINS/zsh-autosuggestions/zsh-autosuggestions.zsh
-
-# OMZP::sudo: Esc-Esc prepends sudo to current command
-[[ -f "$ZSH_PLUGINS/omz-sudo/OMZP::sudo" ]] && source "$ZSH_PLUGINS/omz-sudo/OMZP::sudo"
-
-# fzf shell integration: Ctrl-R history, Ctrl-T file picker, Alt-C cd picker (debian package)
-[[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-[[ -f /usr/share/doc/fzf/examples/completion.zsh ]] && source /usr/share/doc/fzf/examples/completion.zsh
 
 # Keybindings
 bindkey -e
@@ -69,6 +48,17 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 
 # disable automatic window title
 DISABLE_AUTO_TITLE="true"
+
+# Execute on Enter
+accept-line() {
+    if [[ -z $BUFFER ]]; then
+        zle -I
+        clear && ls --color=auto
+    else
+        zle ".$WIDGET"
+    fi
+}
+zle -N accept-line
 
 # cd hook: clear+ls on every directory change
 chpwd() { clear && ls --color=auto; }
@@ -162,7 +152,3 @@ export NVM_DIR="$HOME/.nvm"
 export AD_USERNAME=sfeng
 export VAULT_ENTITY_ID=
 export VAULT_ADDR=http://127.0.0.1:8100
-
-# zsh-syntax-highlighting: must be sourced LAST (wraps ZLE)
-[[ -f $ZSH_PLUGINS/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] \
-    && source $ZSH_PLUGINS/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

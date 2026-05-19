@@ -4,12 +4,6 @@ case $- in
       *) return;;
 esac
 
-# Prefer zsh as the interactive shell; SHLVL guard so `bash` from inside zsh
-# doesn't re-exec back into zsh (exec doesn't increment SHLVL).
-if [[ "$SHLVL" -le 1 ]] && command -v zsh >/dev/null; then
-    exec zsh
-fi
-
 # Prompt with git branch
 parse_git_branch() {
   git branch 2>/dev/null | grep '*' | sed 's/* //'
@@ -51,11 +45,25 @@ fi
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 # cd override: always clear+ls on directory change
-cd() { builtin cd "$@" && clear && ls; }
+cd() { builtin cd "$1" && clear && ls; }
 
 # tmux window title (precmd equivalent via PROMPT_COMMAND)
 _tmux_precmd() { [[ -n "$TMUX" ]] && printf '\033k%s\033\\' "$(basename "$PWD")"; }
-PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_tmux_precmd"
+
+# Empty Enter: clear+ls (detects empty enter by checking if history number advanced)
+_prev_hist_n=-1
+_check_empty_enter() {
+    local n
+    n=$(HISTTIMEFORMAT= history 1 2>/dev/null | awk '{print $1; exit}')
+    : "${n:=0}"
+    if (( n <= _prev_hist_n )); then
+        clear && ls --color=auto
+    else
+        _prev_hist_n=$n
+    fi
+}
+
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }_tmux_precmd; _check_empty_enter"
 
 # general aliases
 alias e='exit'
@@ -75,10 +83,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 
 # Config aliases
-alias rs='clear && source ~/.bashrc'
+alias rs='source ~/.bashrc'
 alias brc='nvim ~/.bashrc'
 alias cf="builtin cd ~/.config"
-alias ch="rm -f ~/.bash_history && history -c && clear"
 alias nrc="nvim ~/.config/nvim/init.lua"
 
 # nvim

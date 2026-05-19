@@ -40,6 +40,7 @@ Use when the target directory contains runtime files that must not be committed 
 Current exceptions:
 - `~/.config/portpal/` — has a `.sock` at runtime; only `portpal.toml` is symlinked
 - `~/Library/Application Support/Code/User/` — VS Code runtime state; only `settings.json` and `keybindings.json` are symlinked
+- `~/.ssh/` — contains `known_hosts`, `cm-*` ControlMaster sockets, private keys; **and** `~/.ssh/config` itself is rewritten by `coder config-ssh` via atomic-rename (which breaks symlinks). So `~/.ssh/config` stays as a real file; only `~/.ssh/coder-multiplex.conf` is symlinked, included from `~/.ssh/config` via an `Include` directive placed outside Coder's managed markers
 
 ### Home dotfiles
 
