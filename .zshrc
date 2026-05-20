@@ -55,6 +55,14 @@ if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then
     eval "$(oh-my-posh init zsh --config $HOME/.config/ohmyposh/zen.toml)"
 fi
 
+# Disable DEC mode 2031 (color-scheme change notifications) on every prompt.
+# Inner apps (claude code, nvim, etc.) enable it and may not clean up; ghostty
+# then re-emits \e[?997;Ps n on tmux session-switch, which leaks "997;1n" into
+# shell input via tmux's CSI parser.
+autoload -Uz add-zsh-hook
+_disable_dec_2031() { printf '\e[?2031l' }
+add-zsh-hook precmd _disable_dec_2031
+
 # Keybindings
 bindkey -e
 bindkey '^p' history-search-backward
