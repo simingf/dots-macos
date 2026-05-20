@@ -11,6 +11,7 @@
 cask_args appdir: "/Applications", fontdir: "/Library/Fonts", adopt: true
 
 # ---- Taps ----
+tap "coder/coder"
 tap "hashicorp/tap"
 tap "itsfrank/tap"
 tap "jandedobbeleer/oh-my-posh"
@@ -44,6 +45,7 @@ brew "openjdk"
 brew "php"
 brew "prettier"
 brew "ripgrep"
+brew "rsync"
 brew "ruby"
 brew "ruff"
 brew "sapling"
@@ -70,6 +72,7 @@ cask "alt-tab"
 cask "appcleaner"
 cask "asana"
 cask "bitwarden"
+cask "coder/coder/coder-desktop"
 cask "crossover"
 cask "cursor"
 cask "dcv-viewer"
