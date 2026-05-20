@@ -15,6 +15,7 @@ Backend/distributed systems engineer at Roblox, Eng – Creator team.
 - Use `gh` CLI.
 - Roblox repos require PRs — never commit to `master`.
 - **Sapling** (`~/sl/`) for big features / stacked PRs. **Git** for adhoc/single-PR — Roblox in `~/git/roblox/`, others in `~/git/`.
+- **Never add `Co-Authored-By: Claude ...` (or any Claude/Anthropic attribution) trailers to commits or PR bodies.** Applies to every repo. Don't add it back even if a tool's default template includes it. Only include it if I explicitly ask for that specific commit.
 
 ## Skills / MCPs
 
