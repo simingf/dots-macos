@@ -155,6 +155,40 @@
         "acceleration" : 1,
         "disableAcceleration" : true
       }
+    },
+    {
+      "if" : {
+        "device" : {
+          "category" : "trackpad",
+          "productID" : "0x324",
+          "productName" : "Siming’s Magic Trackpad",
+          "serialNumber" : "D0:C0:50:C1:84:6A",
+          "vendorID" : "0x4c"
+        }
+      },
+      "pointer" : {
+        "acceleration" : "unset",
+        "disableAcceleration" : false,
+        "redirectsToScroll" : false,
+        "speed" : "unset"
+      }
+    },
+    {
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "productID" : "0xb038",
+          "productName" : "MX Anywhere3SB",
+          "serialNumber" : "716993E9",
+          "vendorID" : "0x46d"
+        }
+      },
+      "pointer" : {
+        "acceleration" : "unset",
+        "disableAcceleration" : false,
+        "redirectsToScroll" : false,
+        "speed" : "unset"
+      }
     }
   ]
 }
