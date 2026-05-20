@@ -148,6 +148,10 @@ if vim.env.NVIM_REMOTE then
 	return
 end
 
+-- IS_SSH: in an SSH session, skip plugins that need network or ship arch-specific
+-- native binaries (Mason, blink.cmp Rust fuzzy). False locally on macOS, so a no-op.
+local IS_SSH = (vim.env.SSH_CONNECTION or "") ~= ""
+
 -- setup code from documentation --
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
@@ -590,6 +594,7 @@ require("lazy").setup({
 		opts = {
 			keymap = { preset = "default" },
 			appearance = { nerd_font_variant = "mono" },
+			fuzzy = { implementation = IS_SSH and "lua" or "prefer_rust" },
 			completion = {
 				documentation = { auto_show = true, auto_show_delay_ms = 200 },
 				ghost_text = { enabled = true },
@@ -632,6 +637,7 @@ require("lazy").setup({
 	-- configs as lsp/<name>.lua on the runtimepath, consumed by vim.lsp.config.
 	{
 		"williamboman/mason.nvim",
+		enabled = not IS_SSH,
 		opts = {
 			-- Crashdummyy registry provides the `roslyn` LSP package used by roslyn.nvim.
 			registries = {
@@ -643,6 +649,7 @@ require("lazy").setup({
 	{ "neovim/nvim-lspconfig" },
 	{
 		"williamboman/mason-lspconfig.nvim",
+		enabled = not IS_SSH,
 		dependencies = {
 			"williamboman/mason.nvim",
 			"neovim/nvim-lspconfig",
@@ -724,6 +731,7 @@ require("lazy").setup({
 	-- mason-tool-installer: ensure formatters/linters/LSPs installed via Mason
 	{
 		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		enabled = not IS_SSH,
 		dependencies = { "williamboman/mason.nvim" },
 		opts = {
 			ensure_installed = {
