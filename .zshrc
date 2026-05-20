@@ -257,9 +257,58 @@ alias rg="rg --hyperlink-format=kitty"
 # sl update
 sup() {
     echo "➡️ pulling..." && sl pull || return 1
-    echo "➡️ rebasing on newest master..." && sl rebase -d master || true
-    echo "➡️ restacking..." && sl restack || true
+
+    # Reconcile orphans from prior mid-stack amends or interrupted ops.
+    # No-op on a clean stack; recovery action when restack has work to do.
+    echo "➡️ restacking orphans..." && sl restack || true
+
+    echo "➡️ rebasing on newest master..."
+    local out rc
+    out=$(sl rebase -d master 2>&1)
+    rc=$?
+    [[ -n "$out" ]] && echo "$out"
+    if [[ $rc -ne 0 ]]; then
+        if [[ "$out" == *"nothing to rebase"* ]]; then
+            :  # benign — already on master, sapling exits non-zero anyway
+        elif sl resolve --list 2>/dev/null | grep -q '^U '; then
+            _sup_resolve || return 1
+        else
+            return 1  # already echoed above
+        fi
+    fi
+
+    echo "➡️ formatting stack files (.editorconfig)..."
+    local stack_files
+    stack_files=$(sl files -r 'master::.' 2>/dev/null)
+    [[ -n "$stack_files" ]] && echo "$stack_files" | xargs -r dotnet format --no-restore --include
+
+    [[ -n "$(sl status -m)" ]] && echo "➡️ absorbing format changes..." && sl absorb -a
+
     echo "➡️ submitting prs..." && sl pr submit --stack
+}
+
+# walk through each conflicted file in $EDITOR — :wq advances to next
+_sup_resolve() {
+    local files
+    files=$(sl resolve --list 2>/dev/null | awk '$1 == "U" {print $2}')
+    [[ -z "$files" ]] && { sl continue; return $?; }
+
+    echo "➡️ conflicts: opening in ${EDITOR:-nvim} (:wq advances to next)"
+    # shellcheck disable=SC2086
+    ${EDITOR:-nvim} -- $files </dev/tty || return 1
+
+    while IFS= read -r f; do
+        [[ -z "$f" ]] && continue
+        if grep -qE '^(<<<<<<<|=======|>>>>>>>)' "$f"; then
+            echo "✗ $f still has conflict markers; aborting" >&2
+            echo "  fix manually then: sl resolve --mark $f && sl continue" >&2
+            return 1
+        fi
+        sl resolve --mark "$f" || return 1
+    done <<< "$files"
+
+    echo "➡️ all resolved, continuing rebase..."
+    sl continue
 }
 
 # work aliases
