@@ -76,17 +76,24 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls -G $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls -G $realpath'
 
-# Execute on Enter: empty enter → clear+ls (via accept-line widget so it runs as a real command)
+# clear screen + ls in one atomic write (no fork for clear, no flash gap)
+_clear_ls() {
+    local out
+    out=$(eza --color=always --icons=auto --hyperlink 2>/dev/null)
+    printf '\e[H\e[2J\e[3J%s\n' "$out"
+}
+
+# Execute on Enter: empty enter → clear+ls
 accept-line() {
     if [[ -z $BUFFER ]]; then
-        BUFFER=" clear && eza --icons=auto --hyperlink"
+        BUFFER=' _clear_ls'
     fi
     zle ".$WIDGET"
 }
 zle -N accept-line
 
 # cd hook: clear+ls on every directory change
-chpwd() { clear && eza --icons=auto --hyperlink; }
+chpwd() { _clear_ls; }
 
 # tmux window title
 _tmux_precmd() {
