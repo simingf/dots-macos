@@ -58,3 +58,28 @@ Always use **relative paths**. Never hardcode `/Users/sfeng/`.
 ### What not to commit
 
 Do not commit runtime artifacts: `*.sock`, `*.pid`, `*.lock`. Add to `.gitignore` if they appear under a tracked path.
+
+## Linux dev box mirror (`~/git/dots-linux`)
+
+A separate, public-on-github.rbx.com repo (`~/git/dots-linux`) holds dotfiles for Coder Linux dev boxes (`*.coder` workspaces). Coder clones it at workspace startup and runs its `setup.sh`. **`~/dots` is the source of truth** for everything shared; dots-linux mirrors a subset, plus vendored plugins/binaries because the dev box has no internet.
+
+See `~/git/dots-linux/CLAUDE.md` for vendoring, IS_SSH guards, and refresh procedures.
+
+### Sync contract
+
+| File / dir | Sync state | Rule |
+|---|---|---|
+| `.tmux.conf` | **byte-identical** | One file lives in both repos; portability handled inside via `if-shell 'test "$(uname)" = Linux' ...`. Edit both copies in lockstep. |
+| `.config/nvim/init.lua` | **byte-identical** | IS_SSH guards (`vim.env.SSH_CONNECTION`) handle Linux differences inline. Refresh dots-linux with plain `cp`. |
+| `.config/nvim/lazy-lock.json` | **byte-identical** | Plain `cp`. |
+| `.zshrc` | **partial** | Mac is canonical for shared aliases/functions. Linux has its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), and ls/grep/rm aliases (no `eza`/`trash`). When adding a new shared alias/function on Mac, mirror it into the Linux `.zshrc` by hand. |
+| `.gitconfig` | **partial** | Linux has only `user.name` + the `github.rbx.com` credential helper using `/usr/bin/gh`. Mac additionally has personal+work GH accounts, LFS, GCM, maintenance — not relevant on the dev box. |
+| `.bashrc` | **Linux-only** | 5-line stub that `exec zsh`s. Not in `~/dots`. |
+| `vendor/`, `setup.sh` | **Linux-only** | Vendored plugins, terminfo, and the bootstrap script — only relevant on the no-internet dev box. |
+| `Library/`, `Brewfile`, `manual/`, `scripts/`, ghostty/kitty/aerospace/ohmyposh/karabiner configs | **Mac-only** | Do NOT mirror to dots-linux. |
+
+### When making changes
+
+- **Editing `.tmux.conf` / `init.lua` / `lazy-lock.json`**: update `~/dots` first, then `cp` to `~/git/dots-linux/...` to keep them byte-identical.
+- **Adding a Mac-only alias/function to `.zshrc`**: decide whether it should also exist on Linux. If yes, mirror it into `~/git/dots-linux/.zshrc` (skipping pieces that depend on Mac-only tools). If no, leave Linux untouched.
+- **Adding a new shared dotfile**: add to `~/dots`, decide if it belongs on Linux too, and if so add a parallel copy and a row to the table above.
