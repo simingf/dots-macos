@@ -12,6 +12,7 @@ cask_args appdir: "/Applications", fontdir: "/Library/Fonts", adopt: true
 
 # ---- Taps ----
 tap "coder/coder"
+tap "FelixKratz/formulae"
 tap "hashicorp/tap"
 tap "itsfrank/tap"
 tap "jandedobbeleer/oh-my-posh"
@@ -22,6 +23,7 @@ tap "nikitabobko/tap"
 
 # ---- Formulae ----
 brew "black"
+brew "borders"
 brew "btop"
 brew "duti"
 brew "eza"
