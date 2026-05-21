@@ -277,38 +277,81 @@ sup() {
         fi
     fi
 
-    echo "➡️ formatting stack files (.editorconfig)..."
+    # Scope: files modified or added between master and the working copy.
+    #   `sl status --rev master` (long form is required — `-r` means --removed
+    #   in `sl status`). Don't use `sl files -r 'master::.'`: that lists every
+    #   file *tracked at* each rev in the revset, i.e. the whole repo.
+    # Tool: `dotnet format whitespace` rather than full `dotnet format`. Full
+    #   mode runs analyzer fixers via Roslyn's "Fix All in Solution", which
+    #   ignores --include and writes across unincluded files. Whitespace mode
+    #   applies only .editorconfig whitespace rules (BOMs, line endings,
+    #   indentation, trailing whitespace) and respects --include strictly —
+    #   matches the bot's observed behavior.
+    echo "➡️ formatting stack-touched files (.editorconfig whitespace)..."
     local stack_files
-    stack_files=$(sl files -r 'master::.' 2>/dev/null)
-    [[ -n "$stack_files" ]] && echo "$stack_files" | xargs -r dotnet format --no-restore --include
+    stack_files=$(sl status -m -a -n --rev master 2>/dev/null)
+    if [[ -n "$stack_files" ]]; then
+        echo "  scope: $(echo "$stack_files" | wc -l | tr -d ' ') file(s)"
+        echo "$stack_files" | xargs -r dotnet format whitespace --no-restore --verbosity minimal --include
+    else
+        echo "  (no stack files)"
+    fi
 
-    [[ -n "$(sl status -m)" ]] && echo "➡️ absorbing format changes..." && sl absorb -a
+    if [[ -n "$(sl status -m)" ]]; then
+        echo "➡️ format diff:"
+        sl diff --stat
+        echo "➡️ absorbing format changes..."
+        # Filter absorb's per-chunk preview; keep only the summary lines.
+        sl absorb -a 2>&1 | grep -vE '^[+-][^+-]|^@@|^---|^\+\+\+'
+        # Discard any chunks absorb couldn't attribute (changes to lines the
+        # user didn't author) so they don't sit in the WC across runs. The
+        # bot may still pick those up and commit them on the PR — that's
+        # unavoidable without breaking absorb's blame-correctness.
+        if [[ -n "$(sl status -m)" ]]; then
+            echo "➡️ discarding unabsorbable format debris..."
+            sl revert --all
+        fi
+    fi
 
     echo "➡️ submitting prs..." && sl pr submit --stack
 }
 
-# walk through each conflicted file in $EDITOR — :wq advances to next
+# Walk through each conflicted file in $EDITOR — :wq advances to next.
+# Loops until rebase is fully complete: `sl continue` may pause again at a
+# subsequent commit's conflict, in which case we re-collect and re-edit.
 _sup_resolve() {
-    local files
-    files=$(sl resolve --list 2>/dev/null | awk '$1 == "U" {print $2}')
-    [[ -z "$files" ]] && { sl continue; return $?; }
-
-    echo "➡️ conflicts: opening in ${EDITOR:-nvim} (:wq advances to next)"
-    # shellcheck disable=SC2086
-    ${EDITOR:-nvim} -- $files </dev/tty || return 1
-
-    while IFS= read -r f; do
-        [[ -z "$f" ]] && continue
-        if grep -qE '^(<<<<<<<|=======|>>>>>>>)' "$f"; then
-            echo "✗ $f still has conflict markers; aborting" >&2
-            echo "  fix manually then: sl resolve --mark $f && sl continue" >&2
-            return 1
+    while true; do
+        local files
+        files=$(sl resolve --list 2>/dev/null | awk '$1 == "U" {print $2}')
+        if [[ -z "$files" ]]; then
+            # No unresolved files. Rebase may still be paused (e.g., we just
+            # marked the last one resolved); call continue to finish it.
+            sl continue 2>/dev/null || true
+            break
         fi
-        sl resolve --mark "$f" || return 1
-    done <<< "$files"
 
-    echo "➡️ all resolved, continuing rebase..."
-    sl continue
+        echo "➡️ conflicts: opening in ${EDITOR:-nvim} (:wq advances to next)"
+        # shellcheck disable=SC2086
+        ${EDITOR:-nvim} -- $files </dev/tty || return 1
+
+        while IFS= read -r f; do
+            [[ -z "$f" ]] && continue
+            if grep -qE '^(<<<<<<<|=======|>>>>>>>)' "$f"; then
+                echo "✗ $f still has conflict markers; aborting" >&2
+                echo "  fix manually then: sl resolve --mark $f && sl continue" >&2
+                return 1
+            fi
+            sl resolve --mark "$f" || return 1
+        done <<< "$files"
+
+        echo "➡️ continuing rebase..."
+        # `sl continue` may pause again at the next commit's conflicts; the
+        # outer loop will detect and handle the new unresolved set.
+        sl continue || true
+    done
+
+    echo "➡️ all conflicts resolved"
+    return 0
 }
 
 # work aliases
