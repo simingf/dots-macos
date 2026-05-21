@@ -1,0 +1,10 @@
+#!/bin/bash
+pkill -x borders
+options=(
+  style=round
+  width=6.0
+  hidpi=off
+  active_color=0xffceacf6
+  inactive_color=0xff6e6a86
+)
+borders "${options[@]}"

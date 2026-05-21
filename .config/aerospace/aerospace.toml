@@ -1,5 +1,5 @@
 start-at-login = true
-after-startup-command = ['layout tiles']
+after-startup-command = ['layout tiles', 'exec-and-forget $HOME/.config/borders/bordersrc']
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
@@ -41,12 +41,12 @@ preset = 'qwerty'
 #                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
 #                 See: https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
 [gaps]
-inner.horizontal = 5
-inner.vertical =   5
-outer.left =       5
-outer.right =      5
-outer.bottom =     5
-outer.top =        5
+inner.horizontal = 12
+inner.vertical =   12
+outer.left =       8
+outer.right =      8
+outer.bottom =     8
+outer.top =        8
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
