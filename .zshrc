@@ -63,6 +63,13 @@ autoload -Uz add-zsh-hook
 _disable_dec_2031() { printf '\e[?2031l' }
 add-zsh-hook precmd _disable_dec_2031
 
+# Disable mouse-tracking modes on every prompt. Inner apps (vim, htop, remote
+# tmux over ssh) enable 1000/1002/1003/1006/1015; if they crash or the ssh
+# session dies before sending the matching disable, tmux keeps forwarding click
+# bytes to the pane and they land as text in the next shell prompt.
+_disable_mouse_tracking() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l' }
+add-zsh-hook precmd _disable_mouse_tracking
+
 # Keybindings
 bindkey -e
 bindkey '^p' history-search-backward
