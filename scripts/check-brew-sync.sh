@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BREWFILE="${1:-$HOME/dots/Brewfile}"
+BREWFILE="${1:-$HOME/dots-macos/Brewfile}"
 
 if [[ ! -f "$BREWFILE" ]]; then
   echo "Brewfile not found: $BREWFILE" >&2

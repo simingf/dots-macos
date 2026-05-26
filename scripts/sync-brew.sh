@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BREWFILE="${1:-$HOME/dots/Brewfile}"
+BREWFILE="${1:-$HOME/dots-macos/Brewfile}"
 TMPFILE=$(mktemp)
 trap 'rm -f "$TMPFILE"' EXIT
 
@@ -9,14 +9,14 @@ brew bundle dump --force --tap --formula --cask --no-restart --file="$TMPFILE"
 
 {
   cat <<'EOF'
-# file location: ${HOME}/dots/Brewfile
-# Usage: brew bundle install --file=~/dots/Brewfile
+# file location: ${HOME}/dots-macos/Brewfile
+# Usage: brew bundle install --file=~/dots-macos/Brewfile
 #
 # Aliases:
-#   alias bbd='brew bundle dump --force --file=~/dots/Brewfile'
-#   alias bbi='brew bundle install --file=~/dots/Brewfile'
-#   alias bbc='brew bundle check --file=~/dots/Brewfile'
-#   alias bbclean='brew bundle cleanup --file=~/dots/Brewfile'
+#   alias bbd='brew bundle dump --force --file=~/dots-macos/Brewfile'
+#   alias bbi='brew bundle install --file=~/dots-macos/Brewfile'
+#   alias bbc='brew bundle check --file=~/dots-macos/Brewfile'
+#   alias bbclean='brew bundle cleanup --file=~/dots-macos/Brewfile'
 
 # Install all casks to /Applications and adopt any existing app already present
 cask_args appdir: "/Applications", fontdir: "/Library/Fonts", adopt: true

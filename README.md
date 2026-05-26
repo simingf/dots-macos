@@ -28,13 +28,13 @@ git lfs install --system
 
 ```bash
 touch ~/.hushlogin
-cd ~/dots && stow . --target ~
+cd ~/dots-macos && stow . --target ~
 ```
 
 ## Homebrew
 
 ```bash
-brew bundle install --file=~/dots/Brewfile
+brew bundle install --file=~/dots-macos/Brewfile
 ```
 
 ## Manual Setup

@@ -149,7 +149,7 @@ alias app='builtin cd /Applications/'
 alias doc='builtin cd ~/Documents/'
 alias dow='builtin cd ~/Downloads/'
 alias des='builtin cd ~/Desktop/'
-alias dots='builtin cd ~/dots'
+alias dots='builtin cd ~/dots-macos'
 
 # config aliases
 # updates everything

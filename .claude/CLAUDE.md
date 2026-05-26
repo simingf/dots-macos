@@ -7,8 +7,8 @@ Backend/distributed systems engineer at Roblox, Eng – Creator team.
 ## Editor / Tools
 
 - Prefer `rg` over `grep`, `fd` over `find`, `sd` over `sed`.
-- Dotfiles under `~/dots/`, managed with stow.
-- Global `~/.claude/CLAUDE.md` is a symlink to `~/dots/.claude/CLAUDE.md` — edit the source.
+- Dotfiles under `~/dots-macos/`, managed with stow.
+- Global `~/.claude/CLAUDE.md` is a symlink to `~/dots-macos/.claude/CLAUDE.md` — edit the source.
 
 ## Version Control
 
