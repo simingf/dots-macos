@@ -60,14 +60,14 @@ fi
 # then re-emits \e[?997;Ps n on tmux session-switch, which leaks "997;1n" into
 # shell input via tmux's CSI parser.
 autoload -Uz add-zsh-hook
-_disable_dec_2031() { printf '\e[?2031l' }
+_disable_dec_2031() { printf '\e[?2031l'; }
 add-zsh-hook precmd _disable_dec_2031
 
 # Disable mouse-tracking modes on every prompt. Inner apps (vim, htop, remote
 # tmux over ssh) enable 1000/1002/1003/1006/1015; if they crash or the ssh
 # session dies before sending the matching disable, tmux keeps forwarding click
 # bytes to the pane and they land as text in the next shell prompt.
-_disable_mouse_tracking() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l' }
+_disable_mouse_tracking() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l'; }
 add-zsh-hook precmd _disable_mouse_tracking
 
 # Keybindings
@@ -121,10 +121,10 @@ trap 'rm -f "$_zsh_err_buf"' EXIT
 exec 2> >(tee -a "$_zsh_err_buf" >&2)
 _pbcopy_on_error() {
     local rc=$?
-    if (( rc != 0 )) && [[ -s "$_zsh_err_buf" ]]; then
-        pbcopy < "$_zsh_err_buf"
+    if ((rc != 0)) && [[ -s "$_zsh_err_buf" ]]; then
+        pbcopy <"$_zsh_err_buf"
     fi
-    : > "$_zsh_err_buf"
+    : >"$_zsh_err_buf"
 }
 precmd_functions+=(_pbcopy_on_error)
 
@@ -276,11 +276,11 @@ sup() {
     [[ -n "$out" ]] && echo "$out"
     if [[ $rc -ne 0 ]]; then
         if [[ "$out" == *"nothing to rebase"* ]]; then
-            :  # benign — already on master, sapling exits non-zero anyway
+            : # benign — already on master, sapling exits non-zero anyway
         elif sl resolve --list 2>/dev/null | grep -q '^U '; then
             _sup_resolve || return 1
         else
-            return 1  # already echoed above
+            return 1 # already echoed above
         fi
     fi
 
@@ -349,7 +349,7 @@ _sup_resolve() {
                 return 1
             fi
             sl resolve --mark "$f" || return 1
-        done <<< "$files"
+        done <<<"$files"
 
         echo "➡️ continuing rebase..."
         # `sl continue` may pause again at the next commit's conflicts; the
@@ -382,8 +382,8 @@ gotopr() {
 
     echo "➡️ PR #$pr in $host/$org/$repo"
 
-    echo "➡️ cd ~/git..."
-    builtin cd ~/git
+    echo "➡️ cd ~/git/roblox/..."
+    builtin cd ~/git/roblox/
 
     if [ -d "$repo" ]; then
         echo "➡️ Repo found, fetching latest..."
