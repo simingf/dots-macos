@@ -16,6 +16,7 @@ Backend/distributed systems engineer at Roblox, Eng – Creator team.
 - Roblox repos require PRs — never commit to `master`.
 - **Sapling** (`~/sl/`) for big features / stacked PRs. **Git** for adhoc/single-PR — Roblox in `~/git/roblox/`, others in `~/git/`.
 - **Never add `Co-Authored-By: Claude ...` (or any Claude/Anthropic attribution) trailers to commits or PR bodies.** Applies to every repo. Don't add it back even if a tool's default template includes it. Only include it if I explicitly ask for that specific commit.
+- **No git operations (commit/push/pull/fetch) on personal repos (`simingf/...`) from this Mac.** Roblox's Silencer MITM proxy intercepts `github.com` TLS and forcibly auths as `sfeng-roblox`, so any push to a simingf-owned repo 403s and pulls/fetches often fail too. Work on the file edits locally; I'll handle git from the Windows box or another machine. Roblox repos (`github.rbx.com/...`) and `github.com/Roblox/...` are fine.
 
 ## Skills / MCPs
 
