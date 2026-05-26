@@ -126,7 +126,6 @@
   // Claude Code
   "claudeCode.preferredLocation": "panel",
   "claudeCode.allowDangerouslySkipPermissions": true,
-  "claudeCode.claudeProcessWrapper": "/Applications/declawd.app/Contents/Resources/vscode-wrapper",
   "claudeCode.disableLoginPrompt": true,
   "claudeCode.hideOnboarding": true,
   "claudeCode.initialPermissionMode": "bypassPermissions",
@@ -148,9 +147,6 @@
   "liveServer.settings.donotShowInfoMsg": true,
   "workbench.editorAssociations": {
     "*.copilotmd": "vscode.markdown.preview.editor",
-  },
-  "remote.SSH.remotePlatform": {
-    "coder-vscode.dev.rbx.com--sfeng--sfeng-dev.dev": "linux",
   },
   "remote.SSH.connectTimeout": 1800,
   "remote.SSH.serverShutdownTimeout": 28800,
