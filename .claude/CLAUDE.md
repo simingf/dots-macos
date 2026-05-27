@@ -1,40 +1,79 @@
-# Siming's Global Context
+# CLAUDE.md
 
-## Role
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-Backend/distributed systems engineer at Roblox, Eng – Creator team.
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-## Editor / Tools
+## 1. Think Before Coding
 
-- Prefer `rg` over `grep`, `fd` over `find`, `sd` over `sed`.
-- Dotfiles under `~/dots-macos/`, managed with stow.
-- Global `~/.claude/CLAUDE.md` is a symlink to `~/dots-macos/.claude/CLAUDE.md` — edit the source.
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## Tooling
+
+- Dotfiles in `~/dots-macos/`. Global `~/.claude/CLAUDE.md` symlinks here.
+- When writing a deterministic script is easier, write a script.
+- When prompting the user to run something, pipe to `pbcopy` (e.g. `printf '...' | pbcopy`). Prefer `rg` over `grep`, `fd` over `find`, `sd` over `sed`.
 
 ## Version Control
 
 - Use `gh` CLI.
-- Roblox repos require PRs — never commit to `master`.
-- **Sapling** (`~/sl/`) for big features / stacked PRs. **Git** for adhoc/single-PR — Roblox in `~/git/roblox/`, others in `~/git/`.
-- **Never add `Co-Authored-By: Claude ...` (or any Claude/Anthropic attribution) trailers to commits or PR bodies.** Applies to every repo. Don't add it back even if a tool's default template includes it. Only include it if I explicitly ask for that specific commit.
-- **No git operations (commit/push/pull/fetch) on personal repos (`simingf/...`) from this Mac.** Roblox's Silencer MITM proxy intercepts `github.com` TLS and forcibly auths as `sfeng-roblox`, so any push to a simingf-owned repo 403s and pulls/fetches often fail too. Work on the file edits locally; I'll handle git from the Windows box or another machine. Roblox repos (`github.rbx.com/...`) and `github.com/Roblox/...` are fine.
+- No AI attributions in commits or PR bodies.
 
-## Skills / MCPs
-
-- Check for an available skill or MCP before doing a task manually; use it if it fits.
-
-## Scripting
-
-- Write and run a script when a task is repetitive, large-scale, or error-prone.
-
-## Terminal Commands
-
-**Always** put anything you want me to run on my clipboard by **executing a Bash tool call** that pipes to `pbcopy` (e.g. `printf '...' | pbcopy`). I'll run it and paste any output back to you.
-
-## Epistemic Honesty
-
-- Don't fabricate. Verify against code/docs/MCPs before asserting — don't reconstruct from memory. If unsure, say so and ask rather than filling the gap with a plausible guess.
-
-## Preferences
-
-- Concise, direct, accurate.
-- LaTeX for formal math; Markdown otherwise.
