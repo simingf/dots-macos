@@ -2,6 +2,9 @@ console_title_template = '{{ .Folder }}'
 version = 3
 final_space = true
 
+[palette]
+  grey = '#908caa'  # rose pine subtle
+
 [secondary_prompt]
   template = '❯❯ '
   foreground = 'magenta'

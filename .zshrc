@@ -79,6 +79,10 @@ bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 bindkey '^[w' kill-region
 
+# tree / ls colors — also feeds the zstyle list-colors below.
+# ANSI named codes (no hex) so colors track the terminal theme (Rose Pine here).
+export LS_COLORS='di=01;34:ln=36:or=01;31:ex=01;32:tw=01;34:ow=01;34:pi=33:so=33:bd=33:cd=33:su=01;31:sg=01;31:*.tar=33:*.tgz=33:*.zip=33:*.gz=33:*.bz2=33:*.xz=33:*.7z=33:*.rar=33:*.jpg=35:*.jpeg=35:*.png=35:*.gif=35:*.svg=35:*.mp3=35:*.mp4=35:*.mov=35:*.md=04:*.lock=02:*.log=02:*.bak=02'
+
 # Completion styling
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
