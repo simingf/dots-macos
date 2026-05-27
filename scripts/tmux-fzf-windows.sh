@@ -7,10 +7,10 @@ count=$(tmux display-message -p '#{session_windows}')
 y=$(tmux display-message -p '#{client_height}')
 
 tmux display-popup -E -x 0 -y "$y" -w 100% -h "$((count + 5))" '
-sel=$(tmux list-windows -F "#{window_activity} #{session_name}:#{window_index}|#{window_index}:#{window_name}" \
+sel=$(tmux list-windows -F "#{window_activity} #{session_name}:#{window_index}|#{window_index}: #{window_name}" \
         | sort -rn \
         | cut -d" " -f2- \
-        | fzf --no-sort --delimiter="|" --with-nth=2 --prompt="window> ") \
+        | fzf --no-sort --delimiter="[|]" --with-nth=2 --prompt="window> ") \
   && target=$(echo "$sel" | cut -d"|" -f1) \
   && [ -n "$target" ] && tmux switch-client -t "$target"
 ' || true
