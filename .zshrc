@@ -4,6 +4,9 @@ if [[ -f "/opt/homebrew/bin/brew" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# Dotfiles dir — referenced by .tmux.conf bindings (mirrored to dots-linux as ~/dots-linux)
+export DOTFILES_DIR=~/dots-macos
+
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
     export EDITOR='vim'

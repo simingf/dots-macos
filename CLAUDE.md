@@ -59,11 +59,11 @@ Always use **relative paths**. Never hardcode `/Users/sfeng/`.
 
 Do not commit runtime artifacts: `*.sock`, `*.pid`, `*.lock`. Add to `.gitignore` if they appear under a tracked path.
 
-## Linux dev box mirror (`~/git/dots-linux`)
+## Linux dev box mirror (`~/dots-linux`)
 
-A separate, public-on-github.rbx.com repo (`~/git/dots-linux`) holds dotfiles for Coder Linux dev boxes (`*.coder` workspaces). Coder clones it at workspace startup and runs its `setup.sh`. **`~/dots-macos` is the source of truth** for everything shared; dots-linux mirrors a subset, plus vendored plugins/binaries because the dev box has no internet.
+A separate, public-on-github.rbx.com repo (`~/dots-linux`) holds dotfiles for Coder Linux dev boxes (`*.coder` workspaces). Coder clones it at workspace startup and runs its `setup.sh`. **`~/dots-macos` is the source of truth** for everything shared; dots-linux mirrors a subset, plus vendored plugins/binaries because the dev box has no internet.
 
-See `~/git/dots-linux/CLAUDE.md` for vendoring, IS_SSH guards, and refresh procedures.
+See `~/dots-linux/CLAUDE.md` for vendoring, IS_SSH guards, and refresh procedures.
 
 ### Sync contract
 
@@ -76,10 +76,11 @@ See `~/git/dots-linux/CLAUDE.md` for vendoring, IS_SSH guards, and refresh proce
 | `.gitconfig` | **partial** | Linux has only `user.name` + the `github.rbx.com` credential helper using `/usr/bin/gh`. Mac additionally has personal+work GH accounts, LFS, GCM, maintenance — not relevant on the dev box. |
 | `.bashrc` | **Linux-only** | 5-line stub that `exec zsh`s. Not in `~/dots-macos`. |
 | `vendor/`, `setup.sh` | **Linux-only** | Vendored plugins, terminfo, and the bootstrap script — only relevant on the no-internet dev box. |
-| `Library/`, `Brewfile`, `manual/`, `scripts/`, ghostty/kitty/aerospace/ohmyposh/karabiner configs | **Mac-only** | Do NOT mirror to dots-linux. |
+| `scripts/tmux-fzf-*.sh` | **byte-identical** | Referenced by `.tmux.conf` via `$DOTFILES_DIR/scripts/...` (exported per-host from `.zshrc`). When edited on Mac, `cp` to `~/dots-linux/scripts/`. Other `scripts/` (brew, setup, duti) stay Mac-only. |
+| `Library/`, `Brewfile`, `manual/`, ghostty/kitty/aerospace/ohmyposh/karabiner configs | **Mac-only** | Do NOT mirror to dots-linux. |
 
 ### When making changes
 
-- **Editing `.tmux.conf` / `init.lua` / `lazy-lock.json`**: update `~/dots-macos` first, then `cp` to `~/git/dots-linux/...` to keep them byte-identical.
-- **Adding a Mac-only alias/function to `.zshrc`**: decide whether it should also exist on Linux. If yes, mirror it into `~/git/dots-linux/.zshrc` (skipping pieces that depend on Mac-only tools). If no, leave Linux untouched.
+- **Editing `.tmux.conf` / `init.lua` / `lazy-lock.json`**: update `~/dots-macos` first, then `cp` to `~/dots-linux/...` to keep them byte-identical.
+- **Adding a Mac-only alias/function to `.zshrc`**: decide whether it should also exist on Linux. If yes, mirror it into `~/dots-linux/.zshrc` (skipping pieces that depend on Mac-only tools). If no, leave Linux untouched.
 - **Adding a new shared dotfile**: add to `~/dots-macos`, decide if it belongs on Linux too, and if so add a parallel copy and a row to the table above.
