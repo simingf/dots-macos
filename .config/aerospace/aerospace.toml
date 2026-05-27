@@ -76,10 +76,13 @@ alt-0 = 'flatten-workspace-tree'
 alt-f = 'fullscreen'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#focus
-alt-m = 'focus --boundaries-action wrap-around-the-workspace left'
-alt-n = 'focus --boundaries-action wrap-around-the-workspace down'
-alt-e = 'focus --boundaries-action wrap-around-the-workspace up'
-alt-i = 'focus --boundaries-action wrap-around-the-workspace right'
+# Cross-monitor spatial focus with wrap-around. Wraps `aerospace focus` to work
+# around https://github.com/nikitabobko/AeroSpace/issues/1491 (built-in
+# all-monitors-outer-frame lands on MRU, skipping windows).
+alt-m = 'exec-and-forget $HOME/.config/aerospace/aerospace-focus.sh left'
+alt-n = 'exec-and-forget $HOME/.config/aerospace/aerospace-focus.sh down'
+alt-e = 'exec-and-forget $HOME/.config/aerospace/aerospace-focus.sh up'
+alt-i = 'exec-and-forget $HOME/.config/aerospace/aerospace-focus.sh right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move
 alt-left = 'move left'
