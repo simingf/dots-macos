@@ -66,14 +66,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-## Tooling
+## Miscellaneous
 
-- Dotfiles in `~/dots-macos/`. Global `~/.claude/CLAUDE.md` symlinks here.
-- When writing a deterministic script is easier, write a script.
-- When prompting the user to run something, pipe to `pbcopy` (e.g. `printf '...' | pbcopy`). Prefer `rg` over `grep`, `fd` over `find`, `sd` over `sed`.
-
-## Version Control
-
+- When possible, write a deterministic script instead of completing a task manually.
+- When prompting the user to run something, copy it into their clipboard.
 - Use `gh` CLI.
 - No AI attributions in commits or PR bodies.
 
