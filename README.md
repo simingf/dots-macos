@@ -1,110 +1,116 @@
-# Mac Setup
+# dots-macos
 
-## Disable Hold Key For Tilde
+macOS dotfiles. **Source of truth** for two sibling repos:
+
+- [dots-linux](https://github.rbx.com/Roblox/dots-linux) — Coder Linux dev boxes (`*.coder`).
+- [dots-windows](https://github.com/simingf/dots-windows) — personal Windows machine.
+
+Operational details (sync workflow, sync contract, editing conventions) live in [`CLAUDE.md`](./CLAUDE.md).
+
+## Bootstrap
+
+```bash
+touch ~/.hushlogin
+cd ~/dots-macos && stow . --target ~     # symlinks into $HOME
+brew bundle install --file=~/dots-macos/Brewfile
+```
+
+## Layout
+
+```
+dots-macos/
+├── .config/                            # XDG configs (stow → ~/.config/)
+│   ├── nvim/                           # init.lua + lazy-lock.json (byte-identical to siblings)
+│   ├── aerospace/                      # tiling WM
+│   ├── ohmyposh/, ripgrep/, gh/        # byte-identical with dots-windows
+│   └── ...
+├── Library/
+│   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
+│   └── Preferences/sapling/
+├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
+├── .claude/CLAUDE.md                   # symlinked → ~/.claude/CLAUDE.md (global Claude config)
+├── scripts/
+│   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
+│   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux
+│   ├── setup.sh, check-brew-sync.sh    # Mac-only helpers
+│   └── tmux-fzf-*.sh                   # called from .tmux.conf, byte-identical with dots-linux
+├── manual/                             # configs requiring manual import (not stow-managed)
+└── Brewfile
+```
+
+## Things you can ask Claude
+
+- **"sync my dotfiles"** — runs `scripts/sync-dotfiles.py --apply` (byte-identical files only).
+- **"refresh the Linux vendored plugins"** — runs `nvim --headless +Lazy sync`, `zsh -ic 'zinit update --all'`, then `scripts/refresh-linux-vendored.sh`.
+- **"mirror this alias to Linux"** / **"mirror this function to Windows"** — hand-port a `.zshrc` change into `dots-linux/.zshrc` (skipping Mac-only tools) or `dots-windows/powershell/profile.ps1` (translating zsh→PowerShell).
+- **"add `<app>` to dotfiles"** — places the config under the right path, updates `sync-dotfiles.py` if it should mirror, adds a CLAUDE.md row.
+
+See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
+
+## Symlink conventions
+
+- **Default**: directory-level symlinks (`.config/<app>/`, `Library/Application Support/<app>/`).
+- **File-level exceptions** when the target dir holds runtime state:
+  - `~/.config/portpal/` — runtime `.sock`; only `portpal.toml` is symlinked.
+  - `~/Library/Application Support/Code/User/` — VS Code state; only `settings.json` + `keybindings.json`.
+  - `~/.ssh/` — `coder config-ssh` rewrites `~/.ssh/config` via atomic-rename (breaks symlinks); only `coder-multiplex.conf` is symlinked, included from a real `~/.ssh/config`.
+- Always **relative paths** in symlinks — never hardcode `/Users/sfeng/`.
+- Don't commit `*.sock`, `*.pid`, `*.lock`.
+
+---
+
+## Fresh Mac setup checklist
+
+Personal reference — run after `stow` + Homebrew above.
+
+### Disable hold-key for tilde
 
 ```bash
 defaults write -g ApplePressAndHoldEnabled -bool false
 ```
 
-## Remove Dock
+### Remove dock
 
 ```bash
 defaults write com.apple.dock autohide-delay -float 1000; killall Dock
+# revert: defaults delete com.apple.dock autohide-delay; killall Dock
 ```
 
-To revert:
-
-```bash
-defaults delete com.apple.dock autohide-delay; killall Dock
-```
-
-## git-lfs setup
+### git-lfs
 
 ```bash
 git lfs install --system
 ```
 
-## Dotfiles Setup
+### Manual imports
 
-```bash
-touch ~/.hushlogin
-cd ~/dots-macos && stow . --target ~
-```
+- **Alfred themes** — import from `manual/alfred/themes/` via Alfred Preferences → Appearance.
+- **Alfred terminal custom setup** — paste `manual/alfred/terminal_custom.applescript` into Alfred Preferences → Features → Terminal/Shell → Application: Custom (launches Ghostty).
+- **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings.
+- **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/).
 
-## Homebrew
+### Paid casks
 
-```bash
-brew bundle install --file=~/dots-macos/Brewfile
-```
+Alcove, AlDente, Alfred, Crossover, LookAway
 
-## Manual Setup
+### App Store
 
-- **Alfred themes** — import from `manual/alfred/themes/` via Alfred Preferences → Appearance
-- **Alfred terminal custom setup** — paste contents of `manual/alfred/terminal_custom.applescript` into Alfred Preferences → Features → Terminal/Shell → Application: Custom (launches Ghostty)
-- **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings
-- **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/)
+- **Paid**: Yoink, rcmd (not installed), Klack
+- **Free**: Amphetamine, Googly Eyes, Xcode (not installed)
 
-### Paid Casks
+### Download online
 
-- Alcove
-- AlDente
-- Alfred
-- Crossover
-- LookAway
+- **Paid**: SideNotes (not installed)
+- **Free**: ZoomHider, IsThereNet, Coder Desktop, Docker Desktop, Google Chrome, Roblox, Roblox Studio, Vencord, Mousecape (not installed), Stacher (not installed)
 
-## Download Via App Store
+### Roblox / work apps
 
-### Paid:
+Managed and installed by Roblox IT: Falcon, GlobalProtect, Jamf Self Service, Roscan, Santa.
 
-Yoink
-rcmd (currently not installed)
-Klack
+### xclient.info / 52mac.com / macked.app
 
-### Free:
+Cleanshot X (4.7.6, 5/6) — no lifetime license.
 
-Amphetamine
-Googly Eyes
-Xcode (currently not installed)
+### Alfred workflows
 
-## Download Online
-
-### Paid:
-
-SideNotes (currently not installed)
-
-### Free:
-
-ZoomHider
-IsThereNet
-Coder Desktop
-Docker Desktop
-Google Chrome
-Roblox
-Roblox Studio
-Vencord
-Mousecape (currently not installed)
-Stacher (currently not installed)
-
-## Roblox / Work Apps
-
-Managed and installed by Roblox IT:
-
-- Falcon
-- GlobalProtect
-- Jamf Self Service
-- Roscan
-- Santa
-
-## xclient.info / 52mac.com / macked.app
-
-Cleanshot X (4.7.6, 5/6) (NO LIFETIME LICENSE)
-
-## Alfred Workflows
-
-Amazon Suggest
-Arc Tabs and Spaces
-Calculate Anything
-Google Suggest
-System Settings
-Thumbnail Navigation
-Youtube Suggest
+Amazon Suggest, Arc Tabs and Spaces, Calculate Anything, Google Suggest, System Settings, Thumbnail Navigation, Youtube Suggest.

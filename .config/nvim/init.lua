@@ -152,6 +152,10 @@ end
 -- native binaries (Mason, blink.cmp Rust fuzzy). False locally on macOS, so a no-op.
 local IS_SSH = (vim.env.SSH_CONNECTION or "") ~= ""
 
+-- HAS_DOTNET: gate the C# / roslyn toolchain. True on the work Mac, false on the
+-- personal Windows box. Lets a single init.lua serve all 3 hosts.
+local HAS_DOTNET = vim.fn.executable("dotnet") == 1
+
 -- setup code from documentation --
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
@@ -640,9 +644,11 @@ require("lazy").setup({
 		enabled = not IS_SSH,
 		opts = {
 			-- Crashdummyy registry provides the `roslyn` LSP package used by roslyn.nvim.
-			registries = {
+			registries = HAS_DOTNET and {
 				"github:mason-org/mason-registry",
 				"github:Crashdummyy/mason-registry",
+			} or {
+				"github:mason-org/mason-registry",
 			},
 		},
 	},
@@ -734,7 +740,7 @@ require("lazy").setup({
 		enabled = not IS_SSH,
 		dependencies = { "williamboman/mason.nvim" },
 		opts = {
-			ensure_installed = {
+			ensure_installed = HAS_DOTNET and {
 				"goimports",
 				"gofumpt",
 				"ruff",
@@ -743,6 +749,13 @@ require("lazy").setup({
 				"clang-format",
 				"csharpier",
 				"roslyn", -- C# LSP, consumed by roslyn.nvim
+			} or {
+				"goimports",
+				"gofumpt",
+				"ruff",
+				"stylua",
+				"shfmt",
+				"clang-format",
 			},
 		},
 	},
@@ -751,6 +764,7 @@ require("lazy").setup({
 	-- Auto-discovers the server installed by Mason via the Crashdummyy registry.
 	{
 		"seblyng/roslyn.nvim",
+		enabled = HAS_DOTNET,
 		ft = "cs",
 		opts = {},
 	},

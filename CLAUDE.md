@@ -1,86 +1,104 @@
 # dots-macos — Claude Instructions
 
-## Repo structure
+`~/dots-macos` is the **source of truth** for all three dotfile repos:
 
-```
-dots-macos/
-├── .config/          # XDG config dirs (stow → ~/.config/)
-├── Library/
-│   ├── Application Support/   # e.g. lazygit, VS Code
-│   └── Preferences/           # e.g. sapling
-├── manual/           # configs requiring manual import (Alfred, Enhancer for YouTube, Iris CE) — NOT stow-managed
-├── scripts/          # setup.sh, check-brew-sync.sh
-└── Brewfile          # Homebrew packages
-```
+- `~/dots-linux` — public on github.rbx.com; Coder applies on Linux dev boxes (`*.coder`). No internet on the box, so plugins/terminfo are vendored.
+- `~/dots-windows` — personal Windows. **Must contain no work content.**
 
-Apply all symlinks with:
+For repo layout and bootstrap, see [`README.md`](./README.md).
+
+## Behavior
+
+When the user asks you to edit a file, route based on its sync class (see contract below):
+
+- **Byte-identical** with a sibling: edit here (Mac is source), then run `scripts/sync-dotfiles.py --apply` as part of the same task — don't wait for the user to ask. The script is idempotent.
+- **Partial** (e.g., `.zshrc`, `.gitconfig`): edit here, then judge whether the change should hand-mirror to the sibling. If the change is generic (a new alias, a new function), propagate to `~/dots-linux` and/or `~/dots-windows` — translating out Mac-only tools (`eza`, `trash`, `pbcopy`, oh-my-posh, homebrew, `/Applications/`). If platform-specific, leave siblings alone. Ask if unsure.
+- **Mac-only**: edit and you're done.
+
+Default: the user expects shared files to stay synced. Don't end a task that touched a byte-identical file without running the sync script.
+
+## Sync workflow
+
+When the user says **"sync dotfiles"** (or after editing any byte-identical file below):
 
 ```bash
-cd ~/dots-macos && stow . --target ~
+~/dots-macos/scripts/sync-dotfiles.py            # dry-run, shows drift
+~/dots-macos/scripts/sync-dotfiles.py --apply    # copy drifted files
 ```
 
-## Symlink conventions
+When the user says **"refresh Linux vendored plugins"**:
 
-### Directory-level symlinks (default)
-
-Symlink the whole app directory. Applies to `.config/` subdirs and `Library/` subdirs:
-
-```
-~/.config/nvim                        →  ../dots-macos/.config/nvim
-~/Library/Application Support/lazygit →  ../../dots-macos/Library/Application Support/lazygit
-~/Library/Preferences/sapling         →  ../../dots-macos/Library/Preferences/sapling
+```bash
+nvim --headless +"Lazy! sync" +qa
+zsh -ic 'zinit update --all'
+~/dots-macos/scripts/refresh-linux-vendored.sh
+~/dots-macos/scripts/sync-dotfiles.py --apply linux   # in case init.lua/.tmux.conf drifted
 ```
 
-When adding a new app config, put its directory in the right place under `dots-macos/` and stow creates the directory-level symlink automatically.
+The user commits/pushes from each sibling repo themselves.
 
-### File-level symlinks (exceptions)
+## Sync contract
 
-Use when the target directory contains runtime files that must not be committed (sockets, caches, generated state). Keep the real directory in place and symlink only the config files inside it.
+| File / dir | linux | windows | Rule |
+|---|---|---|---|
+| `.tmux.conf` | byte-identical | — | Inline portability via `if-shell 'test "$(uname)" = Linux' ...`; path differences use `$DOTFILES_DIR/scripts/...` exported per-host from `.zshrc`. |
+| `.config/nvim/init.lua` | byte-identical | byte-identical | Runtime guards `IS_SSH` (Linux dev box) and `HAS_DOTNET` (work Mac only) gate Mason/blink-Rust/roslyn. |
+| `.config/nvim/lazy-lock.json` | byte-identical | byte-identical | |
+| `scripts/tmux-fzf-*.sh` | byte-identical | — | Called from `.tmux.conf` via `$DOTFILES_DIR`. |
+| `Library/Application Support/lazygit/config.yml` | — | byte-identical | |
+| `Library/Application Support/Code/User/{settings,keybindings}.json` | — | byte-identical | LF line endings (Mac normalized). |
+| `.config/{ohmyposh/zen.toml, ripgrep/rg.conf, gh/config.yml}` | — | byte-identical | |
+| `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `ls`/`grep`/`rm` aliases (no `eza`/`trash`), `pbcopy` stub, devspace env vars, and `kk`/`kkr` → `claude` instead of `declawd`. Hand-mirror new shared aliases. |
+| `.gitconfig` | partial | — | Linux is minimal: `user.name` + the `github.rbx.com` credential helper. Mac has personal+work GH accounts, LFS, GCM, maintenance. |
+| `.claude/CLAUDE.md` | — | partial | Roblox-specific bits (Sapling, Silencer, github.rbx.com paths) live only on Mac; Windows uses `Set-Clipboard` instead of `pbcopy` and drops the Roblox role line. |
+| `powershell/profile.ps1` (in dots-windows) | — | partial | Hand-translated subset of `.zshrc`. Mirror new shared shell logic by hand, skipping Mac-only tools. |
+| `.bashrc`, `vendor/`, `setup.sh` | Linux-only | — | |
+| `windowsterminal/`, `scripts/apply.ps1` | — | Windows-only | |
+| `Library/` (rest), `Brewfile`, `manual/`, `ghostty/`, `kitty/`, `aerospace/`, `karabiner/` | Mac-only | Mac-only | Do NOT mirror. |
 
-Current exceptions:
-- `~/.config/portpal/` — has a `.sock` at runtime; only `portpal.toml` is symlinked
-- `~/Library/Application Support/Code/User/` — VS Code runtime state; only `settings.json` and `keybindings.json` are symlinked
-- `~/.ssh/` — contains `known_hosts`, `cm-*` ControlMaster sockets, private keys; **and** `~/.ssh/config` itself is rewritten by `coder config-ssh` via atomic-rename (which breaks symlinks). So `~/.ssh/config` stays as a real file; only `~/.ssh/coder-multiplex.conf` is symlinked, included from `~/.ssh/config` via an `Include` directive placed outside Coder's managed markers
+When extending: add a row above, add to `IDENTICAL` in `sync-dotfiles.py` if byte-identical, update the matching `README.md` layout/things-to-ask sections.
 
-### Home dotfiles
+## Scripts policy
 
-Single files in `~` are necessarily file-level:
+Scripts are organized by who runs them:
 
-```
-~/.zshrc     →  dots-macos/.zshrc
-~/.gitconfig →  dots-macos/.gitconfig
-```
+- **Bootstrap scripts** live in their own repo: `dots-macos/scripts/setup.sh`, `dots-linux/setup.sh`, `dots-windows/scripts/apply.ps1`. Each runs on the platform whose dotfiles it applies.
+- **Cross-repo orchestration** lives in `dots-macos/scripts/` because Mac is the control plane: `sync-dotfiles.py`, `refresh-linux-vendored.sh`. They read from `~/dots-macos` and write into the sibling repos.
+- **Config helpers** live in every repo where the calling config runs: `scripts/tmux-fzf-*.sh` exists in both dots-macos and dots-linux because tmux runs on both. Synced byte-identical via `sync-dotfiles.py`.
 
-### Symlink path style
+When adding a new script, place it by this rule. Don't copy orchestration scripts into siblings — `~/dots-macos/scripts/sync-dotfiles.py` is invoked from any directory.
 
-Always use **relative paths**. Never hardcode `/Users/sfeng/`.
+## Editing conventions
 
-### What not to commit
+- `init.lua` runtime guards: `local IS_SSH = (vim.env.SSH_CONNECTION or "") ~= ""` and `local HAS_DOTNET = vim.fn.executable("dotnet") == 1`. Use these to gate Mason / Rust-fuzzy / roslyn — don't introduce host-specific files.
+- `.tmux.conf` portability: use `if-shell 'test "$(uname)" = Linux' '<linux-cmd>' '<mac-cmd>'`. Path-style differences via `$DOTFILES_DIR` exported from `.zshrc`.
+- VS Code JSON files: LF line endings only.
+- Symlinks: relative paths only — never hardcode `/Users/sfeng/`.
 
-Do not commit runtime artifacts: `*.sock`, `*.pid`, `*.lock`. Add to `.gitignore` if they appear under a tracked path.
+## Doc structure (keep aligned across all 3 repos)
 
-## Linux dev box mirror (`~/dots-linux`)
+Each repo has both `README.md` (human-facing) and `CLAUDE.md` (AI-operational). The split:
 
-A separate, public-on-github.rbx.com repo (`~/dots-linux`) holds dotfiles for Coder Linux dev boxes (`*.coder` workspaces). Coder clones it at workspace startup and runs its `setup.sh`. **`~/dots-macos` is the source of truth** for everything shared; dots-linux mirrors a subset, plus vendored plugins/binaries because the dev box has no internet.
+| `README.md` | `CLAUDE.md` |
+|---|---|
+| 1-2 sentence repo summary + sibling cross-refs | Source-of-truth identification (1 line) |
+| Bootstrap commands (how to apply on a fresh machine) | **Behavior** — routing rules for edit requests by sync class. Required, near the top. This is what makes a fresh Claude session act correctly without an explicit `/init`. |
+| Layout (full directory tree, path mappings) | Sync workflow + commands (what triggers when user says "sync dotfiles") |
+| "Things you can ask Claude" — phrasings the user can use | Sync contract table (canonical only in dots-macos; siblings list partials + reference) |
+| Concepts users should understand (vendoring, ASCII-only, symlink conventions) | Constraints (security, no-git-from-Mac, no-work-content, etc.) |
+| Repo-specific extras (Mac setup checklist, gotchas, TODO) | Editing conventions (runtime guards, line endings, etc.) + this doc-structure section |
 
-See `~/dots-linux/CLAUDE.md` for vendoring, IS_SSH guards, and refresh procedures.
+Rules:
 
-### Sync contract
+- **Layout** lives in README only. CLAUDE.md may name specific files when they have operational rules attached, but doesn't repeat the tree.
+- **Sync contract** lives in this CLAUDE.md only. Siblings reference it.
+- **Sibling repo links** appear in both — README frames them as friendly cross-refs ("companion repo"), CLAUDE.md as source-of-truth relationship.
+- **"Things you can ask Claude"** lives in README. Each phrasing maps to a concrete operation documented in CLAUDE.md (so the human prompt reliably triggers the AI behavior).
 
-| File / dir | Sync state | Rule |
-|---|---|---|
-| `.tmux.conf` | **byte-identical** | One file lives in both repos; portability handled inside via `if-shell 'test "$(uname)" = Linux' ...`. Edit both copies in lockstep. |
-| `.config/nvim/init.lua` | **byte-identical** | IS_SSH guards (`vim.env.SSH_CONNECTION`) handle Linux differences inline. Refresh dots-linux with plain `cp`. |
-| `.config/nvim/lazy-lock.json` | **byte-identical** | Plain `cp`. |
-| `.zshrc` | **partial** | Mac is canonical for shared aliases/functions. Linux has its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), and ls/grep/rm aliases (no `eza`/`trash`). When adding a new shared alias/function on Mac, mirror it into the Linux `.zshrc` by hand. |
-| `.gitconfig` | **partial** | Linux has only `user.name` + the `github.rbx.com` credential helper using `/usr/bin/gh`. Mac additionally has personal+work GH accounts, LFS, GCM, maintenance — not relevant on the dev box. |
-| `.bashrc` | **Linux-only** | 5-line stub that `exec zsh`s. Not in `~/dots-macos`. |
-| `vendor/`, `setup.sh` | **Linux-only** | Vendored plugins, terminfo, and the bootstrap script — only relevant on the no-internet dev box. |
-| `scripts/tmux-fzf-*.sh` | **byte-identical** | Referenced by `.tmux.conf` via `$DOTFILES_DIR/scripts/...` (exported per-host from `.zshrc`). When edited on Mac, `cp` to `~/dots-linux/scripts/`. Other `scripts/` (brew, setup, duti) stay Mac-only. |
-| `Library/`, `Brewfile`, `manual/`, ghostty/kitty/aerospace/ohmyposh/karabiner configs | **Mac-only** | Do NOT mirror to dots-linux. |
+When you change something:
 
-### When making changes
-
-- **Editing `.tmux.conf` / `init.lua` / `lazy-lock.json`**: update `~/dots-macos` first, then `cp` to `~/dots-linux/...` to keep them byte-identical.
-- **Adding a Mac-only alias/function to `.zshrc`**: decide whether it should also exist on Linux. If yes, mirror it into `~/dots-linux/.zshrc` (skipping pieces that depend on Mac-only tools). If no, leave Linux untouched.
-- **Adding a new shared dotfile**: add to `~/dots-macos`, decide if it belongs on Linux too, and if so add a parallel copy and a row to the table above.
+1. **Editing a byte-identical file** → run `sync-dotfiles.py --apply`. No doc changes.
+2. **Adding a new shared dotfile** → add it to dots-macos, add a row to the sync contract above, add to `IDENTICAL` in `sync-dotfiles.py`, update layout in each affected README, and (if it changes user phrasings) update "Things you can ask Claude".
+3. **Changing the sync workflow** (new script, new flag) → update this CLAUDE.md and the corresponding "Things you can ask Claude" entries in all 3 READMEs.
+4. **Changing constraints or editing conventions** → update CLAUDE.md only (not README — operational).
+5. **Always propagate cross-repo doc changes to all 3 repos** — both README and CLAUDE.md kept structurally aligned.
