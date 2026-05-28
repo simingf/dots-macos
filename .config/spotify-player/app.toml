@@ -3,14 +3,15 @@ client_id = "d420a117a32841c2b3474932e49fb54b"
 client_port = 8080
 login_redirect_uri = "http://127.0.0.1:8989/login"
 playback_format = """
-{status} {track} • {artists} {liked}
-{album} • {genres}
+{status} {track} {liked}
+{artists}
+{album}
+{genres}
 {metadata}"""
 playback_metadata_fields = [
     "repeat",
     "shuffle",
     "volume",
-    "device",
 ]
 notify_timeout_in_secs = 0
 tracks_playback_limit = 50
