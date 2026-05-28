@@ -17,16 +17,35 @@ key_sequence = "m"
 command = "FocusNextWindow"
 key_sequence = "i"
 
-# `n` was NextTrack, `p` was PreviousTrack — moved to ,/. since `n` is now navigation.
-# `.` was PlayRandom (overridden); `,` had no default.
-
-[[keymaps]]
-command = "NextTrack"
-key_sequence = "."
+# Track / seek cluster:
+#   [ / ]    PreviousTrack / NextTrack       (overrides displaced n; p still works as default fallback for prev)
+#   , / .    SeekBackward / SeekForward      (uses seek_duration_secs from app.toml; default <,> still active)
+#   *        PlayRandom                       (was on `.`; wildcard ≈ random)
 
 [[keymaps]]
 command = "PreviousTrack"
+key_sequence = "["
+
+[[keymaps]]
+command = "NextTrack"
+key_sequence = "]"
+
+[[keymaps]]
+command = { SeekBackward = {} }
 key_sequence = ","
+
+[[keymaps]]
+command = { SeekForward = {} }
+key_sequence = "."
+
+[[keymaps]]
+command = "PlayRandom"
+key_sequence = "*"
+
+# Volume: `=` for +5 so both volume keys (-, =) are shift-free. `+` still works as default fallback.
+[[keymaps]]
+command = { VolumeChange = { offset = 5 } }
+key_sequence = "="
 
 # ============================================================================
 # DEFAULT KEYMAP — for reference. Press `?` (or `C-h`) inside the app to open
@@ -35,15 +54,15 @@ key_sequence = ","
 #
 # --- Playback ---
 #   space             ResumePause
-#   n                 NextTrack            (overridden above → .)
-#   p                 PreviousTrack        (overridden above → ,)
-#   .                 PlayRandom           (overridden above → NextTrack)
+#   n                 NextTrack            (overridden above → ])
+#   p                 PreviousTrack        (still works; alias above on [)
+#   .                 PlayRandom           (overridden above → SeekForward; PlayRandom rebound to *)
 #   C-r               Repeat
 #   C-s               Shuffle
-#   +  /  -           VolumeChange ±5
+#   +  /  -           VolumeChange ±5      (= aliased above for shift-free vol up)
 #   _                 Mute
 #   ^                 SeekStart
-#   >  /  <           SeekForward / SeekBackward
+#   >  /  <           SeekForward / SeekBackward  (still default; aliases above on . / ,)
 #
 # --- List navigation ---
 #   j   C-n   down    SelectNextOrScrollDown        (also n above)
