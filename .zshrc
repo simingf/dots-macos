@@ -498,8 +498,8 @@ eval "$(zoxide init --cmd cd zsh)"
 
 # Auto-attach to (or create) tmux session 'dev' on shell startup.
 # Skip when already in tmux, in non-interactive shells, or under VSCode/Cursor.
-# `exec` replaces zsh with tmux so detaching closes the terminal.
+# No `exec`: zsh stays under tmux, so detaching returns to this prompt instead of closing the terminal.
 if [[ -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v tmux >/dev/null 2>&1; then
     tmux has-session -t=dev 2>/dev/null || tmux new-session -d -s dev
-    exec tmux attach -t dev
+    tmux attach -t dev
 fi
