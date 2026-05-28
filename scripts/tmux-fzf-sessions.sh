@@ -7,10 +7,11 @@ count=$(tmux display-message -p '#{server_sessions}')
 y=$(tmux display-message -p '#{client_height}')
 
 tmux display-popup -E -x 0 -y "$y" -w 100% -h "$((count + 5))" '
-sel=$(tmux list-sessions -F "#{session_attached} #{session_last_attached} #{session_name}#{?session_attached, (attached),}" \
+sel=$(tmux list-sessions -F "#{session_attached} #{session_last_attached} #{session_name}|#{session_name}#{?session_attached, (attached),}" \
         | sort -k1,1n -k2,2nr \
         | cut -d" " -f3- \
-        | fzf --no-sort --prompt="session> " \
-        | cut -d" " -f1) \
+        | awk -F"|" "{ print \$1 \"|\" NR \": \" \$2 }" \
+        | fzf --no-sort --delimiter="[|]" --with-nth=2 --prompt="session> " \
+        | cut -d"|" -f1) \
   && [ -n "$sel" ] && tmux switch-client -t "$sel"
 ' || true
