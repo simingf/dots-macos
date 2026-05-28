@@ -50,7 +50,13 @@ zinit snippet OMZP::command-not-found
 
 # Load completions
 fpath=($HOME/.docker/completions $HOME/.zfunc $fpath)
-autoload -Uz compinit && compinit
+autoload -Uz compinit
+# Skip the security check / dump rebuild if the cache is < 24h old.
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+else
+    compinit -C
+fi
 zinit cdreplay -q
 
 # Oh My Posh prompt
@@ -112,10 +118,12 @@ chpwd() { _clear_ls; }
 # tmux window title
 _tmux_precmd() {
     [[ -n "$TMUX" ]] || return
+    [[ $(tmux show -wqv @manual_window_name_set) == 1 ]] && return
     printf '\033k%s\033\\' "$(basename "$PWD")"
 }
 _tmux_preexec() {
     [[ -n "$TMUX" ]] || return
+    [[ $(tmux show -wqv @manual_window_name_set) == 1 ]] && return
     printf '\033k%s\033\\' "$1"
 }
 precmd_functions+=(_tmux_precmd)
@@ -124,7 +132,7 @@ preexec_functions+=(_tmux_preexec)
 # pbcopy stderr from failed commands (best-effort: tee subprocess is async,
 # so very fast commands' output may not flush before precmd fires).
 _zsh_err_buf=$(mktemp -t zsh-err)
-trap 'rm -f "$_zsh_err_buf"' EXIT
+trap 'command rm -f "$_zsh_err_buf"' EXIT
 exec 2> >(tee -a "$_zsh_err_buf" >&2)
 _pbcopy_on_error() {
     local rc=$?
@@ -169,7 +177,7 @@ alias cf="builtin cd ~/.config"
 # zsh config
 alias zrc="nvim ~/.zshrc"
 alias rs="clear && exec zsh"
-alias ch="rm -f ~/.zsh_history && clear"
+alias ch="command rm -f ~/.zsh_history && clear"
 # ghostty config
 alias grc="nvim ~/.config/ghostty/config"
 # kitty config
@@ -185,7 +193,11 @@ alias v='nvim'
 lg() {
     local name remote_host
     name=$(git rev-parse --show-toplevel 2>/dev/null) && name="lg ($(basename "$name"))" || name="lazygit"
-    [[ -n "$TMUX" ]] && printf '\033k%s\033\\' "$name" || printf '\033]0;%s\033\\' "$name"
+    if [[ -n "$TMUX" ]]; then
+        [[ $(tmux show -wqv @manual_window_name_set) != 1 ]] && printf '\033k%s\033\\' "$name"
+    else
+        printf '\033]0;%s\033\\' "$name"
+    fi
     remote_host=$(git remote get-url origin 2>/dev/null | sed 's|https://\([^/]*\)/.*|\1|; s|git@\([^:]*\):.*|\1|')
     if [[ "$remote_host" == "github.com" ]]; then
         local token
@@ -260,7 +272,13 @@ runall() {
 alias rsa='runall rs'
 # rename tmux window to ssh destination; precmd restores on exit
 ssh() {
-    [[ -n "$TMUX" ]] && printf '\033k%s\033\\' "${@: -1}"
+    if [[ -n "$TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
+        # Skip option flags to find the destination (first non-option positional).
+        local OPTIND=1 OPTARG opt dest
+        while getopts ':46AaCfGgKkMNnqsTtVvXxYyB:b:c:D:E:e:F:I:i:J:L:l:m:O:o:p:Q:R:S:W:w:' opt "$@"; do :; done
+        dest="${@[OPTIND]}"
+        [[ -n "$dest" ]] && printf '\033k%s\033\\' "$dest"
+    fi
     command ssh "$@"
 }
 
@@ -306,7 +324,7 @@ sup() {
     stack_files=$(sl status -m -a -n --rev master 2>/dev/null)
     if [[ -n "$stack_files" ]]; then
         echo "  scope: $(echo "$stack_files" | wc -l | tr -d ' ') file(s)"
-        echo "$stack_files" | xargs -r dotnet format whitespace --no-restore --verbosity minimal --include
+        echo "$stack_files" | xargs dotnet format whitespace --no-restore --verbosity minimal --include
     else
         echo "  (no stack files)"
     fi
@@ -477,3 +495,11 @@ path+=/Library/TeX/texbin
 # Shell integrations
 source <(fzf --zsh)
 eval "$(zoxide init --cmd cd zsh)"
+
+# Auto-attach to (or create) tmux session 'dev' on shell startup.
+# Skip when already in tmux, in non-interactive shells, or under VSCode/Cursor.
+# `exec` replaces zsh with tmux so detaching closes the terminal.
+if [[ -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v tmux >/dev/null 2>&1; then
+    tmux has-session -t=dev 2>/dev/null || tmux new-session -d -s dev
+    exec tmux attach -t dev
+fi
