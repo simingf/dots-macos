@@ -42,7 +42,7 @@ dots-macos/
 
 - **"sync my dotfiles"** — runs `scripts/sync-dotfiles.py --apply` (byte-identical files only).
 - **"refresh the Linux vendored plugins"** — runs `nvim --headless +Lazy sync`, `zsh -ic 'zinit update --all'`, then `scripts/refresh-linux-vendored.sh`.
-- **"mirror this alias to Linux"** / **"mirror this function to Windows"** — hand-port a `.zshrc` change into `dots-linux/.zshrc` (skipping Mac-only tools) or `dots-windows/powershell/profile.ps1` (translating zsh→PowerShell).
+- **"mirror this alias to Linux"** / **"mirror this function to Windows"** — hand-port a `.zshrc` change into `dots-linux/.zshrc` (skipping Mac-only tools) or `dots-windows/Documents/PowerShell/Profile.ps1` (translating zsh→PowerShell).
 - **"add `<app>` to dotfiles"** — places the config under the right path, updates `sync-dotfiles.py` if it should mirror, adds a CLAUDE.md row.
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.

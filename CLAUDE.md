@@ -50,10 +50,10 @@ The user commits/pushes from each sibling repo themselves.
 | `.config/{ohmyposh/zen.toml, ripgrep/rg.conf, gh/config.yml}` | — | byte-identical | |
 | `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `ls`/`grep`/`rm` aliases (no `eza`/`trash`), `pbcopy` stub, devspace env vars, and `kk`/`kkr` → `claude` instead of `declawd`. Hand-mirror new shared aliases. |
 | `.gitconfig` | partial | — | Linux is minimal: `user.name` + the `github.rbx.com` credential helper. Mac has personal+work GH accounts, LFS, GCM, maintenance. |
-| `.claude/CLAUDE.md` | — | partial | Roblox-specific bits (Sapling, Silencer, github.rbx.com paths) live only on Mac; Windows uses `Set-Clipboard` instead of `pbcopy` and drops the Roblox role line. |
-| `powershell/profile.ps1` (in dots-windows) | — | partial | Hand-translated subset of `.zshrc`. Mirror new shared shell logic by hand, skipping Mac-only tools. |
+| `.claude/CLAUDE.md` | byte-identical | byte-identical | Global Claude Code instructions. Kept platform-agnostic so all three repos can share verbatim. |
+| `Documents/PowerShell/Profile.ps1` (in dots-windows) | — | partial | Hand-translated subset of `.zshrc`. Mirror new shared shell logic by hand, skipping Mac-only tools. |
 | `.bashrc`, `vendor/`, `setup.sh` | Linux-only | — | |
-| `windowsterminal/`, `scripts/apply.ps1` | — | Windows-only | |
+| `AppData/Local/Packages/Microsoft.WindowsTerminal_…/`, `scripts/apply.ps1` | — | Windows-only | |
 | `Library/` (rest), `Brewfile`, `manual/`, `ghostty/`, `kitty/`, `aerospace/`, `karabiner/` | Mac-only | Mac-only | Do NOT mirror. |
 
 When extending: add a row above, add to `IDENTICAL` in `sync-dotfiles.py` if byte-identical, update the matching `README.md` layout/things-to-ask sections.
