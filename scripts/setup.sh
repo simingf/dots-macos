@@ -51,7 +51,7 @@ brew bundle install --file="$DOTS/Brewfile"
 
 step "Rust toolchain (rustup) + cargo binaries"
 rustup default stable
-cargo install spotify_player
+cargo install spotify_player --features image,notify --locked
 
 step "Default file handlers (Launch Services plist)"
 # We patch ~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist

@@ -27,3 +27,81 @@ key_sequence = "."
 [[keymaps]]
 command = "PreviousTrack"
 key_sequence = ","
+
+# ============================================================================
+# DEFAULT KEYMAP — for reference. Press `?` (or `C-h`) inside the app to open
+# the live command-help popup. spotify_player has no always-on hint overlay.
+# ============================================================================
+#
+# --- Playback ---
+#   space             ResumePause
+#   n                 NextTrack            (overridden above → .)
+#   p                 PreviousTrack        (overridden above → ,)
+#   .                 PlayRandom           (overridden above → NextTrack)
+#   C-r               Repeat
+#   C-s               Shuffle
+#   +  /  -           VolumeChange ±5
+#   _                 Mute
+#   ^                 SeekStart
+#   >  /  <           SeekForward / SeekBackward
+#
+# --- List navigation ---
+#   j   C-n   down    SelectNextOrScrollDown        (also n above)
+#   k   C-p   up      SelectPreviousOrScrollUp      (also e above)
+#   C-f  page_down    PageSelectNextOrScrollDown
+#   C-b  page_up      PageSelectPreviousOrScrollUp
+#   g g               SelectFirstOrScrollToTop
+#   G    end          SelectLastOrScrollToBottom
+#   enter             ChooseSelected
+#
+# --- Pages & windows ---
+#   tab               FocusNextWindow              (also i above)
+#   backtab           FocusPreviousWindow          (also m above)
+#   backspace  C-q    PreviousPage
+#   g space           CurrentlyPlayingContextPage
+#   g l               LibraryPage
+#   g s               SearchPage
+#   g b               BrowsePage
+#   g t               TopTrackPage
+#   g r               RecentlyPlayedTrackPage
+#   g y               LikedTrackPage
+#   g L   l           LyricsPage
+#   g c               JumpToCurrentTrackInContext
+#   g o               OpenLogs
+#
+# --- Browse ---
+#   u p               BrowseUserPlaylists
+#   u a               BrowseUserFollowedArtists
+#   u A               BrowseUserSavedAlbums
+#
+# --- Actions / search / queue ---
+#   /                 Search
+#   z                 Queue
+#   Z   C-z           AddSelectedItemToQueue
+#   a                 ShowActionsOnCurrentTrack
+#   A                 ShowActionsOnCurrentContext
+#   C-space   g a     ShowActionsOnSelectedItem
+#   C-g               JumpToHighlightTrackInContext
+#   r                 RefreshPlayback
+#   R                 RestartIntegratedClient
+#   O                 OpenSpotifyLinkFromClipboard
+#   N                 CreatePlaylist
+#   C-j               MovePlaylistItemDown
+#   C-k               MovePlaylistItemUp
+#
+# --- Sort (in track lists) ---
+#   s t               SortTrackByTitle
+#   s a               SortTrackByArtists
+#   s A               SortTrackByAlbum
+#   s d               SortTrackByDuration
+#   s D               SortTrackByAddedDate
+#   s r               ReverseTrackOrder
+#   s l a             SortLibraryAlphabetically
+#   s l r             SortLibraryByRecent
+#
+# --- App ---
+#   T                 SwitchTheme
+#   D                 SwitchDevice
+#   ?   C-h           OpenCommandHelp
+#   esc               ClosePopup
+#   q   C-c           Quit

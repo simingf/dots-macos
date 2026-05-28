@@ -443,6 +443,17 @@ p() {
     fi
 }
 
+# spotify_player — viuer's kitty-graphics probe deadlocks under tmux (passthrough is
+# one-way; the terminal's reply gets intercepted by tmux and never reaches viuer).
+# Override TERM inside tmux so viuer skips the kitty/ghostty path; lose album art there.
+s() {
+    if [[ -n "$TMUX" ]]; then
+        TERM=xterm-256color command spotify_player "$@"
+    else
+        command spotify_player "$@"
+    fi
+}
+
 # conda (lazy-loaded)
 export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
 _conda_load() {
