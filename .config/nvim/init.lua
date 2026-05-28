@@ -553,6 +553,19 @@ require("lazy").setup({
 		branch = "main",
 		lazy = false,
 		config = function()
+			-- main branch installs parser+queries to ~/.local/share/nvim/site/{parser,queries}/.
+			-- Gated by IS_SSH because Linux dev box has no internet (parsers vendored separately).
+			if not IS_SSH then
+				pcall(function()
+					require("nvim-treesitter").install({
+						"bash", "c", "c_sharp", "cpp", "go", "lua", "python",
+						"toml", "json", "yaml",
+						"javascript", "typescript",
+						"markdown", "markdown_inline",
+						"vim", "vimdoc",
+					})
+				end)
+			end
 			vim.api.nvim_create_autocmd("FileType", {
 				callback = function(args)
 					pcall(vim.treesitter.start, args.buf)
