@@ -52,6 +52,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
 - **Default**: directory-level symlinks (`.config/<app>/`, `Library/Application Support/<app>/`).
 - **File-level exceptions** when the target dir holds runtime state:
   - `~/.config/portpal/` — runtime `.sock`; only `portpal.toml` is symlinked.
+  - `~/.config/spotify-player/` — runtime token cache; only `app.toml` is symlinked.
   - `~/Library/Application Support/Code/User/` — VS Code state; only `settings.json` + `keybindings.json`.
   - `~/.ssh/` — `coder config-ssh` rewrites `~/.ssh/config` via atomic-rename (breaks symlinks); only `coder-multiplex.conf` is symlinked, included from a real `~/.ssh/config`.
 - Always **relative paths** in symlinks — never hardcode `/Users/sfeng/`.

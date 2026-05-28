@@ -40,10 +40,18 @@ touch ~/.hushlogin
   rm -f "$target"
 done
 
+# Pre-create dirs that should be file-level symlinked (so stow doesn't tree-fold
+# the whole dir, which would capture runtime state like OAuth tokens / sockets).
+mkdir -p "$HOME/.config/portpal" "$HOME/.config/spotify-player"
+
 stow --dir="$DOTS" --target="$HOME" .
 
 step "Homebrew bundle"
 brew bundle install --file="$DOTS/Brewfile"
+
+step "Rust toolchain (rustup) + cargo binaries"
+rustup default stable
+cargo install spotify_player
 
 step "Default file handlers (Launch Services plist)"
 # We patch ~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist
