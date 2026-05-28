@@ -1,0 +1,27 @@
+[[themes]]
+name = "rose_pine"
+
+[themes.palette]
+background = "#191724"
+foreground = "#e0def4"
+
+[themes.component_style]
+block_title         = { fg = "#c4a7e7", modifiers = ["Bold"] }
+border              = { fg = "#6e6a86" }
+playback_status     = { fg = "#9ccfd8", modifiers = ["Bold"] }
+playback_track      = { fg = "#ebbcba", modifiers = ["Bold"] }
+playback_artists    = { fg = "#f6c177" }
+playback_album      = { fg = "#c4a7e7" }
+playback_genres     = { fg = "#908caa" }
+playback_metadata   = { fg = "#6e6a86" }
+playback_progress_bar          = { bg = "#31748f" }
+playback_progress_bar_unfilled = { bg = "#21202e" }
+current_playing     = { fg = "#9ccfd8", modifiers = ["Bold"] }
+page_desc           = { fg = "#c4a7e7", modifiers = ["Bold"] }
+playlist_desc       = { fg = "#908caa" }
+table_header        = { fg = "#31748f", modifiers = ["Bold"] }
+selection           = { bg = "#403d52", modifiers = ["Bold"] }
+secondary_row       = { fg = "#908caa" }
+like                = { fg = "#eb6f92" }
+lyrics_played       = { fg = "#6e6a86" }
+lyrics_playing      = { fg = "#f6c177", modifiers = ["Bold"] }

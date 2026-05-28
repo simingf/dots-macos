@@ -1,0 +1,29 @@
+# Colemak-DH navigation: mnei in place of hjkl.
+# j/k still work as fallbacks (defaults are merged unless overridden).
+
+[[keymaps]]
+command = "SelectNextOrScrollDown"
+key_sequence = "n"
+
+[[keymaps]]
+command = "SelectPreviousOrScrollUp"
+key_sequence = "e"
+
+[[keymaps]]
+command = "FocusPreviousWindow"
+key_sequence = "m"
+
+[[keymaps]]
+command = "FocusNextWindow"
+key_sequence = "i"
+
+# `n` was NextTrack, `p` was PreviousTrack — moved to ,/. since `n` is now navigation.
+# `.` was PlayRandom (overridden); `,` had no default.
+
+[[keymaps]]
+command = "NextTrack"
+key_sequence = "."
+
+[[keymaps]]
+command = "PreviousTrack"
+key_sequence = ","
