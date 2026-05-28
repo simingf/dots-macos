@@ -17,6 +17,29 @@ git lfs install --system
 
 step "Dotfiles (stow)"
 touch ~/.hushlogin
+
+# stow refuses to overwrite real (non-symlink) files. Remove any in $HOME that
+# would conflict — assumed to be Mac defaults on a fresh box.
+( cd "$DOTS" && find . -type f \
+    -not -path './.git/*' \
+    -not -path './scripts/*' \
+    -not -path './manual/*' \
+    -not -path './ssh-dots/*' \
+    -not -name '.DS_Store' \
+    -not -name 'README.md' \
+    -not -name 'WORK.md' \
+    -not -name 'CLAUDE.md' \
+) | while IFS= read -r f; do
+  target="$HOME/${f#./}"
+  [ -e "$target" ] || continue
+  # Skip if target already resolves into $DOTS (stow tree-folds parent dirs
+  # into symlinks, so a plain `-L` test on the leaf misses these).
+  real=$(realpath "$target" 2>/dev/null || true)
+  case "$real" in "$DOTS"/*) continue;; esac
+  echo "  rm $target"
+  rm -f "$target"
+done
+
 stow --dir="$DOTS" --target="$HOME" .
 
 step "Homebrew bundle"
