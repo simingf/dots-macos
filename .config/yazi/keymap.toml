@@ -41,7 +41,7 @@
 #
 # Jump
 #   z / Z        zoxide / fzf jump
-#   gg / G       Top / bottom of list
+#   gg           Top of list (G is rebound below)
 #   gh / gc / gd cd ~ / ~/.config / ~/Downloads
 #   g<Space>     cd interactively
 #
@@ -59,6 +59,7 @@
 #   n  was "go to next find match". Use `/` to re-find, or rebind to `]` etc.
 #   e  was unbound on most yazi versions.
 #   i  was unbound on most yazi versions (or "spot" in some builds).
+#   G  was "jump to bottom"; rebound to launch lazygit at cwd.
 
 [mgr]
 prepend_keymap = [
@@ -75,6 +76,10 @@ prepend_keymap = [
     # Directory history (mirrors default H/L behavior)
     { on = "M", run = "back",      desc = "Go back to the previous directory" },
     { on = "I", run = "forward",   desc = "Go forward to the next directory" },
+
+    # Lazygit at yazi's cwd. --block hands yazi the terminal until lazygit
+    # exits, then yazi resumes — overrides default G (jump to bottom).
+    { on = "G", run = "shell --block 'lazygit'", desc = "Open lazygit at cwd" },
 ]
 
 [tasks]

@@ -531,6 +531,25 @@ require("lazy").setup({
 		},
 	},
 
+	-- yazi.nvim: launch yazi as a file picker; selecting a file `:edit`s it.
+	-- Skipped where yazi isn't installed (e.g. Windows) — `cond` keeps the plugin
+	-- in lazy-lock.json so siblings stay byte-identical, but blocks setup at startup.
+	{
+		"mikavilpas/yazi.nvim",
+		version = "*",
+		dependencies = { "folke/snacks.nvim" },
+		cond = function()
+			return vim.fn.executable("yazi") == 1
+		end,
+		keys = {
+			{ "<leader>y", "<cmd>Yazi<cr>", desc = "yazi @ current file" },
+			{ "<leader>Y", "<cmd>Yazi cwd<cr>", desc = "yazi @ cwd" },
+		},
+		opts = {
+			open_for_directories = false,
+		},
+	},
+
 	-- yanky: clipboard history (replaces neoclip). <leader>ty uses snacks picker via vim.ui.select.
 	-- Must load early (VeryLazy) so TextYankPost hooks are registered at startup.
 	{
