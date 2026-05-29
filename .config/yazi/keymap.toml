@@ -1,0 +1,108 @@
+# Yazi keymap — Colemak-DH navigation.
+#
+# This file uses `prepend_keymap`, so the bindings below win, but every default
+# binding remains active afterward. Upstream defaults:
+#   https://github.com/sxyazi/yazi/blob/main/yazi-config/preset/keymap.toml
+# Press ~ or <F1> inside yazi for a searchable list of every active binding.
+#
+# === Useful DEFAULT bindings worth learning (NOT changed by this file) ===
+#
+# Selection
+#   <Space>      Toggle selection of current entry, then move down
+#   v / V        Visual select / unselect mode
+#   <C-a> / <C-r> Select all / invert selection
+#
+# File ops
+#   y            Yank (copy)
+#   x            Yank (cut)
+#   p / P        Paste / paste-overwrite
+#   d / D        Trash / permanently delete
+#   a            Create file (end with `/` for directory)
+#   r            Rename (cursor before extension)
+#   .            Toggle hidden files
+#
+# Open
+#   o / <Enter>  Open with default app ($EDITOR for text, blocks until exit)
+#   O            Open with picker (choose app interactively)
+#
+# Shell
+#   ;            Run a shell command (non-blocking)
+#   :            Run a shell command (blocks until done)
+#
+# Find / filter / search
+#   /  ?         Find next / previous (live, in current view)
+#   f            Filter
+#   s / S        Search by filename (fd) / by content (ripgrep)
+#   <C-s>        Cancel ongoing search
+#
+# Tabs
+#   t            New tab          [ / ]    Prev / next tab
+#   1 .. 9       Switch to tab N  { / }    Swap with prev / next
+#
+# Jump
+#   z / Z        zoxide / fzf jump
+#   gg / G       Top / bottom of list
+#   gh / gc / gd cd ~ / ~/.config / ~/Downloads
+#   g<Space>     cd interactively
+#
+# Misc
+#   w            Tasks panel
+#   q            Quit (writes cwd file → `y` shell wrapper cd's there)
+#   Q            Quit without writing cwd file
+#   <C-c>        Close current task / cancel
+#   ~ or <F1>    Help (browsable list of every binding)
+#
+# === Defaults this file SHADOWS ===
+#   m  was a linemode prefix (ms/mp/mc/mm/mo/mn for size/permissions/etc.).
+#      Linemode is now reachable only via `:linemode <name>` shell command,
+#      or by rebinding the prefix to e.g. `,` below.
+#   n  was "go to next find match". Use `/` to re-find, or rebind to `]` etc.
+#   e  was unbound on most yazi versions.
+#   i  was unbound on most yazi versions (or "spot" in some builds).
+
+[mgr]
+prepend_keymap = [
+    # Colemak-DH navigation (mnei == hjkl in qwerty positions)
+    { on = "m", run = "leave",     desc = "Go back to the parent directory" },
+    { on = "n", run = "arrow 1",   desc = "Move cursor down" },
+    { on = "e", run = "arrow -1",  desc = "Move cursor up" },
+    { on = "i", run = "enter",     desc = "Enter the child directory" },
+
+    # Capitalized = jump 5 (mirrors default J/K behavior)
+    { on = "N", run = "arrow 5",   desc = "Move cursor down 5 lines" },
+    { on = "E", run = "arrow -5",  desc = "Move cursor up 5 lines" },
+
+    # Directory history (mirrors default H/L behavior)
+    { on = "M", run = "back",      desc = "Go back to the previous directory" },
+    { on = "I", run = "forward",   desc = "Go forward to the next directory" },
+]
+
+[tasks]
+prepend_keymap = [
+    { on = "n", run = "arrow 1",  desc = "Move cursor down" },
+    { on = "e", run = "arrow -1", desc = "Move cursor up" },
+]
+
+[spot]
+prepend_keymap = [
+    { on = "n", run = "arrow 1",  desc = "Move cursor down" },
+    { on = "e", run = "arrow -1", desc = "Move cursor up" },
+]
+
+[pick]
+prepend_keymap = [
+    { on = "n", run = "arrow 1",  desc = "Move cursor down" },
+    { on = "e", run = "arrow -1", desc = "Move cursor up" },
+]
+
+[cmp]
+prepend_keymap = [
+    { on = "n", run = "arrow 1",  desc = "Move cursor down" },
+    { on = "e", run = "arrow -1", desc = "Move cursor up" },
+]
+
+[help]
+prepend_keymap = [
+    { on = "n", run = "arrow 1",  desc = "Move cursor down" },
+    { on = "e", run = "arrow -1", desc = "Move cursor up" },
+]

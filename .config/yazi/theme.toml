@@ -1,0 +1,5 @@
+# Theme is provided by the Rose Pine flavor at flavors/rose-pine.yazi/.
+# To switch variants, set `dark` or `light` to `rose-pine-moon` /
+# `rose-pine-dawn` and drop the matching flavor dir alongside it.
+[flavor]
+dark = "rose-pine"

@@ -31,6 +31,11 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         (".config/nvim/lazy-lock.json", ".config/nvim/lazy-lock.json"),
         ("scripts/tmux-fzf-sessions.sh", "scripts/tmux-fzf-sessions.sh"),
         ("scripts/tmux-fzf-windows.sh", "scripts/tmux-fzf-windows.sh"),
+        (".config/yazi/yazi.toml", ".config/yazi/yazi.toml"),
+        (".config/yazi/keymap.toml", ".config/yazi/keymap.toml"),
+        (".config/yazi/theme.toml", ".config/yazi/theme.toml"),
+        (".config/yazi/flavors/rose-pine.yazi/flavor.toml", ".config/yazi/flavors/rose-pine.yazi/flavor.toml"),
+        (".config/yazi/flavors/rose-pine.yazi/tmtheme.xml", ".config/yazi/flavors/rose-pine.yazi/tmtheme.xml"),
         (".claude/CLAUDE.md", ".claude/CLAUDE.md"),
     ],
     "windows": [

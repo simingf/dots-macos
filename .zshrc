@@ -143,6 +143,16 @@ _pbcopy_on_error() {
 }
 precmd_functions+=(_pbcopy_on_error)
 
+# yazi wrapper — quitting with `q` lands the shell in yazi's last cwd
+y() {
+    local tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+        builtin cd -- "$cwd"
+    fi
+    command rm -f -- "$tmp"
+}
+
 # general aliases
 alias e='exit'
 alias ls='eza --icons=auto --hyperlink'
@@ -453,6 +463,10 @@ s() {
         command spotify_player "$@"
     fi
 }
+
+# ani-cli — launching iina-cli from inside tmux opens IINA but doesn't focus it
+# (macOS denies frontmost to apps spawned under tmux's session). Wrapper re-activates.
+export ANI_CLI_PLAYER="$DOTFILES_DIR/scripts/iina-cli-activate.sh"
 
 # conda (lazy-loaded)
 export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"

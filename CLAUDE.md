@@ -45,6 +45,7 @@ The user commits/pushes from each sibling repo themselves.
 | `.config/nvim/init.lua` | byte-identical | byte-identical | Runtime guards `IS_SSH` (Linux dev box) and `HAS_DOTNET` (work Mac only) gate Mason/blink-Rust/roslyn. |
 | `.config/nvim/lazy-lock.json` | byte-identical | byte-identical | |
 | `scripts/tmux-fzf-*.sh` | byte-identical | — | Called from `.tmux.conf` via `$DOTFILES_DIR`. |
+| `.config/yazi/{yazi,keymap,theme}.toml` + `flavors/rose-pine.yazi/{flavor.toml,tmtheme.xml}` | byte-identical | — | Linux `yazi`+`ya` binaries vendored under `dots-linux/vendor/bin/`. New yazi files (e.g. extra flavors, plugins) must be added to `IDENTICAL["linux"]` in `sync-dotfiles.py`. |
 | `Library/Application Support/lazygit/config.yml` | — | byte-identical | |
 | `Library/Application Support/Code/User/{settings,keybindings}.json` | — | byte-identical | LF line endings (Mac normalized). |
 | `.config/{ohmyposh/zen.toml, ripgrep/rg.conf, gh/config.yml}` | — | byte-identical | |
