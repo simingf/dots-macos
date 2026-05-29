@@ -75,6 +75,7 @@ When adding a new script, place it by this rule. Don't copy orchestration script
 - `.tmux.conf` portability: use `if-shell 'test "$(uname)" = Linux' '<linux-cmd>' '<mac-cmd>'`. Path-style differences via `$DOTFILES_DIR` exported from `.zshrc`.
 - VS Code JSON files: LF line endings only.
 - Symlinks: relative paths only — never hardcode `/Users/sfeng/`.
+- **macOS GUI apps launched from tmux:** processes spawned from a tmux pane inherit a non-GUI audit session, so direct-exec launches of `.app` binaries (or CLIs that exec them — e.g. `iina-cli`) draw windows but never register with NSWorkspace — no menu bar, no cmd-tab, no activation. Wrap the launch in `/usr/bin/open -na <App> --args <flags> <file/url>` so Launch Services hands it to the GUI session. Pattern: `scripts/iina-cli-activate.sh` (set as `ANI_CLI_PLAYER` in `.zshrc`). `reattach-to-user-namespace` does **not** fix this — it addresses an older bootstrap-port issue, not audit-session inheritance.
 
 ## Doc structure (keep aligned across all 3 repos)
 
