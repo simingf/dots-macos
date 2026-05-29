@@ -1,8 +1,10 @@
 README.md
 WORK.md
 CLAUDE.md
+Brewfile
 manual
 scripts
 ssh-dots
 \.DS_Store
 \.git
+\.gitignore

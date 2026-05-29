@@ -2,8 +2,20 @@
 set -euo pipefail
 
 DOTS="$(cd "$(dirname "$0")/.." && pwd)"
+[ -f "$DOTS/Brewfile" ] || { echo "Error: DOTS=$DOTS doesn't look like dots-macos" >&2; exit 1; }
 
 step() { echo "==> $*"; }
+
+step "Install Homebrew"
+if ! command -v brew >/dev/null 2>&1; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+# Ensure brew is on PATH for the rest of this script even on a fresh install.
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
 
 step "Disable press-and-hold (tilde key)"
 defaults write -g ApplePressAndHoldEnabled -bool false
@@ -12,25 +24,26 @@ step "Hide Dock"
 defaults write com.apple.dock autohide-delay -float 1000
 killall Dock 2>/dev/null || true
 
-step "git-lfs system install"
-git lfs install --system
-
-step "Dotfiles (stow)"
+step "Suppress login banner"
 touch ~/.hushlogin
 
+step "Dotfiles (stow)"
 # stow refuses to overwrite real (non-symlink) files. Remove any in $HOME that
 # would conflict — assumed to be Mac defaults on a fresh box.
-( cd "$DOTS" && find . -type f \
-    -not -path './.git/*' \
-    -not -path './scripts/*' \
-    -not -path './manual/*' \
-    -not -path './ssh-dots/*' \
+# Keep this exclude list in sync with .stow-local-ignore.
+find "$DOTS" -type f \
+    -not -path "$DOTS/.git/*" \
+    -not -path "$DOTS/scripts/*" \
+    -not -path "$DOTS/manual/*" \
+    -not -path "$DOTS/ssh-dots/*" \
     -not -name '.DS_Store' \
+    -not -name '.gitignore' \
+    -not -name 'Brewfile' \
     -not -name 'README.md' \
     -not -name 'WORK.md' \
     -not -name 'CLAUDE.md' \
-) | while IFS= read -r f; do
-  target="$HOME/${f#./}"
+| while IFS= read -r f; do
+  target="$HOME/${f#$DOTS/}"
   [ -e "$target" ] || continue
   # Skip if target already resolves into $DOTS (stow tree-folds parent dirs
   # into symlinks, so a plain `-L` test on the leaf misses these).
@@ -49,16 +62,22 @@ stow --dir="$DOTS" --target="$HOME" .
 step "Homebrew bundle"
 brew bundle install --file="$DOTS/Brewfile"
 
-step "Rust toolchain (rustup) + cargo binaries"
+step "git-lfs system install"
+git lfs install --system
+
+step "Rust toolchain (rustup)"
 rustup default stable
-cargo install spotify_player --features image,notify --locked
+
+step "spotify_player (cargo)"
+command -v spotify_player >/dev/null 2>&1 || \
+  cargo install spotify_player --features image,notify --locked
 
 step "ani-cli (not in Homebrew)"
 if ! command -v ani-cli >/dev/null 2>&1; then
-  tmp=$(mktemp -d)
-  git clone --depth=1 https://github.com/pystardust/ani-cli.git "$tmp/ani-cli"
-  install -m 0755 "$tmp/ani-cli/ani-cli" "$(brew --prefix)/bin/ani-cli"
-  /bin/rm -rf "$tmp"
+  anicli_tmp=$(mktemp -d)
+  trap '/bin/rm -rf "$anicli_tmp"' EXIT
+  git clone --depth=1 https://github.com/pystardust/ani-cli.git "$anicli_tmp/ani-cli"
+  install -m 0755 "$anicli_tmp/ani-cli/ani-cli" "$(brew --prefix)/bin/ani-cli"
 fi
 
 step "Default file handlers (Launch Services plist)"
@@ -132,11 +151,16 @@ PY
 
 # Reload cfprefsd + Launch Services so changes take effect without a relogin
 killall cfprefsd 2>/dev/null || true
-/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -kill -seed 2>/dev/null || true
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+if [ -x "$LSREGISTER" ]; then
+  "$LSREGISTER" -kill -seed
+fi
 
-echo ""
-echo "Done. Manual steps remaining:"
-echo "  - Alfred themes: import from $DOTS/manual/alfred/themes/ via Alfred Preferences → Appearance"
-echo "  - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings"
-echo "  - App Store: Yoink, Klack, Amphetamine, Googly Eyes"
-echo "  - Online: ZoomHider, IsThereNet, Coder Desktop"
+cat <<EOF
+
+Done. Manual steps remaining:
+  - Alfred themes: import from $DOTS/manual/alfred/themes/ via Alfred Preferences → Appearance
+  - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings
+  - App Store: Yoink, Klack, Amphetamine, Googly Eyes
+  - Online: ZoomHider, IsThereNet, Coder Desktop
+EOF
