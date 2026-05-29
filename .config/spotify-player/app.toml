@@ -51,8 +51,8 @@ playback_window_position = "Bottom"
 playback_window_height = 10
 
 [layout.library]
-playlist_percent = 40
-album_percent = 40
+playlist_percent = 35
+album_percent = 35
 
 [device]
 name = "spotify-player"
