@@ -53,6 +53,14 @@ step "Rust toolchain (rustup) + cargo binaries"
 rustup default stable
 cargo install spotify_player --features image,notify --locked
 
+step "ani-cli (not in Homebrew)"
+if ! command -v ani-cli >/dev/null 2>&1; then
+  tmp=$(mktemp -d)
+  git clone --depth=1 https://github.com/pystardust/ani-cli.git "$tmp/ani-cli"
+  install -m 0755 "$tmp/ani-cli/ani-cli" "$(brew --prefix)/bin/ani-cli"
+  /bin/rm -rf "$tmp"
+fi
+
 step "Default file handlers (Launch Services plist)"
 # We patch ~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist
 # directly instead of shelling out to `duti`, for two reasons:

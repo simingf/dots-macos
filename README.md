@@ -15,6 +15,8 @@ cd ~/dots-macos && stow . --target ~     # symlinks into $HOME
 brew bundle install --file=~/dots-macos/Brewfile
 ```
 
+`scripts/setup.sh` does the full bootstrap (the above plus `rustup`, `cargo install spotify_player`, and [ani-cli](https://github.com/pystardust/ani-cli) — the last not in Homebrew, copied into `$(brew --prefix)/bin`).
+
 ## Layout
 
 ```
