@@ -23,6 +23,7 @@ tap "nikitabobko/tap"
 
 # ---- Formulae ----
 brew "aria2"
+brew "astroterm"
 brew "black"
 brew "btop"
 brew "curl"

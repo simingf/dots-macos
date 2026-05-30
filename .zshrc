@@ -165,6 +165,7 @@ alias pwd='pwd | tee >(pbcopy)'
 alias npmg='npm list -g --depth 0'
 alias icat="kitten icat"
 alias top="btop"
+alias astro='astroterm -cCm --city="San Francisco"'
 
 # directory aliases
 alias -- -='cd -'
