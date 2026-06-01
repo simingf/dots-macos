@@ -99,7 +99,7 @@ Open `/Applications/Finicky.app` once to accept default-browser (or System Setti
 
 ### Paid casks
 
-Alcove, AlDente, Alfred, Crossover, LookAway
+Alcove, AlDente, Alfred, AltTab, Crossover, LookAway
 
 ### App Store
 
