@@ -28,7 +28,7 @@ dots-macos/
 │   └── ...
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
-│   └── Preferences/sapling/
+│   └── Preferences/                    # sapling/ (dir-level); AltTab, AlDente plists (file-level)
 ├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
 ├── .finicky.ts                         # Finicky: routes all external links to work Chrome profile
 ├── .claude/CLAUDE.md                   # symlinked → ~/.claude/CLAUDE.md (global Claude config)
@@ -53,6 +53,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
 ## Symlink conventions
 
 - **Default**: directory-level symlinks (`.config/<app>/`, `Library/Application Support/<app>/`).
+- **`~/Library/Preferences/`** — individual plist files are file-level symlinks (the dir holds many other apps' plists we don't own).
 - **File-level exceptions** when the target dir holds runtime state:
   - `~/.config/portpal/` — runtime `.sock`; only `portpal.toml` is symlinked.
   - `~/.config/spotify-player/` — runtime token cache; only `app.toml` is symlinked.
