@@ -12,7 +12,7 @@ For repo layout and bootstrap, see [`README.md`](./README.md).
 When the user asks you to edit a file, route by sync class (see contract below):
 
 - **Byte-identical** with a sibling: edit here (Mac is source), then run `scripts/sync-dotfiles.py --apply` in the same task. Idempotent.
-- **Partial** (e.g., `.zshrc`, `.gitconfig`): edit here, then judge whether to hand-mirror. Generic changes (new alias/function) propagate to siblings, **translating Mac-only tools out** (`eza`, `trash`, `pbcopy`, oh-my-posh, homebrew, `/Applications/`). Platform-specific changes don't. Ask if unsure.
+- **Partial** (e.g., `.zshrc`, `.gitconfig`): edit here, then judge whether to hand-mirror. Generic changes (new alias/function) propagate to siblings, **translating Mac-only tools out** (`trash`, `pbcopy`, oh-my-posh, homebrew, `/Applications/`). Platform-specific changes don't. Ask if unsure.
 - **Mac-only**: edit and you're done.
 
 Don't end a task that touched a byte-identical file without running the sync script.
@@ -71,7 +71,7 @@ User commits/pushes from each sibling repo themselves.
 | `Library/Application Support/lazygit/config.yml` | — | byte-identical | |
 | `Library/Application Support/Code/User/{settings,keybindings}.json` | — | byte-identical | LF line endings (Mac normalized). |
 | `.config/{ohmyposh/zen.toml, ripgrep/rg.conf, gh/config.yml}` | — | byte-identical | |
-| `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `ls`/`grep`/`rm` aliases (no `eza`/`trash`), `pbcopy` stub, devspace env vars, `kk`/`kkr` → `claude` (vs `declawd`). Hand-mirror new shared aliases. |
+| `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `grep`/`rm` aliases (no `trash`), `pbcopy` stub, devspace env vars, `kk`/`kkr` → `claude` (vs `declawd`). The `_clear_ls`/accept-line/chpwd block is identical on both. Hand-mirror new shared aliases. |
 | `.gitconfig` | partial | — | Linux is minimal: `user.name` + `github.rbx.com` credential helper. Mac has personal+work GH accounts, LFS, GCM, maintenance. |
 | `.claude/CLAUDE.md` | byte-identical | byte-identical | Global Claude Code instructions. Platform-agnostic. |
 | `Documents/PowerShell/Profile.ps1` (in dots-windows) | — | partial | Hand-translated subset of `.zshrc`. |
