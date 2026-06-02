@@ -407,6 +407,14 @@ alias kk='declawd --no-extra-output --dangerously-skip-permissions'
 alias kkr='declawd --no-extra-output --dangerously-skip-permissions --resume'
 alias sshdev='ssh sfeng-dev.coder'
 
+pullall() {
+  for dir in ~/git/*(/) ~/git/roblox/*/(/); do
+    [[ -d "$dir/.git" ]] || continue
+    printf '\e[1;34m%s\e[0m\n' "${dir/#$HOME/~}"
+    git -C "$dir" pull --ff-only 2>&1 | sed 's/^/  /'
+  done
+}
+
 # competitive programming
 alias cpr='make && ./sol'
 
