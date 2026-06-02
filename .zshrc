@@ -426,7 +426,8 @@ pullall() {
         printf '\e[1;34m%s\e[0m \e[33m%s → %s\e[0m (pulled)\n' "$name" "$branch" "$default"
       fi
     elif [[ "$output" == *"Already up to date"* ]]; then
-      printf '\e[1;34m%s\e[0m up to date\n' "$name"
+      branch=$(git -C "$dir" branch --show-current)
+      printf '\e[1;34m%s\e[0m \e[36m(%s)\e[0m up to date\n' "$name" "$branch"
     elif [[ "$output" == *"Fast-forward"* || "$output" == *"Updating"* ]]; then
       stats=$(echo "$output" | grep -oE '[0-9]+ files? changed')
       commits=$(echo "$output" | grep -oE '[a-f0-9]+\.\.[a-f0-9]+' | head -1)
