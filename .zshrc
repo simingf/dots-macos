@@ -412,11 +412,18 @@ pullall() {
   for dir in ~/git/*(/) ~/git/roblox/*/(/); do
     [[ -d "$dir/.git" ]] || continue
     name="${dir/#$HOME/~}"
+    branch=$(git -C "$dir" branch --show-current)
     output=$(git -C "$dir" pull --ff-only 2>&1)
     if [[ "$output" == *"no such ref was fetched"* ]]; then
-      branch=$(git -C "$dir" branch --show-current)
       default=$(git -C "$dir" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
-      : ${default:=master}
+      if [[ -z "$default" ]]; then
+        # origin/HEAD not set — pick main or master based on what exists
+        if git -C "$dir" show-ref --verify --quiet refs/remotes/origin/main; then
+          default=main
+        else
+          default=master
+        fi
+      fi
       git -C "$dir" checkout "$default" &>/dev/null
       git -C "$dir" branch -D "$branch" &>/dev/null
       output=$(git -C "$dir" pull --ff-only 2>&1)
@@ -426,15 +433,14 @@ pullall() {
         printf '\e[1;34m%s\e[0m \e[33m%s → %s\e[0m (pulled)\n' "$name" "$branch" "$default"
       fi
     elif [[ "$output" == *"Already up to date"* ]]; then
-      branch=$(git -C "$dir" branch --show-current)
       printf '\e[1;34m%s\e[0m \e[36m(%s)\e[0m up to date\n' "$name" "$branch"
     elif [[ "$output" == *"Fast-forward"* || "$output" == *"Updating"* ]]; then
       stats=$(echo "$output" | grep -oE '[0-9]+ files? changed')
       commits=$(echo "$output" | grep -oE '[a-f0-9]+\.\.[a-f0-9]+' | head -1)
       count=$(git -C "$dir" log --oneline "${commits%%..*}..${commits##*..}" 2>/dev/null | wc -l | tr -d ' ')
-      printf '\e[1;34m%s\e[0m \e[32m+%s commits, %s\e[0m\n' "$name" "$count" "$stats"
+      printf '\e[1;34m%s\e[0m \e[36m(%s)\e[0m \e[32m+%s commits, %s\e[0m\n' "$name" "$branch" "$count" "$stats"
     else
-      printf '\e[1;34m%s\e[0m \e[31mfailed\e[0m\n' "$name"
+      printf '\e[1;34m%s\e[0m \e[36m(%s)\e[0m \e[31mfailed\e[0m\n' "$name" "$branch"
     fi
   done
 }
