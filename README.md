@@ -28,7 +28,7 @@ dots-macos/
 │   └── ...
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
-│   └── Preferences/                    # sapling/ (dir-level); AltTab, AlDente plists (file-level)
+│   └── Preferences/                    # sapling/ (dir-level symlink)
 ├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
 ├── .finicky.ts                         # Finicky: routes all external links to work Chrome profile
 ├── .claude/CLAUDE.md                   # symlinked → ~/.claude/CLAUDE.md (global Claude config)
@@ -37,7 +37,9 @@ dots-macos/
 │   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux
 │   ├── setup.sh, check-brew-sync.sh    # Mac-only helpers
 │   └── tmux-fzf-*.sh                   # called from .tmux.conf, byte-identical with dots-linux
-├── manual/                             # configs requiring manual import (not stow-managed)
+├── manual/
+│   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
+│   └── ...                             # other configs requiring manual import (not stow-managed)
 └── Brewfile
 ```
 
@@ -46,6 +48,7 @@ dots-macos/
 - **"sync my dotfiles"** — runs `scripts/sync-dotfiles.py --apply` (byte-identical files only).
 - **"refresh the Linux vendored plugins"** — runs `nvim --headless +Lazy sync`, `zsh -ic 'zinit update --all'`, then `scripts/refresh-linux-vendored.sh`.
 - **"mirror this alias to Linux"** / **"mirror this function to Windows"** — hand-port a `.zshrc` change into `dots-linux/.zshrc` (skipping Mac-only tools) or `dots-windows/Documents/PowerShell/Profile.ps1` (translating zsh→PowerShell).
+- **"snapshot `<app>` preferences"** — copies `~/Library/Preferences/<domain>.plist` into `manual/preferences/` and commits.
 - **"I installed `<app>`, set it up in my dots"** / **"add `<app>` to dotfiles"** — walks the checklist in [`CLAUDE.md`](./CLAUDE.md#new-tool--app-setup): install path, config placement + stow, sync wiring, sibling-repo updates, docs.
 
 See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
@@ -53,7 +56,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
 ## Symlink conventions
 
 - **Default**: directory-level symlinks (`.config/<app>/`, `Library/Application Support/<app>/`).
-- **`~/Library/Preferences/`** — individual plist files are file-level symlinks (the dir holds many other apps' plists we don't own).
+- **`~/Library/Preferences/*.plist`** — **never symlink**. macOS `cfprefsd` atomically replaces plists on write, breaking symlinks and resetting settings. Store in `manual/preferences/` and copy during setup (`scripts/setup.sh`). To snapshot current settings: `cp ~/Library/Preferences/<domain>.plist manual/preferences/`.
 - **File-level exceptions** when the target dir holds runtime state:
   - `~/.config/portpal/` — runtime `.sock`; only `portpal.toml` is symlinked.
   - `~/.config/spotify-player/` — runtime token cache; only `app.toml` is symlinked.

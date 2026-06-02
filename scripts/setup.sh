@@ -156,6 +156,15 @@ if [ -x "$LSREGISTER" ]; then
   "$LSREGISTER" -kill -seed
 fi
 
+step "App preferences (defaults import)"
+for plist in "$DOTS"/manual/preferences/*.plist; do
+  [ -f "$plist" ] || continue
+  domain=$(basename "$plist" .plist)
+  echo "  $domain"
+  cp "$plist" "$HOME/Library/Preferences/$(basename "$plist")"
+done
+killall cfprefsd 2>/dev/null || true
+
 cat <<EOF
 
 Done. Manual steps remaining:
@@ -163,4 +172,5 @@ Done. Manual steps remaining:
   - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings
   - App Store: Yoink, Klack, Amphetamine, Googly Eyes
   - Online: ZoomHider, IsThereNet, Coder Desktop
+  - Re-launch AlDente and AltTab to pick up imported preferences
 EOF

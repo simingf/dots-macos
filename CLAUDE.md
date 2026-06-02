@@ -25,8 +25,8 @@ When the user says **"I installed `<app>`"** / **"set up `<app>` in my dots"** /
    - Homebrew formula/cask → `Brewfile` (alphabetical).
    - App Store / paid / manual download / Roblox-IT → matching subsection of README "Fresh Mac setup checklist".
    - Bootstrap beyond `brew bundle` (`rustup`, `cargo install`, copy a binary into `$(brew --prefix)/bin`, etc.) → `scripts/setup.sh`.
-2. **Config placement** — pick the canonical path inside `~/dots-macos/`: `.config/<app>/` (XDG, preferred), `Library/Application Support/<app>/` (macOS-only apps), or `.<app>rc` / `.<app>` (home-level dotfile).
-3. **Stow** — from `~/dots-macos` run `stow . --target ~`. Default to directory-level symlinks; switch to file-level when the dir holds runtime state (see README "Symlink conventions").
+2. **Config placement** — pick the canonical path inside `~/dots-macos/`: `.config/<app>/` (XDG, preferred), `Library/Application Support/<app>/` (macOS-only apps), `.<app>rc` / `.<app>` (home-level dotfile), or `manual/preferences/<domain>.plist` (macOS plist — **never stow**, see Editing conventions).
+3. **Stow** — from `~/dots-macos` run `stow . --target ~`. Default to directory-level symlinks; switch to file-level when the dir holds runtime state (see README "Symlink conventions"). For plists: skip stow, the file lives under `manual/` and is copied by `scripts/setup.sh`.
 4. **Sync class** — pick a row in the contract below:
    - byte-identical → add to `IDENTICAL["linux"]` / `IDENTICAL["windows"]` in `scripts/sync-dotfiles.py`, then `--apply` to seed.
    - partial → hand-mirror generic parts to siblings.
@@ -92,6 +92,7 @@ User commits/pushes from each sibling repo themselves.
 - `.tmux.conf` portability: `if-shell 'test "$(uname)" = Linux' '<linux-cmd>' '<mac-cmd>'`. Path differences via `$DOTFILES_DIR` exported from `.zshrc`.
 - VS Code JSON files: LF only.
 - Symlinks: relative paths only — never hardcode `/Users/sfeng/`.
+- **Plists: never symlink.** macOS `cfprefsd` atomically replaces plist files, breaking symlinks. Store app plists in `manual/preferences/` and restore via `cp` in `scripts/setup.sh`. To snapshot: `cp ~/Library/Preferences/<domain>.plist manual/preferences/`.
 - **macOS GUI apps launched from tmux:** processes spawned from a tmux pane inherit a non-GUI audit session, so direct-exec launches of `.app` binaries (or CLIs that exec them — e.g. `iina-cli`) draw windows but never register with NSWorkspace — no menu bar, no cmd-tab, no activation. Wrap in `/usr/bin/open -na <App> --args <flags> <file/url>`. Pattern: `scripts/iina-cli-activate.sh` (set as `ANI_CLI_PLAYER` in `.zshrc`). `reattach-to-user-namespace` does **not** fix this — different issue (bootstrap port, not audit session).
 
 ## Doc structure (keep aligned across all 3 repos)
