@@ -99,18 +99,24 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls -G $realpath'
 # clear screen + ls in one atomic write (no fork for clear, no flash gap)
 _clear_ls() {
     local out
-    out=$(eza --color=always --icons=auto --hyperlink 2>/dev/null)
+    out=$(eza --color=always --icons=always --hyperlink 2>/dev/null)
     printf '\e[H\e[2J\e[3J%s\n' "$out"
 }
 
-# Execute on Enter: empty enter → clear+ls
+# Execute on Enter: empty enter → schedule clear+ls for next prompt
+_pending_clear_ls=0
 accept-line() {
-    if [[ -z $BUFFER ]]; then
-        BUFFER=' _clear_ls'
-    fi
+    [[ -z $BUFFER ]] && _pending_clear_ls=1
     zle ".$WIDGET"
 }
 zle -N accept-line
+
+_run_pending_clear_ls() {
+    (( _pending_clear_ls )) || return
+    _pending_clear_ls=0
+    _clear_ls
+}
+add-zsh-hook precmd _run_pending_clear_ls
 
 # cd hook: clear+ls on every directory change
 chpwd() { _clear_ls; }
@@ -190,7 +196,7 @@ alias cf="builtin cd ~/.config"
 # zsh config
 alias zrc="nvim ~/.zshrc"
 alias rs="clear && exec zsh"
-alias ch="command rm -f ~/.zsh_history && clear"
+alias ch=': > ~/.zsh_history && fc -p ~/.zsh_history && clear'
 # ghostty config
 alias grc="nvim ~/.config/ghostty/config"
 # kitty config
