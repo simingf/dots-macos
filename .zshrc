@@ -408,10 +408,33 @@ alias kkr='declawd --no-extra-output --dangerously-skip-permissions --resume'
 alias sshdev='ssh sfeng-dev.coder'
 
 pullall() {
+  local dir name output branch default stats commits count
   for dir in ~/git/*(/) ~/git/roblox/*/(/); do
     [[ -d "$dir/.git" ]] || continue
-    printf '\e[1;34m%s\e[0m\n' "${dir/#$HOME/~}"
-    git -C "$dir" pull --ff-only 2>&1 | sed 's/^/  /'
+    name="${dir/#$HOME/~}"
+    output=$(git -C "$dir" pull --ff-only 2>&1)
+    if [[ "$output" == *"no such ref was fetched"* ]]; then
+      branch=$(git -C "$dir" branch --show-current)
+      default=$(git -C "$dir" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
+      : ${default:=master}
+      git -C "$dir" checkout "$default" &>/dev/null
+      git -C "$dir" branch -D "$branch" &>/dev/null
+      output=$(git -C "$dir" pull --ff-only 2>&1)
+      if [[ "$output" == *"Already up to date"* ]]; then
+        printf '\e[1;34m%s\e[0m \e[33m%s → %s\e[0m (up to date)\n' "$name" "$branch" "$default"
+      else
+        printf '\e[1;34m%s\e[0m \e[33m%s → %s\e[0m (pulled)\n' "$name" "$branch" "$default"
+      fi
+    elif [[ "$output" == *"Already up to date"* ]]; then
+      printf '\e[1;34m%s\e[0m up to date\n' "$name"
+    elif [[ "$output" == *"Fast-forward"* || "$output" == *"Updating"* ]]; then
+      stats=$(echo "$output" | grep -oE '[0-9]+ files? changed')
+      commits=$(echo "$output" | grep -oE '[a-f0-9]+\.\.[a-f0-9]+' | head -1)
+      count=$(git -C "$dir" log --oneline "${commits%%..*}..${commits##*..}" 2>/dev/null | wc -l | tr -d ' ')
+      printf '\e[1;34m%s\e[0m \e[32m+%s commits, %s\e[0m\n' "$name" "$count" "$stats"
+    else
+      printf '\e[1;34m%s\e[0m \e[31mfailed\e[0m\n' "$name"
+    fi
   done
 }
 
