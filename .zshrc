@@ -403,8 +403,9 @@ _sup_resolve() {
 alias swarplogin='swarp login sitetest3 && swarp secrets refresh sitetest3'
 alias swarprun='swarp run --watch'
 alias pps='portpal serve'
-alias kk='declawd --no-extra-output --dangerously-skip-permissions'
-alias kkr='declawd --no-extra-output --dangerously-skip-permissions --resume'
+alias claude='SHELL=/bin/bash claude --model claude-opus-4-7 --dangerously-skip-permissions'
+alias kk='claude'
+alias kkr='claude --resume'
 alias sshdev='ssh sfeng-dev.coder'
 
 pullall() {
