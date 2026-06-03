@@ -409,7 +409,7 @@ _sup_resolve() {
 alias swarplogin='swarp login sitetest3 && swarp secrets refresh sitetest3'
 alias swarprun='swarp run --watch'
 alias pps='portpal serve'
-alias claude='SHELL=/bin/bash declawd --yolo --model "claude-opus-4-6[1m]"'
+alias claude='SHELL=/bin/bash declawd --yolo --model claude-opus-4-6'
 alias kk='claude'
 alias pi='claude --pi'
 alias sshdev='ssh sfeng-dev.coder'
