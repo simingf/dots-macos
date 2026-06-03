@@ -78,7 +78,7 @@ User commits/pushes from each sibling repo themselves.
 | `.bashrc`, `vendor/`, `setup.sh` | Linux-only | — | |
 | `AppData/Local/Packages/Microsoft.WindowsTerminal_…/`, `scripts/apply.ps1` | — | Windows-only | |
 | `.finicky.ts` | — | — | Mac-only. Routes every external link to the `Default` Chrome profile (work). |
-| `Library/` (rest), `Brewfile`, `manual/`, `ghostty/`, `kitty/`, `aerospace/`, `karabiner/` | Mac-only | Mac-only | Do NOT mirror. |
+| `Library/` (rest), `Brewfile`, `manual/`, `ghostty/`, `kitty/`, `aerospace/`, `karabiner/`, `.config/topgrade.toml` | Mac-only | Mac-only | Do NOT mirror. |
 
 ## Scripts policy
 

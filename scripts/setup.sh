@@ -68,6 +68,10 @@ git lfs install --system
 step "Rust toolchain (rustup)"
 rustup default stable
 
+step "cargo-update (cargo) — lets topgrade upgrade cargo-installed bins"
+command -v cargo-install-update >/dev/null 2>&1 || \
+  cargo install cargo-update --locked
+
 step "spotify_player (cargo)"
 command -v spotify_player >/dev/null 2>&1 || \
   cargo install spotify_player --features image,notify --locked
