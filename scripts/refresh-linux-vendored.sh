@@ -26,4 +26,37 @@ echo "==> zsh plugins"
 echo "==> nvim plugins"
 "${RSYNC[@]}" ~/.local/share/nvim/lazy/                                         "$DOTS_LINUX/vendor/nvim-lazy/"
 
+echo "==> vendored binaries (linux x86_64 musl)"
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+export GH_HOST=github.com
+
+gh release download --repo eza-community/eza \
+  --pattern 'eza_x86_64-unknown-linux-musl.tar.gz' \
+  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+tar -xzf "$TMPDIR/eza_x86_64-unknown-linux-musl.tar.gz" -C "$TMPDIR" ./eza
+cp "$TMPDIR/eza" "$DOTS_LINUX/vendor/bin/eza"
+echo "  eza ✓"
+
+gh release download --repo ajeetdsouza/zoxide \
+  --pattern 'zoxide-*-x86_64-unknown-linux-musl.tar.gz' \
+  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+tar -xzf "$TMPDIR"/zoxide-*-x86_64-unknown-linux-musl.tar.gz -C "$TMPDIR" zoxide
+cp "$TMPDIR/zoxide" "$DOTS_LINUX/vendor/bin/zoxide"
+echo "  zoxide ✓"
+
+gh release download --repo sxyazi/yazi \
+  --pattern 'yazi-x86_64-unknown-linux-musl.zip' \
+  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+unzip -qo "$TMPDIR/yazi-x86_64-unknown-linux-musl.zip" \
+  'yazi-x86_64-unknown-linux-musl/yazi' \
+  'yazi-x86_64-unknown-linux-musl/ya' \
+  -d "$TMPDIR"
+cp "$TMPDIR/yazi-x86_64-unknown-linux-musl/yazi" "$DOTS_LINUX/vendor/bin/yazi"
+cp "$TMPDIR/yazi-x86_64-unknown-linux-musl/ya"   "$DOTS_LINUX/vendor/bin/ya"
+echo "  yazi, ya ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya}
+
 echo "done."
