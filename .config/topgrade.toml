@@ -17,18 +17,23 @@
 # This avoids a blocking password prompt in the middle of an unattended run
 # (default: false)
 # pre_sudo = false
+pre_sudo = true
 
 # Periodically runs `sudo -v` or `please -w` to avoid password re-prompts during updates (default: false)
 # WARNING: This is a potential security risk; if you walk away from the computer while topgrade is running,
 # another person can come by, CTRL+C, and gain access to a sudo session.
 # sudo_loop = true
 # sudo_loop_interval = 240 # 4 minutes (240s); default if sudo_loop enabled
+sudo_loop = true
 
 # Sudo command to be used
 # sudo_command = "sudo"
 
 # Disable specific steps - same options as the command line flag
 # disable = ["system", "emacs"]
+# claude_code: roblox-wrapped/sandboxed install — self-update always fails
+# containers: don't auto-pull docker images
+disable = ["claude_code", "containers"]
 
 # Run these steps before all others
 # first = ["chezmoi"]
