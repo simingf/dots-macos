@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__mcp-gateway-glean",
+      "mcp__mcp-gateway-grafana",
+      "mcp__mcp-gateway-logs",
+      "mcp__mcp-gateway-sourcegraph",
+      "mcp__mcp-gateway-victoriametrics",
+      "mcp__trino__execute_sql"
+    ]
+  },
+  "model": "opus",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "auto",
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  }
+}

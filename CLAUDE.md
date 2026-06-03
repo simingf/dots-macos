@@ -74,6 +74,8 @@ User commits/pushes from each sibling repo themselves.
 | `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `grep`/`rm` aliases (no `trash`), `pbcopy` stub, devspace env vars, `kk`/`kkr` → `claude` (vs `declawd`). The `_clear_ls`/accept-line/chpwd block is identical on both. Hand-mirror new shared aliases. |
 | `.gitconfig` | partial | — | Linux is minimal: `user.name` + `github.rbx.com` credential helper. Mac has personal+work GH accounts, LFS, GCM, maintenance. |
 | `.claude/CLAUDE.md` | byte-identical | byte-identical | Global Claude Code instructions. Platform-agnostic. |
+| `.claude/settings.json` | byte-identical | — | Claude Code settings (contains work MCP allowlist). File-level symlink. |
+| `.claude/statusline-command.sh` | byte-identical | byte-identical | Status-line renderer. File-level symlink. |
 | `Documents/PowerShell/Profile.ps1` (in dots-windows) | — | partial | Hand-translated subset of `.zshrc`. |
 | `.bashrc`, `vendor/`, `setup.sh` | Linux-only | — | |
 | `AppData/Local/Packages/Microsoft.WindowsTerminal_…/`, `scripts/apply.ps1` | — | Windows-only | |

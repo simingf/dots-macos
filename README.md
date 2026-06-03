@@ -31,7 +31,10 @@ dots-macos/
 │   └── Preferences/                    # sapling/ (dir-level symlink)
 ├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
 ├── .finicky.ts                         # Finicky: routes all external links to work Chrome profile
-├── .claude/CLAUDE.md                   # symlinked → ~/.claude/CLAUDE.md (global Claude config)
+├── .claude/                            # file-level symlinks → ~/.claude/ (runtime state in that dir)
+│   ├── CLAUDE.md                       # global Claude Code instructions
+│   ├── settings.json                   # Claude Code settings (permissions, model, statusLine)
+│   └── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
 │   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux
