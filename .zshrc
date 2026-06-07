@@ -187,7 +187,7 @@ alias dotsw='builtin cd ~/dots-windows'
 
 # config aliases
 # updates everything
-alias up='topgrade -t -y --no-retry && pullall'
+alias up='topgrade --yes --no-retry && pullall'
 # homebrew update
 alias bup='brew update && brew upgrade && brew cleanup && brew autoremove'
 # zinit update
