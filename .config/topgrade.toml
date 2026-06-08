@@ -347,13 +347,11 @@ disable = ["claude_code", "containers"]
 
 
 [npm]
-# Use sudo if the NPM directory isn't owned by the current user
-# use_sudo = true
+use_sudo = false
 
 
 [yarn]
-# Run `yarn global upgrade` with `sudo`
-# use_sudo = true
+use_sudo = false
 
 
 [deno]
@@ -362,8 +360,7 @@ disable = ["claude_code", "containers"]
 
 
 [viteplus]
-# Use sudo if the Vite+ directory isn't owned by the current user
-# use_sudo = true
+use_sudo = false
 
 
 [vim]
@@ -388,8 +385,7 @@ disable = ["claude_code", "containers"]
 
 
 [flatpak]
-# Use sudo for updating the system-wide installation
-# use_sudo = true
+use_sudo = false
 
 
 [distrobox]
@@ -406,16 +402,10 @@ disable = ["claude_code", "containers"]
 # (default: false)
 # system_prune = false
 
-# Use sudo for updating containers. Necessary for non-rootless installs.
-# (default: false)
-# use_sudo = false
+use_sudo = false
 
 [lensfun]
-# If disabled, Topgrade invokes `lensfun‑update‑data` without root privilege,
-# then the update will be only available to you. Otherwise, `sudo` is required,
-# and the update will be installed system-wide, i.e., available to all users.
-# (default: false)
-# use_sudo = false
+use_sudo = false
 
 [julia]
 # If disabled, Topgrade invokes julia with the --startup-file=no CLI option.
