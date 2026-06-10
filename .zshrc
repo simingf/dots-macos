@@ -232,6 +232,19 @@ lg() {
     [[ -z "$TMUX" ]] && printf '\033]0;\033\\'
 }
 
+dotslg() {
+    if [[ -z "$TMUX" ]]; then
+        echo "Not in a tmux session" >&2
+        return 1
+    fi
+    tmux send-keys "cd ~/dots-macos && lg" Enter
+    tmux split-window -h -c "$HOME/dots-linux"
+    tmux send-keys "lg" Enter
+    tmux split-window -h -c "$HOME/dots-windows"
+    tmux send-keys "lg" Enter
+    tmux select-layout even-horizontal
+}
+
 # tmux
 alias trc='nvim ~/.tmux.conf'
 alias trs="tmux source ~/.tmux.conf"
