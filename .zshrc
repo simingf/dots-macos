@@ -237,7 +237,8 @@ dotslg() {
         echo "Not in a tmux session" >&2
         return 1
     fi
-    tmux send-keys "cd ~/dots-macos && lg" Enter
+    tmux new-window -n "dots" -c "$HOME/dots-macos"
+    tmux send-keys "lg" Enter
     tmux split-window -h -c "$HOME/dots-linux"
     tmux send-keys "lg" Enter
     tmux split-window -h -c "$HOME/dots-windows"
