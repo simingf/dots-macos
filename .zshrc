@@ -237,8 +237,13 @@ dotslg() {
         echo "Not in a tmux session" >&2
         return 1
     fi
-    tmux new-window -n "dots" -c "$HOME/dots-macos"
-    tmux send-keys "lg" Enter
+    local pane_count=$(tmux list-panes | wc -l | tr -d ' ')
+    if [[ "$pane_count" -gt 1 ]]; then
+        tmux new-window -n "dots" -c "$HOME/dots-macos"
+        tmux send-keys "lg" Enter
+    else
+        tmux send-keys "cd ~/dots-macos && lg" Enter
+    fi
     tmux split-window -h -c "$HOME/dots-linux"
     tmux send-keys "lg" Enter
     tmux split-window -h -c "$HOME/dots-windows"
