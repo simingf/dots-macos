@@ -299,10 +299,11 @@ runall() {
     tmux list-panes -a -F '#{pane_current_command} #{pane_id}' |
         awk '$1=="zsh"{print $2}' |
         while read -r pane; do
+            [[ "$pane" == "$TMUX_PANE" ]] && continue
             tmux send-keys -t "$pane" "$cmd" Enter
         done
 }
-alias rsa='runall rs'
+alias rsa='runall rs && rs'
 # rename tmux window to ssh destination; precmd restores on exit
 ssh() {
     if [[ -n "$TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
