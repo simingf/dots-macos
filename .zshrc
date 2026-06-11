@@ -438,7 +438,8 @@ alias pps='portpal serve'
 alias claude='SHELL=/bin/bash declawd --yolo --model claude-opus-4-6'
 alias kk='claude'
 alias pi='claude --pi'
-alias sshdev='mosh sfeng-dev.coder'
+alias sshdev='ssh sfeng-dev.coder'
+alias moshdev='mosh sfeng-dev.coder'
 
 pullall() {
     local dir name output branch default stats commits count
