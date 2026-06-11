@@ -309,16 +309,22 @@ runall() {
         done
 }
 alias rsa='runall rs && rs'
-# rename tmux window to ssh destination; precmd restores on exit
+# rename tmux window to ssh/mosh destination; precmd restores on exit
 ssh() {
     if [[ -n "$TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
-        # Skip option flags to find the destination (first non-option positional).
         local OPTIND=1 OPTARG opt dest
         while getopts ':46AaCfGgKkMNnqsTtVvXxYyB:b:c:D:E:e:F:I:i:J:L:l:m:O:o:p:Q:R:S:W:w:' opt "$@"; do :; done
         dest="${@[OPTIND]}"
         [[ -n "$dest" ]] && printf '\033k%s\033\\' "$dest"
     fi
     command ssh "$@"
+}
+mosh() {
+    if [[ -n "$TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
+        local dest="${@[-1]}"
+        [[ -n "$dest" ]] && printf '\033k%s\033\\' "$dest"
+    fi
+    command mosh "$@"
 }
 
 # ripgrep (modern alternative to grep)
@@ -432,7 +438,7 @@ alias pps='portpal serve'
 alias claude='SHELL=/bin/bash declawd --yolo --model claude-opus-4-6'
 alias kk='claude'
 alias pi='claude --pi'
-alias sshdev='ssh sfeng-dev.coder'
+alias sshdev='mosh sfeng-dev.coder'
 
 pullall() {
     local dir name output branch default stats commits count

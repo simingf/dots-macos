@@ -1,8 +1,0 @@
-[[connections]]
-name = "sfeng-dev opencode"
-ssh_host = "sfeng-dev.coder"
-local_port = 4096
-remote_host = "127.0.0.1"
-remote_port = 4096
-auto_start = true
-reconnect_delay_seconds = 30

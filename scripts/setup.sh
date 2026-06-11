@@ -55,12 +55,19 @@ done
 
 # Pre-create dirs that should be file-level symlinked (so stow doesn't tree-fold
 # the whole dir, which would capture runtime state like OAuth tokens / sockets).
-mkdir -p "$HOME/.config/portpal" "$HOME/.config/spotify-player"
+mkdir -p "$HOME/.config/spotify-player"
 
 stow --dir="$DOTS" --target="$HOME" .
 
 step "Homebrew bundle"
+# Tap and trust third-party taps before installing, otherwise brew refuses
+# to load formulae from untrusted taps.
+sed -n 's/^tap "\([^"]*\)".*/\1/p' "$DOTS/Brewfile" | while IFS= read -r tap; do
+  brew tap "$tap" 2>/dev/null || true
+  brew trust "$tap" 2>/dev/null || true
+done
 brew bundle install --file="$DOTS/Brewfile"
+brew bundle cleanup --force --file="$DOTS/Brewfile"
 
 step "git-lfs system install"
 git lfs install --system
