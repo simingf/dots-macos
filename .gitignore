@@ -3,3 +3,9 @@
 .config/gh/hosts.yml
 .config/portpal/portpal.sock
 Library/Application Support/lazygit/state.yml
+
+# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh
+.claude/*
+!.claude/CLAUDE.md
+!.claude/settings.json
+!.claude/statusline-command.sh
