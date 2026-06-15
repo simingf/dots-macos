@@ -390,7 +390,7 @@ sup() {
         fi
     fi
 
-    echo "➡️ submitting prs..." && sl pr submit --stack
+    echo "➡️ submitting prs..." && sl pr submit --stack --draft --config github.max-prs-to-create=-1
 }
 
 # Walk through each conflicted file in $EDITOR — :wq advances to next.
