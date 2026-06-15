@@ -210,6 +210,8 @@ cat <<EOF
 Done. Manual steps remaining:
   - Finicky: set as default browser in System Settings → Desktop & Dock → Default web browser
   - Alfred themes: import from $DOTS/manual/alfred/themes/ via Alfred Preferences → Appearance
+  - Alfred clipboard: enable Clipboard History in Alfred Preferences → Features → Clipboard History
+  - Alfred snippets: set up password snippets in Alfred Preferences → Features → Snippets
   - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings
   - App Store: Yoink, Klack, Amphetamine, Googly Eyes
   - Online: ZoomHider, IsThereNet, Coder Desktop
