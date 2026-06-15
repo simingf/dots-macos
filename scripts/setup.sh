@@ -17,11 +17,34 @@ elif [ -x /usr/local/bin/brew ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+step "Sudo keepalive (for cask installs)"
+sudo -v
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
+# stow is needed before brew bundle runs; install it early.
+brew install stow 2>/dev/null || true
+
 step "Disable press-and-hold (tilde key)"
 defaults write -g ApplePressAndHoldEnabled -bool false
 
-step "Hide Dock"
+step "Dock preferences"
+defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock autohide-delay -float 1000
+defaults write com.apple.dock orientation -string left
+defaults write com.apple.dock show-recents -bool false
+
+step "Window tiling (off — managed by aerospace)"
+defaults write com.apple.WindowManager EnableTilingByEdgeDrag -bool false
+defaults write com.apple.WindowManager EnableTilingOptionAccelerator -bool false
+defaults write com.apple.WindowManager EnableTiledWindowMargins -bool false
+defaults write com.apple.WindowManager EnableTopTilingByDrag -bool false
+
+step "Mission Control (aerospace compatibility)"
+defaults write com.apple.dock mru-spaces -bool false
+defaults write com.apple.dock expose-group-apps -bool true
+defaults write -g AppleSpacesSwitchOnActivate -bool false
+defaults write com.apple.spaces spans-displays -bool true
+
 killall Dock 2>/dev/null || true
 
 step "Suppress login banner"
@@ -60,28 +83,34 @@ mkdir -p "$HOME/.config/spotify-player"
 stow --dir="$DOTS" --target="$HOME" .
 
 step "Homebrew bundle"
-# Tap and trust third-party taps before installing, otherwise brew refuses
-# to load formulae from untrusted taps.
+# Trust third-party taps before installing, otherwise brew refuses to load
+# formulae from untrusted taps. Skip taps already present (avoids slow git fetch).
+tapped=$(brew tap)
 sed -n 's/^tap "\([^"]*\)".*/\1/p' "$DOTS/Brewfile" | while IFS= read -r tap; do
+  echo "$tapped" | grep -qx "$tap" && continue
   brew tap "$tap" 2>/dev/null || true
   brew trust "$tap" 2>/dev/null || true
 done
 brew bundle install --file="$DOTS/Brewfile"
 brew bundle cleanup --force --file="$DOTS/Brewfile"
+# Refresh PATH in case brew linked new keg-only formulae.
+eval "$(brew shellenv)"
 
-step "git-lfs system install"
-git lfs install --system
+step "git-lfs install"
+git lfs install
 
 step "Rust toolchain (rustup)"
 rustup default stable
+# Homebrew's rustup doesn't create ~/.cargo/bin proxies; add the toolchain bin directly.
+export PATH="$(rustup which cargo | xargs dirname):$PATH"
 
 step "cargo-update (cargo) — lets topgrade upgrade cargo-installed bins"
 command -v cargo-install-update >/dev/null 2>&1 || \
-  cargo install cargo-update --locked
+  cargo install cargo-update --locked 2>&1 | grep -v "be sure to add"
 
 step "spotify_player (cargo)"
 command -v spotify_player >/dev/null 2>&1 || \
-  cargo install spotify_player --features image,notify --locked
+  cargo install spotify_player --features image,notify --locked 2>&1 | grep -v "be sure to add"
 
 step "ani-cli (not in Homebrew)"
 if ! command -v ani-cli >/dev/null 2>&1; then
@@ -164,7 +193,7 @@ PY
 killall cfprefsd 2>/dev/null || true
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
 if [ -x "$LSREGISTER" ]; then
-  "$LSREGISTER" -kill -seed
+  "$LSREGISTER" -seed >/dev/null 2>&1
 fi
 
 step "App preferences (defaults import)"
@@ -179,6 +208,7 @@ killall cfprefsd 2>/dev/null || true
 cat <<EOF
 
 Done. Manual steps remaining:
+  - Finicky: set as default browser in System Settings → Desktop & Dock → Default web browser
   - Alfred themes: import from $DOTS/manual/alfred/themes/ via Alfred Preferences → Appearance
   - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings
   - App Store: Yoink, Klack, Amphetamine, Googly Eyes

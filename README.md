@@ -106,7 +106,7 @@ Open `/Applications/Finicky.app` once to accept default-browser (or System Setti
 
 ### Paid casks
 
-Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Crossover, LookAway, Shottr
+Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr
 
 ### App Store
 

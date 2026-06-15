@@ -11,14 +11,14 @@
 cask_args appdir: "/Applications", fontdir: "/Library/Fonts", adopt: true
 
 # ---- Taps ----
-tap "coder/coder"
-tap "felixkratz/formulae"
-tap "hashicorp/tap"
-tap "jandedobbeleer/oh-my-posh"
-tap "jesseduffield/lazygit"
-tap "lizardbyte/homebrew"
-tap "microsoft/git"
-tap "nikitabobko/tap"
+tap "coder/coder", trusted: true
+tap "felixkratz/formulae", trusted: true
+tap "hashicorp/tap", trusted: true
+tap "jandedobbeleer/oh-my-posh", trusted: true
+tap "jesseduffield/lazygit", trusted: true
+tap "lizardbyte/homebrew", trusted: true
+tap "microsoft/git", trusted: true
+tap "nikitabobko/tap", trusted: true
 
 # ---- Formulae ----
 brew "aria2"
@@ -30,7 +30,7 @@ brew "curl"
 brew "duti"
 brew "eza"
 brew "fd"
-brew "felixkratz/formulae/borders"
+brew "felixkratz/formulae/borders", trusted: true
 brew "ffmpeg"
 brew "fzf"
 brew "gh"
@@ -39,10 +39,10 @@ brew "git-lfs"
 brew "git"
 brew "go"
 brew "grep"
-brew "hashicorp/tap/nomad"
-brew "hashicorp/tap/vault"
+brew "hashicorp/tap/nomad", trusted: true
+brew "hashicorp/tap/vault", trusted: true
 brew "imagemagick"
-brew "jandedobbeleer/oh-my-posh/oh-my-posh"
+brew "jandedobbeleer/oh-my-posh/oh-my-posh", trusted: true
 brew "lazygit"
 brew "luarocks"
 brew "mosh"
@@ -84,39 +84,25 @@ cask "asana"
 cask "bettertouchtool"
 cask "bitwarden"
 cask "blackhole-2ch"
+cask "clop"
 cask "coder/coder/coder-desktop"
-cask "crossover"
 cask "cursor"
-cask "dcv-viewer"
 cask "discord"
-cask "epic-games"
 cask "finicky"
 cask "font-jetbrains-mono-nerd-font"
-cask "ghostty@tip"
+cask "ghostty"
 cask "git-credential-manager"
 cask "iina"
 cask "karabiner-elements"
 cask "keyboardcleantool"
-cask "kitty"
 cask "linearmouse"
-cask "logitech-g-hub"
 cask "lookaway"
 cask "miniconda"
 cask "monitorcontrol"
-cask "neteasemusic"
 cask "nikitabobko/tap/aerospace"
 cask "obsidian"
 cask "opal-app"
-cask "postman"
-cask "prefs-editor"
-cask "prismlauncher"
-cask "qflipper"
-cask "rider"
 cask "shottr"
-cask "slack"
 cask "spotify"
-cask "steam"
-cask "visual-studio-code"
 cask "wechat"
 cask "wispr-flow"
-cask "zoom"
