@@ -1,0 +1,44 @@
+4.3. A note on ‘Displays have separate Spaces’
+There is an observation that macOS works better and more stable if you disable Displays have separate Spaces. (It’s enabled by default) People report all sorts of weird issues related to focus and performance when this setting is enabled:
+
+Wrong window may receive focus in multi-monitor setup: #101 (Bug in Apple API)
+
+Wrong borderless Alacritty window may receive focus in single monitor setup: #247 (Bug in Apple API)
+
+Performance issues: #333
+
+macOS randomly switches focus back: #289
+
+When Displays have separate Spaces is enabled, moving windows between monitors causes windows to move between different Spaces which is not correctly handled by the public APIs AeroSpace uses, apparently, these APIs are not aware about Spaces existence. Spaces are just cursed in macOS. The less Spaces you have, the better macOS behaves.
+
+‘Displays have separate Spaces’ is enabled    ‘Displays have separate Spaces’ is disabled
+Is it possible for window to span across several monitors?
+
+❌ No. macOS limitation
+
+👍 Yes
+
+Overall stability and performance
+
+❌ Weird focus and performance issues may happen (see the list above)
+
+👍 Public Apple API are more stable (which in turn affects AeroSpace stability)
+
+When the first monitor is in fullscreen
+
+👍 Second monitor operates independently
+
+❌ Second monitor is unusable black screen
+
+macOS status bar …​
+
+…​ is displayed on both monitors
+
+…​ is displayed only on main monitor
+
+If you don’t care about macOS native fullscreen in multi-monitor setup (which is itself clunky anyway, since it creates a separate Space instance), I recommend disabling Displays have separate Spaces.
+
+You can disable the setting by running:
+
+defaults write com.apple.spaces spans-displays -bool true && killall SystemUIServer
+(or in System Settings: System Settings → Desktop & Dock → Displays have separate Spaces). Logout is required for the setting to take effect.

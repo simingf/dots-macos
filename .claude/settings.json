@@ -2,7 +2,6 @@
   "cleanupPeriodDays": 30,
   "env": {},
   "includeCoAuthoredBy": false,
-  "model": "opus",
   "permissions": {
     "allow": [
       "mcp__mcp-gateway-glean",
@@ -14,11 +13,12 @@
     ],
     "deny": []
   },
-  "skipDangerousModePermissionPrompt": true,
+  "model": "opus",
   "statusLine": {
-    "command": "bash ~/.claude/statusline-command.sh",
-    "type": "command"
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
   },
+  "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
   "verbose": true
 }
