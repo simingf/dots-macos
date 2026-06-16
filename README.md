@@ -96,15 +96,6 @@ git lfs install --system
 
 Open `/Applications/Finicky.app` once to accept default-browser (or System Settings → Desktop & Dock → Default web browser). `~/.config/finicky/finicky.ts` is already symlinked and routes every link to the `Default` Chrome profile (work). Edit `profile` if Chrome renumbers folders.
 
-### Manual imports
-
-- **Alfred themes** — import from `manual/alfred/themes/` via Alfred Preferences → Appearance.
-- **Alfred terminal custom setup** — paste `manual/alfred/terminal_custom.applescript` into Alfred Preferences → Features → Terminal/Shell → Application: Custom (launches Ghostty).
-- **Alfred clipboard** — enable Clipboard History in Alfred Preferences → Features → Clipboard History.
-- **Alfred snippets** — set up password snippets in Alfred Preferences → Features → Snippets.
-- **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings.
-- **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/).
-
 ### Paid casks
 
 Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr
@@ -129,6 +120,15 @@ Managed via Jamf Self Service or auto-installed by Roblox IT:
 ### xclient.info / 52mac.com / macked.app
 
 Cleanshot X (4.7.6, 5/6) — no lifetime license.
+
+### Manual imports
+
+- **Alfred themes** — import from `manual/alfred/themes/` via Alfred Preferences → Appearance.
+- **Alfred terminal custom setup** — paste `manual/alfred/terminal_custom.applescript` into Alfred Preferences → Features → Terminal/Shell → Application: Custom (launches Ghostty).
+- **Alfred clipboard** — enable Clipboard History in Alfred Preferences → Features → Clipboard History.
+- **Alfred snippets** — set up password snippets in Alfred Preferences → Features → Snippets.
+- **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings.
+- **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/).
 
 ### Alfred workflows
 
