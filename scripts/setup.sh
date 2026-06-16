@@ -214,6 +214,6 @@ Done. Manual steps remaining:
   - Alfred snippets: set up password snippets in Alfred Preferences → Features → Snippets
   - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings
   - App Store: Yoink, Klack, Amphetamine, Googly Eyes
-  - Online: ZoomHider, IsThereNet, Coder Desktop
+  - Online: ZoomHider, IsThereNet
   - Re-launch AlDente and AltTab to pick up imported preferences
 EOF

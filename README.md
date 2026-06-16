@@ -24,13 +24,13 @@ dots-macos/
 ├── .config/                            # XDG configs (stow → ~/.config/)
 │   ├── nvim/                           # init.lua + lazy-lock.json (byte-identical to siblings)
 │   ├── aerospace/                      # tiling WM
+│   ├── finicky/                        # routes all external links to work Chrome profile
 │   ├── ohmyposh/, ripgrep/, gh/        # byte-identical with dots-windows
 │   └── ...
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
 │   └── Preferences/                    # sapling/ (dir-level symlink)
 ├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
-├── .finicky.ts                         # Finicky: routes all external links to work Chrome profile
 ├── .claude/                            # file-level symlinks → ~/.claude/ (runtime state in that dir)
 │   ├── CLAUDE.md                       # global Claude Code instructions
 │   ├── settings.json                   # Claude Code settings (permissions, model, statusLine)
@@ -61,7 +61,6 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
 - **Default**: directory-level symlinks (`.config/<app>/`, `Library/Application Support/<app>/`).
 - **`~/Library/Preferences/*.plist`** — **never symlink**. macOS `cfprefsd` atomically replaces plists on write, breaking symlinks and resetting settings. Store in `manual/preferences/` and copy during setup (`scripts/setup.sh`). To snapshot current settings: `cp ~/Library/Preferences/<domain>.plist manual/preferences/`.
 - **File-level exceptions** when the target dir holds runtime state:
-  - `~/.config/portpal/` — runtime `.sock`; only `portpal.toml` is symlinked.
   - `~/.config/spotify-player/` — runtime token cache; only `app.toml` is symlinked.
   - `~/Library/Application Support/Code/User/` — VS Code state; only `settings.json` + `keybindings.json`.
   - `~/.ssh/` — `coder config-ssh` rewrites `~/.ssh/config` via atomic-rename (breaks symlinks); only `coder-multiplex.conf` is symlinked, included from a real `~/.ssh/config`.
@@ -95,12 +94,14 @@ git lfs install --system
 
 ### Set Finicky as default browser
 
-Open `/Applications/Finicky.app` once to accept default-browser (or System Settings → Desktop & Dock → Default web browser). `~/.finicky.ts` is already symlinked and routes every link to the `Default` Chrome profile (work). Edit `profile` if Chrome renumbers folders.
+Open `/Applications/Finicky.app` once to accept default-browser (or System Settings → Desktop & Dock → Default web browser). `~/.config/finicky/finicky.ts` is already symlinked and routes every link to the `Default` Chrome profile (work). Edit `profile` if Chrome renumbers folders.
 
 ### Manual imports
 
 - **Alfred themes** — import from `manual/alfred/themes/` via Alfred Preferences → Appearance.
 - **Alfred terminal custom setup** — paste `manual/alfred/terminal_custom.applescript` into Alfred Preferences → Features → Terminal/Shell → Application: Custom (launches Ghostty).
+- **Alfred clipboard** — enable Clipboard History in Alfred Preferences → Features → Clipboard History.
+- **Alfred snippets** — set up password snippets in Alfred Preferences → Features → Snippets.
 - **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings.
 - **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/).
 
@@ -116,11 +117,14 @@ Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr
 ### Download online
 
 - **Paid**: SideNotes (not installed)
-- **Free**: ZoomHider, IsThereNet, Coder Desktop, Docker Desktop, Google Chrome, Roblox, Roblox Studio, Vencord, Mousecape (not installed), Stacher (not installed)
+- **Free**: ZoomHider, IsThereNet, Vencord, Mousecape (not installed), Stacher (not installed)
 
-### Roblox / work apps
+### Jamf (Roblox IT)
 
-Managed and installed by Roblox IT: Falcon, GlobalProtect, Jamf Self Service, Roscan, Santa.
+Managed via Jamf Self Service or auto-installed by Roblox IT:
+
+- **Self Service**: Google Chrome, Docker Desktop, VS Code, Zoom, JetBrains Rider, Roblox Player, Roblox Studio
+- **Auto-managed**: Falcon, GlobalProtect, Jamf Self Service, Roscan, Santa
 
 ### xclient.info / 52mac.com / macked.app
 
