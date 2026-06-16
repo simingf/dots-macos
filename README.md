@@ -102,12 +102,15 @@ Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr, Yoink
 
 ### App Store
 
-- **Paid**: rcmd (not installed), Klack
+- **Paid**: Klack
 - **Free**: Googly Eyes, Xcode (not installed)
+
+### Casks (not installed)
+
+- **Paid**: rcmd, SideNotes
 
 ### Download online
 
-- **Paid**: SideNotes (not installed)
 - **Free**: ZoomHider, Mousecape (not installed), Stacher (not installed)
 
 ### Jamf (Roblox IT)
