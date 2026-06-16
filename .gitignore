@@ -16,7 +16,9 @@ Library/Application Support/Code/User/*
 !.claude/settings.json
 !.claude/statusline-command.sh
 
-# Alfred — ignore passwords, machine-local prefs, and Remote app icons
+# Alfred — ignore passwords, machine-local prefs, Remote app icons, and legacy files
 manual/alfred/Alfred.alfredpreferences/snippets/passwords/
 manual/alfred/Alfred.alfredpreferences/remote/
 manual/alfred/Alfred.alfredpreferences/preferences/local/
+manual/alfred/themes/
+manual/alfred/terminal_custom.applescript
