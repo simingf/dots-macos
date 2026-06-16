@@ -41,6 +41,7 @@ dots-macos/
 │   ├── setup.sh, check-brew-sync.sh    # Mac-only helpers
 │   └── tmux-fzf-*.sh                   # called from .tmux.conf, byte-identical with dots-linux
 ├── manual/
+│   ├── alfred/                         # Alfred sync folder (preferences, themes, snippets, workflows)
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
 │   └── ...                             # other configs requiring manual import (not stow-managed)
 └── Brewfile
@@ -126,13 +127,6 @@ Cleanshot X (4.7.6, 5/6) — no lifetime license.
 
 ### Manual imports
 
-- **Alfred themes** — import from `manual/alfred/themes/` via Alfred Preferences → Appearance.
-- **Alfred terminal custom setup** — paste `manual/alfred/terminal_custom.applescript` into Alfred Preferences → Features → Terminal/Shell → Application: Custom (launches Ghostty).
-- **Alfred clipboard** — enable Clipboard History in Alfred Preferences → Features → Clipboard History.
-- **Alfred snippets** — set up password snippets in Alfred Preferences → Features → Snippets.
+- **Alfred** — `setup.sh` seeds `prefs.json` so Alfred loads from `manual/alfred/` on first launch. On an existing machine: Alfred Preferences → Advanced → "Set preferences folder…" → `~/dots-macos/manual/alfred`.
 - **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings.
 - **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/).
-
-### Alfred workflows
-
-Amazon Suggest, Arc Tabs and Spaces, Calculate Anything, Google Suggest, System Settings, Thumbnail Navigation, Youtube Suggest.
