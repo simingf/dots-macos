@@ -1,3 +1,4 @@
 on alfred_script(q)
-    do shell script "cd ~; nohup /Applications/Ghostty.app/Contents/MacOS/ghostty -e /bin/zsh -c \"source ~/.zshrc && " & q & ";/bin/zsh\" > /dev/null 2>&1 &"
+    do shell script "/opt/homebrew/bin/tmux new-window -t dev -c $HOME \\; send-keys " & quoted form of q & " Enter"
+    tell application "Ghostty" to activate
 end alfred_script
