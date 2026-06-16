@@ -3,6 +3,13 @@
 .config/gh/hosts.yml
 Library/Application Support/lazygit/state.yml
 
+# VS Code — only track settings.json and keybindings.json
+Library/Application Support/Code/*
+!Library/Application Support/Code/User/
+Library/Application Support/Code/User/*
+!Library/Application Support/Code/User/settings.json
+!Library/Application Support/Code/User/keybindings.json
+
 # Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh
 .claude/*
 !.claude/CLAUDE.md
