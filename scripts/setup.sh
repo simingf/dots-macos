@@ -196,6 +196,16 @@ if [ -x "$LSREGISTER" ]; then
   "$LSREGISTER" -seed >/dev/null 2>&1
 fi
 
+step "Alfred sync folder"
+alfred_prefs="$HOME/Library/Application Support/Alfred/prefs.json"
+mkdir -p "$(dirname "$alfred_prefs")"
+cat > "$alfred_prefs" <<AJSON
+{
+  "current" : "$DOTS/manual/alfred/Alfred.alfredpreferences",
+  "localhash" : ""
+}
+AJSON
+
 step "App preferences (defaults import)"
 for plist in "$DOTS"/manual/preferences/*.plist; do
   [ -f "$plist" ] || continue
@@ -209,11 +219,9 @@ cat <<EOF
 
 Done. Manual steps remaining:
   - Finicky: set as default browser in System Settings → Desktop & Dock → Default web browser
-  - Alfred themes: import from $DOTS/manual/alfred/themes/ via Alfred Preferences → Appearance
-  - Alfred clipboard: enable Clipboard History in Alfred Preferences → Features → Clipboard History
-  - Alfred snippets: set up password snippets in Alfred Preferences → Features → Snippets
+  - Alfred: relaunch Alfred so it picks up the sync folder (preferences/themes/snippets/workflows auto-load)
   - Enhancer for YouTube: import $DOTS/manual/enhancer_for_youtube/config.json via extension settings
-  - App Store: Yoink, Klack, Amphetamine, Googly Eyes
-  - Online: ZoomHider, IsThereNet
+  - App Store: Klack, Googly Eyes
+  - Online: ZoomHider
   - Re-launch AlDente and AltTab to pick up imported preferences
 EOF
