@@ -151,4 +151,5 @@
   "remote.SSH.connectTimeout": 1800,
   "remote.SSH.serverShutdownTimeout": 28800,
   "security.promptForRemoteFileProtocolHandling": false,
+  "update.showReleaseNotes": false,
 }
