@@ -98,17 +98,17 @@ Open `/Applications/Finicky.app` once to accept default-browser (or System Setti
 
 ### Paid casks
 
-Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr
+Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr, Yoink
 
 ### App Store
 
-- **Paid**: Yoink, rcmd (not installed), Klack
-- **Free**: Amphetamine, Googly Eyes, Xcode (not installed)
+- **Paid**: rcmd (not installed), Klack
+- **Free**: Googly Eyes, Xcode (not installed)
 
 ### Download online
 
 - **Paid**: SideNotes (not installed)
-- **Free**: ZoomHider, IsThereNet, Vencord, Mousecape (not installed), Stacher (not installed)
+- **Free**: ZoomHider, Mousecape (not installed), Stacher (not installed)
 
 ### Jamf (Roblox IT)
 
