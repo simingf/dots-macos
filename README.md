@@ -24,9 +24,16 @@ dots-macos/
 ├── .config/                            # XDG configs (stow → ~/.config/)
 │   ├── nvim/                           # init.lua + lazy-lock.json (byte-identical to siblings)
 │   ├── aerospace/                      # tiling WM
+│   ├── borders/                        # window border highlights
+│   ├── btop/                           # system monitor
 │   ├── finicky/                        # routes all external links to work Chrome profile
+│   ├── ghostty/                        # terminal emulator
+│   ├── istherenet/                     # network status menubar
+│   ├── linearmouse/                    # mouse acceleration/scrolling
 │   ├── ohmyposh/, ripgrep/, gh/        # byte-identical with dots-windows
-│   └── ...
+│   ├── spotify-player/                 # app.toml, keymap.toml, theme.toml
+│   ├── yazi/                           # file manager (byte-identical with dots-linux)
+│   └── topgrade.toml, karabiner/, kitty/
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
 │   └── Preferences/                    # sapling/ (dir-level symlink)
@@ -38,7 +45,11 @@ dots-macos/
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
 │   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux
-│   ├── setup.sh, check-brew-sync.sh    # Mac-only helpers
+│   ├── setup.sh                        # full bootstrap (brew, rustup, cargo install, ani-cli, plists)
+│   ├── check-brew-sync.sh, sync-brew.sh  # Brewfile drift helpers
+│   ├── duti.conf                       # default app associations (used by setup.sh)
+│   ├── iina-cli-activate.sh            # open IINA via /usr/bin/open for tmux GUI compat
+│   ├── tag-casks-orange.sh             # Finder tag paid casks for visibility
 │   └── tmux-fzf-*.sh                   # called from .tmux.conf, byte-identical with dots-linux
 ├── manual/
 │   ├── alfred/                         # Alfred sync folder (preferences, themes, snippets, workflows)
@@ -62,7 +73,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
 - **Default**: directory-level symlinks (`.config/<app>/`, `Library/Application Support/<app>/`).
 - **`~/Library/Preferences/*.plist`** — **never symlink**. macOS `cfprefsd` atomically replaces plists on write, breaking symlinks and resetting settings. Store in `manual/preferences/` and copy during setup (`scripts/setup.sh`). To snapshot current settings: `cp ~/Library/Preferences/<domain>.plist manual/preferences/`.
 - **File-level exceptions** when the target dir holds runtime state:
-  - `~/.config/spotify-player/` — runtime token cache; only `app.toml` is symlinked.
+  - `~/.config/spotify-player/` — runtime token/cache files; only `app.toml`, `keymap.toml`, `theme.toml` are tracked.
   - `~/Library/Application Support/Code/User/` — VS Code state; only `settings.json` + `keybindings.json`.
   - `~/.ssh/` — `coder config-ssh` rewrites `~/.ssh/config` via atomic-rename (breaks symlinks); only `coder-multiplex.conf` is symlinked, included from a real `~/.ssh/config`.
 - Always **relative paths** in symlinks — never hardcode `/Users/sfeng/`.

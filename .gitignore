@@ -1,5 +1,4 @@
 .config/kitty/kitty.conf.bak
-.config/nvim/lazy-lock.json
 .config/gh/hosts.yml
 Library/Application Support/lazygit/state.yml
 
