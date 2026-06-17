@@ -24,6 +24,7 @@ dots-macos/
 ├── .config/                            # XDG configs (stow → ~/.config/)
 │   ├── nvim/                           # init.lua + lazy-lock.json (byte-identical to siblings)
 │   ├── aerospace/                      # tiling WM
+│   ├── alfred/                         # Alfred sync folder (preferences, themes, snippets, workflows)
 │   ├── borders/                        # window border highlights
 │   ├── btop/                           # system monitor
 │   ├── finicky/                        # routes all external links to work Chrome profile
@@ -52,7 +53,6 @@ dots-macos/
 │   ├── tag-casks-orange.sh             # Finder tag paid casks for visibility
 │   └── tmux-fzf-*.sh                   # called from .tmux.conf, byte-identical with dots-linux
 ├── manual/
-│   ├── alfred/                         # Alfred sync folder (preferences, themes, snippets, workflows)
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
 │   └── ...                             # other configs requiring manual import (not stow-managed)
 └── Brewfile
@@ -138,6 +138,6 @@ Cleanshot X (4.7.6, 5/6) — no lifetime license.
 
 ### Manual imports
 
-- **Alfred** — `setup.sh` seeds `prefs.json` so Alfred loads from `manual/alfred/` on first launch. On an existing machine: Alfred Preferences → Advanced → "Set preferences folder…" → `~/dots-macos/manual/alfred`.
+- **Alfred** — stow symlinks `~/.config/alfred` into place. `setup.sh` seeds `prefs.json` so Alfred loads from there on first launch. On an existing machine: Alfred Preferences → Advanced → "Set preferences folder…" → `~/.config/alfred`.
 - **Enhancer for YouTube** — import `manual/enhancer_for_youtube/config.json` via extension settings.
 - **Iris CE layout** — import `manual/iris_ce/iris_ce_rev__1.layout.json` via VIA configurator (https://caniusevia.com/).

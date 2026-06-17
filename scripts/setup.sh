@@ -201,7 +201,7 @@ alfred_prefs="$HOME/Library/Application Support/Alfred/prefs.json"
 mkdir -p "$(dirname "$alfred_prefs")"
 cat > "$alfred_prefs" <<AJSON
 {
-  "current" : "$DOTS/manual/alfred/Alfred.alfredpreferences",
+  "current" : "$DOTS/.config/alfred/Alfred.alfredpreferences",
   "localhash" : ""
 }
 AJSON
