@@ -119,7 +119,7 @@ _run_pending_clear_ls() {
 add-zsh-hook precmd _run_pending_clear_ls
 
 # cd hook: clear+ls on every directory change
-chpwd() { _clear_ls; }
+chpwd() { ((_suppress_chpwd)) || _clear_ls; }
 
 # tmux window title
 _tmux_precmd() {
@@ -435,7 +435,7 @@ _sup_resolve() {
 alias swarplogin='swarp login sitetest3 && swarp secrets refresh sitetest3'
 alias swarprun='swarp run --watch'
 alias pps='portpal serve'
-alias claude='SHELL=/bin/bash declawd --yolo --model claude-opus-4-6'
+alias claude='SHELL=/bin/bash declawd --yolo'
 alias kk='claude'
 alias pi='claude --pi'
 alias sshdev='ssh sfeng-dev.coder'
@@ -492,6 +492,8 @@ gotopr() {
 
     echo "➡️ PR #$pr in $host/$org/$repo"
 
+    _suppress_chpwd=1
+
     echo "➡️ cd ~/git/roblox/..."
     builtin cd ~/git/roblox/
 
@@ -506,6 +508,8 @@ gotopr() {
 
     echo "➡️ Checking out PR #$pr..."
     gh pr checkout "$pr"
+
+    _suppress_chpwd=0
 }
 
 # vscode/cursor
