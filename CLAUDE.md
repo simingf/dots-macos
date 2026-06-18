@@ -71,7 +71,8 @@ User commits/pushes from each sibling repo themselves.
 | `Library/Application Support/lazygit/config.yml` | — | byte-identical | |
 | `Library/Application Support/Code/User/{settings,keybindings}.json` | — | byte-identical | LF line endings (Mac normalized). |
 | `.config/{ohmyposh/zen.toml, ripgrep/rg.conf, gh/config.yml}` | — | byte-identical | |
-| `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `grep`/`rm` aliases (no `trash`), `pbcopy` stub, devspace env vars, `kk`/`kkr` → `claude` (vs `declawd`). The `_clear_ls`/accept-line/chpwd block is identical on both. Hand-mirror new shared aliases. |
+| `.zprofile` | partial | — | Mac has homebrew shellenv, conda/TeX/rustup/iina PATH entries. Linux has `GCC_COLORS`, devspace env vars, no homebrew. Both share `EDITOR`, `LS_COLORS`, `GH_HOST`, `NVM_DIR`, `~/.local/bin` + `skills-cli` PATH. |
+| `.zshrc` | partial | — | Linux uses its own prompt (`vcs_info` vs oh-my-posh), plugin loader (vendored vs zinit), `grep`/`rm` aliases (no `trash`), `pbcopy` stub, `kk`/`kkr` → `claude` (vs `declawd`). The `_clear_ls`/accept-line/chpwd block is identical on both. Hand-mirror new shared aliases. |
 | `.gitconfig` | partial | — | Linux is minimal: `user.name` + `github.rbx.com` credential helper. Mac has personal+work GH accounts, LFS, GCM, maintenance. |
 | `.claude/CLAUDE.md` | byte-identical | byte-identical | Global Claude Code instructions. Platform-agnostic. |
 | `.claude/settings.json` | byte-identical | — | Claude Code settings (contains work MCP allowlist). File-level symlink. |

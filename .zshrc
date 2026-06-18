@@ -1,19 +1,3 @@
-# Homebrew
-if [[ -f "/opt/homebrew/bin/brew" ]]; then
-    # If you're using macOS, you'll want this enabled
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-# Dotfiles dir — referenced by .tmux.conf bindings (mirrored to dots-linux as ~/dots-linux)
-export DOTFILES_DIR=~/dots-macos
-
-# Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-    export EDITOR='vim'
-else
-    export EDITOR='nvim'
-fi
-
 # History
 HISTSIZE=5000
 HISTFILE=~/.zsh_history
@@ -84,10 +68,6 @@ bindkey -e
 bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 bindkey '^[w' kill-region
-
-# tree / ls colors — also feeds the zstyle list-colors below.
-# ANSI named codes (no hex) so colors track the terminal theme (Rose Pine here).
-export LS_COLORS='di=01;34:ln=36:or=01;31:ex=01;32:tw=01;34:ow=01;34:pi=33:so=33:bd=33:cd=33:su=01;31:sg=01;31:*.tar=33:*.tgz=33:*.zip=33:*.gz=33:*.bz2=33:*.xz=33:*.7z=33:*.rar=33:*.jpg=35:*.jpeg=35:*.png=35:*.gif=35:*.svg=35:*.mp3=35:*.mp4=35:*.mov=35:*.md=04:*.lock=02:*.log=02:*.bak=02'
 
 # Completion styling
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
@@ -327,8 +307,7 @@ mosh() {
     command mosh "$@"
 }
 
-# ripgrep (modern alternative to grep)
-export RIPGREP_CONFIG_PATH=~/.config/ripgrep/rg.conf
+# ripgrep
 alias rg="rg --hyperlink-format=kitty"
 
 # sl update
@@ -543,12 +522,7 @@ s() {
     fi
 }
 
-# ani-cli — launching iina-cli from inside tmux opens IINA but doesn't focus it
-# (macOS denies frontmost to apps spawned under tmux's session). Wrapper re-activates.
-export ANI_CLI_PLAYER="$DOTFILES_DIR/scripts/iina-cli-activate.sh"
-
 # conda (lazy-loaded)
-export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
 _conda_load() {
     unfunction conda
     __conda_setup="$('/opt/homebrew/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2>/dev/null)"
@@ -575,10 +549,7 @@ c() {
     fi
 }
 
-export GH_HOST=github.rbx.com
-unset GH_TOKEN
 # nvm (lazy-loaded)
-export NVM_DIR="$HOME/.nvm"
 _nvm_load() {
     unfunction nvm node npm npx yarn pnpm 2>/dev/null
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -590,12 +561,6 @@ npm() { _nvm_load && npm "$@"; }
 npx() { _nvm_load && npx "$@"; }
 yarn() { _nvm_load && yarn "$@"; }
 pnpm() { _nvm_load && pnpm "$@"; }
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/git/skills-cli/bin:$PATH"
-
-# Reminders MacTeX
-path+=/Library/TeX/texbin
-
 # Shell integrations
 source <(fzf --zsh)
 eval "$(zoxide init --cmd cd zsh)"
