@@ -63,7 +63,7 @@ disable = ["claude_code", "containers"]
 # display_time = true
 
 # Don't ask for confirmations (no default value)
-# assume_yes = true
+assume_yes = true
 
 # Whether to ask what to do after a step fails (default: true)
 # ask_retry = true
