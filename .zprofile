@@ -27,5 +27,5 @@ path+=/Library/TeX/texbin
 
 # Rust (Homebrew's rustup doesn't create ~/.cargo/bin proxies)
 if command -v rustup &>/dev/null; then
-    export PATH="$(rustup which cargo 2>/dev/null | xargs dirname 2>/dev/null):$PATH"
+    export PATH="$HOME/.cargo/bin:$(rustup which cargo 2>/dev/null | xargs dirname 2>/dev/null):$PATH"
 fi
