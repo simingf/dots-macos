@@ -5,10 +5,10 @@
 # aerospace's `focus --boundaries all-monitors-outer-frame` lands on the MRU
 # window of the destination monitor instead of the spatially-nearest one.
 #
-# In-workspace case: 1 IPC call (~30ms).
-# Cross-monitor case: in-workspace probe + 2 list queries run concurrently,
-# then 1 swift binary + 1 final focus. The probe's failure cost is hidden
-# behind the list queries it would otherwise block.
+# Left/right: probe in-workspace first (fast path), fall back to cross-monitor.
+# Up/down: pure spatial within the workspace — aerospace's built-in focus
+# incorrectly moves between horizontally-tiled windows on up/down, so we
+# bypass it and use CoreGraphics frames directly.
 #
 # Usage: aerospace-focus.sh left|right|up|down
 
@@ -28,10 +28,21 @@ fi
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/aerofocus.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 
-# Probe and heavy queries run in parallel. The probe attempts the in-workspace
-# focus; on success we exit and the (wasted) query results are discarded. On
-# failure aerospace did not move focus, so the concurrent list snapshots are
-# still consistent with the pre-focus state.
+if [ "$dir" = "up" ] || [ "$dir" = "down" ]; then
+  # Pure spatial: find a window actually above/below on this workspace.
+  # The binary returns a window-id, "cycle" (stacked/accordion), or nothing.
+  focused_id=$(aerospace list-windows --focused --format '%{window-id}')
+  aerospace list-windows --workspace focused --format '%{window-id}' > "$tmp/ws"
+  target=$("$bin" "--spatial" "$dir" "$focused_id" "$tmp/ws")
+  if [ "$target" = "cycle" ]; then
+    aerospace focus "$dir"
+  elif [ -n "$target" ]; then
+    aerospace focus --window-id "$target"
+  fi
+  exit 0
+fi
+
+# Left/right: probe in-workspace first, fall back to cross-monitor.
 aerospace focus --boundaries workspace --boundaries-action fail "$dir" 2>/dev/null \
   && echo ok > "$tmp/probe" &
 probe_pid=$!
@@ -45,4 +56,7 @@ wait
 target=$("$bin" "$dir" "$tmp/m" "$tmp/w")
 [ -z "$target" ] && exit 0
 
-aerospace focus --window-id "$target"
+case "$target" in
+  ws:*) aerospace workspace "${target#ws:}" ;;
+  *)    aerospace focus --window-id "$target" ;;
+esac
