@@ -80,6 +80,22 @@ done
 # the whole dir, which would capture runtime state like OAuth tokens / sockets).
 mkdir -p "$HOME/.config/spotify-player"
 
+step "Docker Artifactory config"
+mkdir -p "$HOME/.docker"
+if [ ! -f "$HOME/.docker/config.json" ]; then
+  cat > "$HOME/.docker/config.json" <<'DJSON'
+{
+    "auths": {
+        "https://docker.artifactory.rbx.com": {
+            "auth": "REPLACE_WITH_base64(username:identity-token)",
+            "email": "sfeng@roblox.com"
+        }
+    }
+}
+DJSON
+  echo "  ⚠ Created ~/.docker/config.json with placeholder — run: docker login docker.artifactory.rbx.com"
+fi
+
 stow --dir="$DOTS" --target="$HOME" .
 
 step "Homebrew bundle"

@@ -5,6 +5,7 @@ Brewfile
 manual
 scripts
 ssh-dots
+\.docker
 \.DS_Store
 \.git
 \.gitignore
