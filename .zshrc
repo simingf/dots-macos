@@ -572,3 +572,11 @@ if [[ -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v tm
     tmux has-session -t=dev 2>/dev/null || tmux new-session -d -s dev
     tmux attach -t dev
 fi
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/sfeng/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions
+
+# Added by declawd
+export PATH="$HOME/.local/bin:$PATH"
