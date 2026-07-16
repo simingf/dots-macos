@@ -212,6 +212,15 @@ if [ -x "$LSREGISTER" ]; then
   "$LSREGISTER" -seed >/dev/null 2>&1
 fi
 
+step "Ghostty terminfo (xterm-ghostty)"
+# tmux sets TERM=xterm-ghostty inside panes; without this, ncurses/tput/clear
+# fail with "terminals database is inaccessible" and zsh double-echoes input.
+ghostty_ti="/Applications/Ghostty.app/Contents/Resources/terminfo/78/xterm-ghostty"
+if [ -f "$ghostty_ti" ]; then
+  mkdir -p "$HOME/.terminfo/78"
+  cp "$ghostty_ti" "$HOME/.terminfo/78/xterm-ghostty"
+fi
+
 step "Alfred sync folder"
 alfred_prefs="$HOME/Library/Application Support/Alfred/prefs.json"
 mkdir -p "$(dirname "$alfred_prefs")"
