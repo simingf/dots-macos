@@ -1,3 +1,6 @@
+# Term
+term = xterm-256color
+
 # Theme
 theme = Rose Pine
 
