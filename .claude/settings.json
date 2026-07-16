@@ -9,7 +9,14 @@
       "mcp__mcp-gateway-logs",
       "mcp__mcp-gateway-sourcegraph",
       "mcp__mcp-gateway-victoriametrics",
-      "mcp__trino__execute_sql"
+      "mcp__trino__execute_sql",
+      "mcp__mcp-gateway-slack",
+      "mcp__mcp-gateway-gmail",
+      "mcp__mcp-gateway-gcalendar",
+      "mcp__mcp-gateway-gdrive",
+      "mcp__mcp-gateway-ros",
+      "mcp__mcp-gateway-elasticsearch",
+      "mcp__mcp-gateway-mosaic_mds"
     ],
     "deny": []
   },
