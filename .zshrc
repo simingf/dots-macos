@@ -473,8 +473,9 @@ gotopr() {
 
     _suppress_chpwd=1
 
-    echo "➡️ cd ~/git/roblox/..."
-    builtin cd ~/git/roblox/
+    mkdir -p ~/git/pr-reviews
+    echo "➡️ cd ~/git/pr-reviews/..."
+    builtin cd ~/git/pr-reviews/
 
     if [ -d "$repo" ]; then
         echo "➡️ Repo found, fetching latest..."
