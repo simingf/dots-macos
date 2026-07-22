@@ -1,5 +1,13 @@
+# Config version for compatibility and deprecations
+# See: https://nikitabobko.github.io/AeroSpace/guide#config-version
+config-version = 2
+
 start-at-login = true
 after-startup-command = ['layout tiles', 'exec-and-forget $HOME/.config/borders/bordersrc']
+
+# Keep numeric workspaces alive when empty (v1 inferred this from bindings)
+# See: https://nikitabobko.github.io/AeroSpace/guide#config-version
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
