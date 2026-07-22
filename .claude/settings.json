@@ -20,7 +20,6 @@
     ],
     "deny": []
   },
-  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
