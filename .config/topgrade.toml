@@ -33,7 +33,8 @@ sudo_loop = true
 # disable = ["system", "emacs"]
 # claude_code: roblox-wrapped/sandboxed install — self-update always fails
 # containers: don't auto-pull docker images
-disable = ["claude_code", "containers"]
+# cursor/pi/claude_code_plugins/codex: sandboxed/wrapped installs — updates fail
+disable = ["claude_code", "containers", "cursor", "pi", "claude_code_plugins", "codex"]
 
 # Run these steps before all others
 # first = ["chezmoi"]
