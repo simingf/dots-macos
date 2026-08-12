@@ -1,0 +1,90 @@
+# herdr configuration
+# Ported from ~/.tmux.conf keybinds + ghostty Rose Pine theme (trying herdr in place of tmux).
+# herdr's model differs from tmux (session->workspace, window->tab), so a few tmux binds
+# have no equivalent and are intentionally omitted: last-toggles (tmux S/W/P),
+# display-panes (tmux p), synchronize-panes (tmux y), swap window/pane (tmux < > [ ]).
+# (tmux MNEI resize is emulated via one-shot [[keys.command]] binds at the end.)
+
+[theme]
+name = "rose-pine"
+
+[ui]
+agent_panel_sort = "spaces"
+# iris accent — matches tmux active pane border / status (#ceacf6)
+accent = "#ceacf6"
+
+[keys]
+# Mac prefix: C-Space (emitted by right_cmd-tap in Karabiner) — same key as tmux.
+prefix = "ctrl+space"
+
+# detach: tmux uses `d` (herdr default is prefix+q)
+detach = "prefix+d"
+
+# session picker: tmux `s`. herdr's workspace ~= tmux session.
+# Moves the default `settings` (prefix+s) off `s` to avoid the collision.
+workspace_picker = "prefix+s"
+settings = "prefix+shift+s"
+
+# create: tmux `c` = window -> new_tab (prefix+c, herdr default); `C` = session -> new workspace
+new_workspace = "prefix+shift+c"
+
+# kill: tmux `k` = window -> close tab; `K` = session -> close workspace
+# (close_workspace on shift+k displaces the unused default swap_pane_up)
+close_tab = "prefix+k"
+close_workspace = "prefix+shift+k"
+
+# window nav: tmux `,` / `.`  (also frees n/p for colemak pane nav below)
+previous_tab = "prefix+comma"
+next_tab = "prefix+period"
+
+# pane focus — colemak-dh: m/n/e/i = left/down/up/right (tmux select-pane)
+focus_pane_left = "prefix+m"
+focus_pane_down = "prefix+n"
+focus_pane_up = "prefix+e"
+focus_pane_right = "prefix+i"
+
+# navigate-mode movement (single keys) — mirror colemak m/n/e/i
+navigate_pane_left = "m"
+navigate_pane_down = "n"
+navigate_pane_up = "e"
+navigate_pane_right = "i"
+
+# pane split: `\` = side-by-side (tmux split -h), `-` = stacked (tmux split -v).
+# NOTE: if the orientation feels swapped, exchange these two keys.
+split_vertical = "prefix+backslash"
+split_horizontal = "prefix+minus"
+
+# Resize: herdr exposes only `resize_mode` (enter, then move) — the in-mode
+# movement keys are hardcoded h/j/k/l + arrows and are NOT remappable. Keep the
+# mode on prefix+r; colemak M/N/E/I resize is provided as one-shot binds below.
+resize_mode = "prefix+r"
+
+# Already herdr defaults, matching tmux (listed for reference, not overrides):
+#   new_tab   = "prefix+c"   (tmux `c` new-window)
+#   close_pane = "prefix+x"  (tmux `x`)
+#   zoom      = "prefix+z"   (tmux `z`)
+
+[ui.toast]
+delivery = "system"
+
+# tmux MNEI resize, one-shot via the socket API (repeat by pressing again).
+# colemak M/N/E/I = resize left/down/up/right. Add `--amount N` to tune the step.
+[[keys.command]]
+key = "prefix+shift+m"
+type = "shell"
+command = "herdr pane resize --direction left --current"
+
+[[keys.command]]
+key = "prefix+shift+n"
+type = "shell"
+command = "herdr pane resize --direction down --current"
+
+[[keys.command]]
+key = "prefix+shift+e"
+type = "shell"
+command = "herdr pane resize --direction up --current"
+
+[[keys.command]]
+key = "prefix+shift+i"
+type = "shell"
+command = "herdr pane resize --direction right --current"

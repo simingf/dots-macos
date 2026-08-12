@@ -43,6 +43,7 @@ brew "grep"
 brew "grpcurl"
 brew "hashicorp/tap/nomad", trusted: true
 brew "hashicorp/tap/vault", trusted: true
+brew "herdr"
 brew "imagemagick"
 brew "jandedobbeleer/oh-my-posh/oh-my-posh", trusted: true
 brew "lazygit"

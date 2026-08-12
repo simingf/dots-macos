@@ -102,13 +102,16 @@ add-zsh-hook precmd _run_pending_clear_ls
 chpwd() { ((_suppress_chpwd)) || _clear_ls; }
 
 # tmux window title
+# herdr sets $TMUX/$TMUX_PANE to impersonate tmux but runs no server, so guard
+# on a real server (probed once) — otherwise these hooks spam "no server running".
+_REAL_TMUX=; [[ -n "$TMUX" ]] && tmux info &>/dev/null && _REAL_TMUX=1
 _tmux_precmd() {
-    [[ -n "$TMUX" ]] || return
+    [[ -n "$_REAL_TMUX" ]] || return
     [[ $(tmux show -wqv @manual_window_name_set) == 1 ]] && return
     printf '\033k%s\033\\' "$(basename "$PWD")"
 }
 _tmux_preexec() {
-    [[ -n "$TMUX" ]] || return
+    [[ -n "$_REAL_TMUX" ]] || return
     [[ $(tmux show -wqv @manual_window_name_set) == 1 ]] && return
     printf '\033k%s\033\\' "$1"
 }
@@ -192,7 +195,7 @@ alias v='nvim'
 lg() {
     local name remote_host
     name=$(git rev-parse --show-toplevel 2>/dev/null) && name="lg ($(basename "$name"))" || name="lazygit"
-    if [[ -n "$TMUX" ]]; then
+    if [[ -n "$_REAL_TMUX" ]]; then
         [[ $(tmux show -wqv @manual_window_name_set) != 1 ]] && printf '\033k%s\033\\' "$name"
     else
         printf '\033]0;%s\033\\' "$name"
@@ -209,11 +212,11 @@ lg() {
     else
         lazygit "$@"
     fi
-    [[ -z "$TMUX" ]] && printf '\033]0;\033\\'
+    [[ -z "$_REAL_TMUX" ]] && printf '\033]0;\033\\'
 }
 
 dotslg() {
-    if [[ -z "$TMUX" ]]; then
+    if [[ -z "$_REAL_TMUX" ]]; then
         echo "Not in a tmux session" >&2
         return 1
     fi
@@ -246,7 +249,7 @@ tn() {
     if ! tmux has-session -t="$name" 2>/dev/null; then
         tmux new-session -d -s "$name"
     fi
-    if [[ -n "$TMUX" ]]; then
+    if [[ -n "$_REAL_TMUX" ]]; then
         tmux switch-client -t "$name"
     else
         tmux attach -t "$name"
@@ -257,7 +260,7 @@ ta() {
     local session
     session=$(tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}' | fzf -q "$*" --select-1 --exit-0 --reverse | sed 's/ (attached)$//')
     [[ -z "$session" ]] && return
-    if [[ -n "$TMUX" ]]; then
+    if [[ -n "$_REAL_TMUX" ]]; then
         tmux switch-client -t "$session"
     else
         tmux attach -t "$session"
@@ -291,7 +294,7 @@ runall() {
 alias rsa='runall rs && rs'
 # rename tmux window to ssh/mosh destination; precmd restores on exit
 ssh() {
-    if [[ -n "$TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
+    if [[ -n "$_REAL_TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
         local OPTIND=1 OPTARG opt dest
         while getopts ':46AaCfGgKkMNnqsTtVvXxYyB:b:c:D:E:e:F:I:i:J:L:l:m:O:o:p:Q:R:S:W:w:' opt "$@"; do :; done
         dest="${@[OPTIND]}"
@@ -300,7 +303,7 @@ ssh() {
     command ssh "$@"
 }
 mosh() {
-    if [[ -n "$TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
+    if [[ -n "$_REAL_TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
         local dest="${@[-1]}"
         [[ -n "$dest" ]] && printf '\033k%s\033\\' "$dest"
     fi
@@ -414,7 +417,7 @@ _sup_resolve() {
 alias swarplogin='swarp login sitetest3 && swarp secrets refresh sitetest3'
 alias swarprun='swarp run --watch'
 alias pps='portpal serve'
-alias claude='SHELL=/bin/bash declawd --yolo'
+alias claude='HERDR_AGENT=claude SHELL=/bin/bash declawd --yolo'
 alias kk='claude'
 alias pi='claude --pi'
 alias sshdev='ssh sfeng-dev.coder'
@@ -566,13 +569,21 @@ pnpm() { _nvm_load && pnpm "$@"; }
 source <(fzf --zsh)
 eval "$(zoxide init --cmd cd zsh)"
 
+# --- trying herdr in place of tmux (2026-08-11) — to revert: delete this block, uncomment tmux below ---
+# Launch/attach herdr on shell startup.
+# Skip when already inside herdr ($HERDR_ENV), inside tmux, non-interactive, or under VSCode/Cursor.
+# No `exec`: zsh stays underneath, so quitting herdr returns to this prompt instead of closing the terminal.
+if [[ "${HERDR_ENV:-}" != 1 && -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v herdr >/dev/null 2>&1; then
+    herdr
+fi
+
 # Auto-attach to (or create) tmux session 'dev' on shell startup.
 # Skip when already in tmux, in non-interactive shells, or under VSCode/Cursor.
 # No `exec`: zsh stays under tmux, so detaching returns to this prompt instead of closing the terminal.
-if [[ -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v tmux >/dev/null 2>&1; then
-    tmux has-session -t=dev 2>/dev/null || tmux new-session -d -s dev
-    tmux attach -t dev
-fi
+# if [[ -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v tmux >/dev/null 2>&1; then
+#     tmux has-session -t=dev 2>/dev/null || tmux new-session -d -s dev
+#     tmux attach -t dev
+# fi
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
 fpath=(/Users/sfeng/.docker/completions $fpath)
 autoload -Uz compinit

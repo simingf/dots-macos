@@ -26,5 +26,6 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
-  "verbose": true
+  "verbose": true,
+  "hooks": {"SessionStart":[{"matcher":"*","hooks":[{"type":"command","command":"bash '/Users/sfeng/.claude/hooks/herdr-agent-state.sh' session","timeout":10}]}]}
 }

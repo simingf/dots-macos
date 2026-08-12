@@ -29,6 +29,7 @@ dots-macos/
 │   ├── btop/                           # system monitor
 │   ├── finicky/                        # routes all external links to work Chrome profile
 │   ├── ghostty/                        # terminal emulator
+│   ├── herdr/                          # agent multiplexer (only config.toml tracked; runtime state stays local)
 │   ├── istherenet/                     # network status menubar
 │   ├── linearmouse/                    # mouse acceleration/scrolling
 │   ├── ohmyposh/, ripgrep/, gh/        # byte-identical with dots-windows
@@ -74,6 +75,7 @@ See [`CLAUDE.md`](./CLAUDE.md) for the full sync contract and operational rules.
 - **`~/Library/Preferences/*.plist`** — **never symlink**. macOS `cfprefsd` atomically replaces plists on write, breaking symlinks and resetting settings. Store in `manual/preferences/` and copy during setup (`scripts/setup.sh`). To snapshot current settings: `cp ~/Library/Preferences/<domain>.plist manual/preferences/`.
 - **File-level exceptions** when the target dir holds runtime state:
   - `~/.config/spotify-player/` — runtime token/cache files; only `app.toml`, `keymap.toml`, `theme.toml` are tracked.
+  - `~/.config/herdr/` — sockets, logs, `session.json`; only `config.toml` is tracked.
   - `~/Library/Application Support/Code/User/` — VS Code state; only `settings.json` + `keybindings.json`.
   - `~/.ssh/` — `coder config-ssh` rewrites `~/.ssh/config` via atomic-rename (breaks symlinks); only `coder-multiplex.conf` is symlinked, included from a real `~/.ssh/config`.
 - Always **relative paths** in symlinks — never hardcode `/Users/sfeng/`.
