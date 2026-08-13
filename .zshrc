@@ -99,38 +99,14 @@ _run_pending_clear_ls() {
 add-zsh-hook precmd _run_pending_clear_ls
 
 # cd hook: clear+ls on every directory change
-chpwd() { ((_suppress_chpwd)) || _clear_ls; }
+# Guard on interactive: Claude Code's Bash tool sources a snapshot that strips
+# _-prefixed funcs (drops _clear_ls) but keeps chpwd, then cd's non-interactively
+# → "command not found: _clear_ls". The guard is baked into the captured body.
+chpwd() { [[ -o interactive ]] || return; ((_suppress_chpwd)) || _clear_ls; }
 
-# tmux window title
 # herdr sets $TMUX/$TMUX_PANE to impersonate tmux but runs no server, so guard
-# on a real server (probed once) — otherwise these hooks spam "no server running".
+# on a real server (probed once) — used by the tmux session helpers (tn/ta/dotslg).
 _REAL_TMUX=; [[ -n "$TMUX" ]] && tmux info &>/dev/null && _REAL_TMUX=1
-_tmux_precmd() {
-    [[ -n "$_REAL_TMUX" ]] || return
-    [[ $(tmux show -wqv @manual_window_name_set) == 1 ]] && return
-    printf '\033k%s\033\\' "$(basename "$PWD")"
-}
-_tmux_preexec() {
-    [[ -n "$_REAL_TMUX" ]] || return
-    [[ $(tmux show -wqv @manual_window_name_set) == 1 ]] && return
-    printf '\033k%s\033\\' "$1"
-}
-precmd_functions+=(_tmux_precmd)
-preexec_functions+=(_tmux_preexec)
-
-# pbcopy stderr from failed commands (best-effort: tee subprocess is async,
-# so very fast commands' output may not flush before precmd fires).
-_zsh_err_buf=$(mktemp -t zsh-err)
-trap 'command rm -f "$_zsh_err_buf"' EXIT
-exec 2> >(tee -a "$_zsh_err_buf" >&2)
-_pbcopy_on_error() {
-    local rc=$?
-    if ((rc != 0)) && [[ -s "$_zsh_err_buf" ]]; then
-        pbcopy <"$_zsh_err_buf"
-    fi
-    : >"$_zsh_err_buf"
-}
-precmd_functions+=(_pbcopy_on_error)
 
 # yazi wrapper — quitting with `q` lands the shell in yazi's last cwd
 y() {
@@ -144,9 +120,9 @@ y() {
 
 # general aliases
 alias e='exit'
-alias ls='eza --icons=auto --hyperlink'
-alias ll='eza -la --git --icons=auto --hyperlink'
-alias lt='eza --tree --level=2 -a --git-ignore --icons=auto --hyperlink'
+alias ls='eza --icons=auto --hyperlink=auto'
+alias ll='eza -la --git --icons=auto --hyperlink=auto'
+alias lt='eza --tree --level=2 -a --git-ignore --icons=auto --hyperlink=auto'
 alias f='open .'
 alias rm='trash'
 alias mkdir='mkdir -p'
@@ -193,13 +169,7 @@ alias v='nvim'
 
 # lazygit
 lg() {
-    local name remote_host
-    name=$(git rev-parse --show-toplevel 2>/dev/null) && name="lg ($(basename "$name"))" || name="lazygit"
-    if [[ -n "$_REAL_TMUX" ]]; then
-        [[ $(tmux show -wqv @manual_window_name_set) != 1 ]] && printf '\033k%s\033\\' "$name"
-    else
-        printf '\033]0;%s\033\\' "$name"
-    fi
+    local remote_host
     remote_host=$(git remote get-url origin 2>/dev/null | sed 's|https://\([^/]*\)/.*|\1|; s|git@\([^:]*\):.*|\1|')
     if [[ "$remote_host" == "github.com" ]]; then
         local token
@@ -212,7 +182,6 @@ lg() {
     else
         lazygit "$@"
     fi
-    [[ -z "$_REAL_TMUX" ]] && printf '\033]0;\033\\'
 }
 
 dotslg() {
@@ -292,24 +261,6 @@ runall() {
         done
 }
 alias rsa='runall rs && rs'
-# rename tmux window to ssh/mosh destination; precmd restores on exit
-ssh() {
-    if [[ -n "$_REAL_TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
-        local OPTIND=1 OPTARG opt dest
-        while getopts ':46AaCfGgKkMNnqsTtVvXxYyB:b:c:D:E:e:F:I:i:J:L:l:m:O:o:p:Q:R:S:W:w:' opt "$@"; do :; done
-        dest="${@[OPTIND]}"
-        [[ -n "$dest" ]] && printf '\033k%s\033\\' "$dest"
-    fi
-    command ssh "$@"
-}
-mosh() {
-    if [[ -n "$_REAL_TMUX" ]] && [[ $(tmux show -wqv @manual_window_name_set) != 1 ]]; then
-        local dest="${@[-1]}"
-        [[ -n "$dest" ]] && printf '\033k%s\033\\' "$dest"
-    fi
-    command mosh "$@"
-}
-
 # ripgrep
 alias rg="rg --hyperlink-format=kitty"
 
@@ -569,26 +520,12 @@ pnpm() { _nvm_load && pnpm "$@"; }
 source <(fzf --zsh)
 eval "$(zoxide init --cmd cd zsh)"
 
-# --- trying herdr in place of tmux (2026-08-11) — to revert: delete this block, uncomment tmux below ---
 # Launch/attach herdr on shell startup.
 # Skip when already inside herdr ($HERDR_ENV), inside tmux, non-interactive, or under VSCode/Cursor.
 # No `exec`: zsh stays underneath, so quitting herdr returns to this prompt instead of closing the terminal.
 if [[ "${HERDR_ENV:-}" != 1 && -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v herdr >/dev/null 2>&1; then
     herdr
 fi
-
-# Auto-attach to (or create) tmux session 'dev' on shell startup.
-# Skip when already in tmux, in non-interactive shells, or under VSCode/Cursor.
-# No `exec`: zsh stays under tmux, so detaching returns to this prompt instead of closing the terminal.
-# if [[ -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v tmux >/dev/null 2>&1; then
-#     tmux has-session -t=dev 2>/dev/null || tmux new-session -d -s dev
-#     tmux attach -t dev
-# fi
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/sfeng/.docker/completions $fpath)
-autoload -Uz compinit
-compinit
-# End of Docker CLI completions
 
 # Added by declawd
 export PATH="$HOME/.local/bin:$PATH"
