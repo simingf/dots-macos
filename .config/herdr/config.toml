@@ -1,15 +1,23 @@
 # herdr configuration
 # Ported from ~/.tmux.conf keybinds + ghostty Rose Pine theme (trying herdr in place of tmux).
 # herdr's model differs from tmux (session->workspace, window->tab), so a few tmux binds
-# have no equivalent and are intentionally omitted: last-toggles (tmux S/W/P),
-# display-panes (tmux p), synchronize-panes (tmux y), swap window/pane (tmux < > [ ]).
-# (tmux MNEI resize is emulated via one-shot [[keys.command]] binds at the end.)
+# still have no equivalent and are intentionally omitted: last-session/last-tab toggles
+# (tmux S, W/Tab — herdr exposes only prev/next, no last-focused), display-panes (tmux p),
+# synchronize-panes (tmux y), swap-window (tmux < >).
+# (tmux MNEI resize + [ ] pane-swap (left/right) are emulated via one-shot [[keys.command]]
+#  binds at the end. tmux P last-pane is native — see last_pane below.)
 
 [theme]
 name = "rose-pine"
 
 [ui]
 agent_panel_sort = "spaces"
+# skip the name prompt on prefix+c — create the tab immediately (tmux `c` had no prompt)
+prompt_new_tab_name = false
+# y/n guard before a workspace is destroyed (tmux had `confirm-before` on kill-window/kill-session).
+# NOTE: herdr has no "empty workspace" — closing the LAST tab (prefix+k) collapses the whole
+# workspace. This is the only close-confirm herdr exposes; there is no per-tab confirm.
+confirm_close = true
 # iris accent — matches tmux active pane border / status (#ceacf6)
 accent = "#ceacf6"
 
@@ -42,6 +50,10 @@ focus_pane_left = "prefix+m"
 focus_pane_down = "prefix+n"
 focus_pane_up = "prefix+e"
 focus_pane_right = "prefix+i"
+
+# last pane (tmux `P`) — UPPERCASE = last toggle. Displaces the unused default rename_pane on shift+p.
+last_pane = "prefix+shift+p"
+rename_pane = ""
 
 # navigate-mode movement (single keys) — mirror colemak m/n/e/i
 navigate_pane_left = "m"
@@ -88,3 +100,15 @@ command = "herdr pane resize --direction up --current"
 key = "prefix+shift+i"
 type = "shell"
 command = "herdr pane resize --direction right --current"
+
+# pane-swap left/right via the socket API (tmux [ ]). L/R only — up/down not needed.
+# (alt+MNEI avoided: aerospace owns those chords.) Spatial swap; no-ops (no_neighbor) at an edge.
+[[keys.command]]
+key = "prefix+["
+type = "shell"
+command = "herdr pane swap --direction left --current"
+
+[[keys.command]]
+key = "prefix+]"
+type = "shell"
+command = "herdr pane swap --direction right --current"
