@@ -165,7 +165,7 @@ alias arc="nvim ~/.config/aerospace/aerospace.toml"
 
 # nvim
 alias nrc="nvim ~/.config/nvim/init.lua"
-alias v='nvim'
+v() { nvim "${@:-.}"; }
 
 # lazygit
 lg() {
