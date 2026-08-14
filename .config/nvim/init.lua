@@ -13,9 +13,9 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
 		vim.opt.titlestring = title
 	end,
 })
--- enable line numbers
+-- enable absolute line numbers
 vim.opt.number = true
-vim.opt.relativenumber = true
+vim.opt.relativenumber = false
 -- keep sign column on
 vim.opt.signcolumn = "yes"
 -- highlight current line
@@ -603,13 +603,18 @@ require("lazy").setup({
 			"MunifTanjim/nui.nvim",
 		},
 		init = function()
-			-- load neo-tree eagerly when nvim starts on a directory so it replaces
-			-- netrw in place; otherwise it stays lazy behind the keymap/cmd.
-			if vim.fn.argc(-1) == 1 then
-				local stat = vim.uv.fs_stat(vim.fn.argv(0))
-				if stat and stat.type == "directory" then
-					require("neo-tree")
-				end
+			-- directory arg (`nvim .`): load neo-tree eagerly so it hijacks netrw
+			-- in place. file arg(s): show it as a sidebar (no focus steal) once
+			-- startup finishes. no args: stay lazy behind the keymap/cmd.
+			local argc = vim.fn.argc(-1)
+			if argc == 0 then
+				return
+			end
+			local stat = vim.uv.fs_stat(vim.fn.argv(0))
+			if argc == 1 and stat and stat.type == "directory" then
+				require("neo-tree")
+			else
+				vim.api.nvim_create_autocmd("VimEnter", { once = true, command = "Neotree show" })
 			end
 		end,
 		keys = {
@@ -633,6 +638,13 @@ require("lazy").setup({
 				-- (agents, git, mv) — off by default, so the sidebar otherwise
 				-- only updates on its own actions or a manual `R`.
 				use_libuv_file_watcher = true,
+				-- show all hidden items (dotfiles + gitignored), displayed dimmed.
+				-- `H` toggles them off/on at runtime.
+				filtered_items = {
+					visible = true,
+					hide_dotfiles = false,
+					hide_gitignored = false,
+				},
 			},
 			window = {
 				position = "left",
