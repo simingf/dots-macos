@@ -16,7 +16,9 @@
       "mcp__mcp-gateway-gdrive",
       "mcp__mcp-gateway-ros",
       "mcp__mcp-gateway-elasticsearch",
-      "mcp__mcp-gateway-mosaic_mds"
+      "mcp__mcp-gateway-mosaic_mds",
+      "mcp__mcp-gateway-teamcity",
+      "mcp__mcp-gateway-sentry_onprem"
     ],
     "deny": []
   },
