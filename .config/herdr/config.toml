@@ -55,11 +55,13 @@ focus_pane_right = "prefix+i"
 last_pane = "prefix+shift+p"
 rename_pane = ""
 
-# navigate-mode movement (single keys) — mirror colemak m/n/e/i
+# navigate-mode movement (single keys) — colemak m/i = pane left/right, n/e = space down/up.
+# herdr's navigate mode (workspace_picker, prefix+s) only walks the space->pane tree; it has
+# no tab action, so tab switching stays on prefix+,/prefix+. above (pane nav also on prefix+MNEI).
 navigate_pane_left = "m"
-navigate_pane_down = "n"
-navigate_pane_up = "e"
 navigate_pane_right = "i"
+navigate_workspace_down = "n"
+navigate_workspace_up = "e"
 
 # pane split: `\` = side-by-side (tmux split -h), `-` = stacked (tmux split -v).
 # NOTE: if the orientation feels swapped, exchange these two keys.
