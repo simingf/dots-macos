@@ -369,8 +369,25 @@ alias swarplogin='swarp login sitetest3 && swarp secrets refresh sitetest3'
 alias swarprun='swarp run --watch'
 alias pps='portpal serve'
 alias claude='HERDR_AGENT=claude SHELL=/bin/bash declawd --yolo'
-alias kk='claude'
 alias pi='claude --pi'
+
+# kk: open a herdr split — claude (the yolo agent) in the current pane on the
+# LEFT (~40%), nvim in a new pane on the RIGHT (~60%). Not auto-linked: run /ide
+# in the claude pane and pick this nvim to connect them (claudecode.nvim serves
+# the /ide protocol). Outside herdr, just runs claude in the current pane.
+kk() {
+    emulate -L zsh
+    [[ "$1" == --yolo ]] && shift    # yolo is already the default; accept the flag for muscle memory
+    if [[ "$HERDR_ENV" != 1 ]]; then claude; return; fi
+    (( $# )) || set -- .
+    local right nvcmd=nvim f
+    for f in "$@"; do nvcmd+=" ${(q)f}"; done
+    # --ratio sizes the current pane (claude): 0.4 → claude ~40%, nvim ~60%
+    right=$(herdr pane split --current --direction right --ratio 0.4 --cwd "$PWD" --no-focus | jq -r '.result.pane.pane_id') || return
+    [[ -n "$right" && "$right" != null ]] || { echo "kk: herdr split failed" >&2; return 1; }
+    herdr pane run "$right" "$nvcmd"
+    claude
+}
 alias sshdev='ssh sfeng-dev.coder'
 alias moshdev='mosh sfeng-dev.coder'
 
@@ -525,6 +542,15 @@ eval "$(zoxide init --cmd cd zsh)"
 # No `exec`: zsh stays underneath, so quitting herdr returns to this prompt instead of closing the terminal.
 if [[ "${HERDR_ENV:-}" != 1 && -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v herdr >/dev/null 2>&1; then
     herdr
+fi
+
+# AI agents (Claude Code, etc.) shell out to standard commands and expect
+# native behavior. Drop aliases that shadow coreutils so `rm` actually deletes
+# (not trash), `ls`/`rg` emit plain output (no eza/ripgrep icons+hyperlinks),
+# `mkdir` doesn't imply -p, and `pwd` has no pbcopy side effect. Interactive
+# shells keep all the aliases above.
+if [[ -n "$AI_AGENT" ]]; then
+    unalias rm ls mkdir pwd rg 2>/dev/null
 fi
 
 # Added by declawd

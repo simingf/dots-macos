@@ -116,6 +116,20 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 		vim.hl.on_yank()
 	end,
 })
+-- auto-reload buffers when the file changes on disk (e.g. edits from an agent
+-- or git). autoread reloads only on events, so poke :checktime on focus/idle to
+-- force the mtime check. Unmodified buffers reload in place; if you have unsaved
+-- changes nvim warns instead of clobbering them. Idle refresh is gated by
+-- 'updatetime' (default 4000ms) via CursorHold.
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
+	desc = "reload buffer if the underlying file changed on disk",
+	callback = function()
+		if vim.fn.mode() ~= "c" then
+			vim.cmd("checktime")
+		end
+	end,
+})
 -- bind 0 to ^ and L to $ (H is taken by arrow.nvim)
 vim.keymap.set({ "n", "x", "o" }, "0", "^", { noremap = true, silent = true })
 vim.keymap.set({ "n", "x", "o" }, "L", "$", { noremap = true, silent = true })
@@ -220,7 +234,7 @@ require("lazy").setup({
 					-- section_separators = { left = '', right = '' },
 					section_separators = "",
 					disabled_filetypes = {
-						statusline = {},
+						statusline = { "neo-tree" },
 						winbar = {},
 					},
 					ignore_focus = {},
@@ -584,9 +598,15 @@ require("lazy").setup({
 			},
 		},
 		opts = {
+			filesystem = {
+				-- auto-refresh the tree when files change on disk out-of-band
+				-- (agents, git, mv) — off by default, so the sidebar otherwise
+				-- only updates on its own actions or a manual `R`.
+				use_libuv_file_watcher = true,
+			},
 			window = {
 				position = "left",
-				width = 32,
+				width = 24,
 				-- Colemak-DH: `i` (right) opens/expands, `m` (left) collapses.
 				-- `n` (down) falls through to the global remap; neo-tree binds `e`
 				-- to toggle_auto_expand_width, so release it ("none" skips the
@@ -849,5 +869,27 @@ require("lazy").setup({
 		enabled = HAS_DOTNET,
 		ft = "cs",
 		opts = {},
+	},
+
+	-- claudecode.nvim: implements the Claude Code IDE protocol (WebSocket + lock
+	-- file in ~/.claude/ide/) so the standalone `claude` CLI can attach to this
+	-- nvim and open its file diffs as native diff buffers. Flow: launch nvim,
+	-- then in a separate claude pane run /ide and pick this instance. event =
+	-- "VeryLazy" + auto_start (default) brings the server up on startup so /ide
+	-- finds it. Skipped on the Linux dev box (no internet to fetch the plugin).
+	{
+		"coder/claudecode.nvim",
+		enabled = not IS_SSH,
+		event = "VeryLazy",
+		dependencies = { "folke/snacks.nvim" },
+		config = true,
+		keys = {
+			{ "<leader>a", nil, desc = "claude code" },
+			{ "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "toggle claude terminal" },
+			{ "<leader>ab", "<cmd>ClaudeCodeAdd %<cr>", desc = "add buffer to context" },
+			{ "<leader>as", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = "send selection" },
+			{ "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "accept diff" },
+			{ "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "deny diff" },
+		},
 	},
 })
