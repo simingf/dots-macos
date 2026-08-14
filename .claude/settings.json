@@ -1,5 +1,5 @@
 {
-  "cleanupPeriodDays": 30,
+  "cleanupPeriodDays": 7,
   "env": {},
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -20,6 +20,20 @@
     ],
     "deny": []
   },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/sfeng/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -27,5 +41,5 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "auto",
   "verbose": true,
-  "hooks": {"SessionStart":[{"matcher":"*","hooks":[{"type":"command","command":"bash '/Users/sfeng/.claude/hooks/herdr-agent-state.sh' session","timeout":10}]}]}
+  "tui": "fullscreen"
 }
