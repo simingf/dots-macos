@@ -289,6 +289,36 @@ require("lazy").setup({
 		"Isrothy/lualine-diagnostic-message",
 	},
 
+	-- bufferline: open buffers as clickable tabs across the top. Mouse clicks
+	-- select tabs (mouse = "a"); [b / ]b cycle and <leader>bp jumps by letter.
+	-- offsets shifts the bar right of the neo-tree sidebar so they don't overlap;
+	-- rose-pine themes the highlights automatically.
+	{
+		"akinsho/bufferline.nvim",
+		version = "*",
+		event = "VeryLazy",
+		dependencies = { "nvim-tree/nvim-web-devicons" },
+		opts = {
+			options = {
+				mode = "buffers", -- every buffer is a tab (not vim tabpages)
+				diagnostics = "nvim_lsp",
+				offsets = {
+					{
+						filetype = "neo-tree",
+						text = "File Explorer",
+						highlight = "Directory",
+						separator = true,
+					},
+				},
+			},
+		},
+		keys = {
+			{ "[b", "<cmd>BufferLineCyclePrev<cr>", desc = "prev buffer" },
+			{ "]b", "<cmd>BufferLineCycleNext<cr>", desc = "next buffer" },
+			{ "<leader>bp", "<cmd>BufferLinePick<cr>", desc = "pick buffer" },
+		},
+	},
+
 	-- git indicators on the left
 	{
 		"lewis6991/gitsigns.nvim",
@@ -606,7 +636,7 @@ require("lazy").setup({
 			},
 			window = {
 				position = "left",
-				width = 24,
+				width = 40,
 				-- Colemak-DH: `i` (right) opens/expands, `m` (left) collapses.
 				-- `n` (down) falls through to the global remap; neo-tree binds `e`
 				-- to toggle_auto_expand_width, so release it ("none" skips the

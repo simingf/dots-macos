@@ -371,21 +371,82 @@ alias pps='portpal serve'
 alias claude='HERDR_AGENT=claude SHELL=/bin/bash declawd --yolo'
 alias pi='claude --pi'
 
+# _kk_recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
+# was most recently visited (zoxide frecency order → recency-weighted); if none
+# are in the zoxide db, fall back to the newest such repo by .git mtime. Prints
+# nothing when the folder has no nested repos.
+_kk_recent_nested_repo() {
+    emulate -L zsh
+    local base="${PWD%/}/" d rel g
+    # Primary: zoxide db, highest frecency first → most-recently-visited wins.
+    while IFS= read -r d; do
+        [[ -n "$d" && "$d" == "$base"* ]] || continue
+        rel="${d#$base}"
+        (( ${#${(s:/:)rel}} <= 2 )) || continue     # only 1–2 levels below the folder
+        [[ -e "$d/.git" ]] && { print -r -- "$d"; return 0; }
+    done < <(zoxide query --list 2>/dev/null)
+    # Fallback: newest .git by mtime across depth 1–2 (repo never cd'd into).
+    zmodload -F zsh/stat b:zstat 2>/dev/null
+    local best="" m; integer bestm=0
+    for g in "$base"*/.git(Nom) "$base"*/*/.git(Nom); do
+        m=$(zstat +mtime -- "$g" 2>/dev/null) || continue
+        [[ -n "$m" ]] && (( m > bestm )) && { bestm=$m; best="${g:h}"; }
+    done
+    [[ -n "$best" ]] && print -r -- "$best"
+}
+
 # kk: open a herdr split — claude (the yolo agent) in the current pane on the
-# LEFT (~40%), nvim in a new pane on the RIGHT (~60%). Not auto-linked: run /ide
-# in the claude pane and pick this nvim to connect them (claudecode.nvim serves
-# the /ide protocol). Outside herdr, just runs claude in the current pane.
+# LEFT, nvim in a new column on the RIGHT, with a plain terminal pane BELOW nvim
+# (~30% of the column's height). With no file args this becomes a 3-pane split
+# with lazygit (35/35/30 width, lazygit full height): in a git repo all of
+# claude/nvim/lazygit open at the repo root; in a plain folder that has git repos
+# nested ≤2 levels deep, claude/nvim/term root at the folder and lazygit opens
+# the most recently visited nested repo. Otherwise claude/nvim split 50/50 over
+# the given paths (or the cwd), with no lazygit.
+# Not auto-linked: run /ide in the claude pane and pick this nvim to connect them
+# (claudecode.nvim serves the /ide protocol). Outside herdr, just runs claude in
+# the current pane. --ratio sizes the pane being split (0.35 → that pane keeps
+# 35%, new pane 65%).
 kk() {
     emulate -L zsh
     [[ "$1" == --yolo ]] && shift    # yolo is already the default; accept the flag for muscle memory
     if [[ "$HERDR_ENV" != 1 ]]; then claude; return; fi
+    local root right lg term paneroot lgroot nvcmd=nvim f
+    if (( $# == 0 )); then
+        if root=$(git rev-parse --show-toplevel 2>/dev/null) && [[ -n "$root" ]]; then
+            paneroot=$root lgroot=$root                 # in a repo: everything at the repo root
+        else
+            # not a repo, but repos nested ≤2 deep: panes at the folder, lazygit at the recent repo
+            lgroot=$(_kk_recent_nested_repo) && [[ -n "$lgroot" ]] && paneroot=$PWD
+        fi
+    fi
+    if [[ -n "$lgroot" ]]; then
+        # claude (35%), nvim on $paneroot (35%), lazygit on $lgroot (30%).
+        right=$(herdr pane split --current --direction right --ratio 0.35 --cwd "$paneroot" --no-focus | jq -r '.result.pane.pane_id') || return
+        [[ -n "$right" && "$right" != null ]] || { echo "kk: herdr split failed" >&2; return 1; }
+        # 0.538 of the 65% right region → nvim 35% / lazygit 30% of the total. Split lazygit off
+        # first (full height), then split the nvim column so the terminal sits only under nvim.
+        lg=$(herdr pane split "$right" --direction right --ratio 0.538 --cwd "$lgroot" --no-focus | jq -r '.result.pane.pane_id') || return
+        [[ -n "$lg" && "$lg" != null ]] || { echo "kk: herdr split failed" >&2; return 1; }
+        # nvim keeps the top 70% of its column; the terminal gets the bottom 30% of the height.
+        term=$(herdr pane split "$right" --direction down --ratio 0.70 --cwd "$paneroot" --no-focus | jq -r '.result.pane.pane_id') || return
+        [[ -n "$term" && "$term" != null ]] || { echo "kk: herdr split failed" >&2; return 1; }
+        herdr pane run "$right" "nvim ${(q)paneroot}"
+        herdr pane run "$lg" "lazygit"
+        # term left as a plain shell — a normal terminal pane.
+        ( cd "$paneroot" && claude )    # subshell: run claude from paneroot without moving this shell
+        return
+    fi
     (( $# )) || set -- .
-    local right nvcmd=nvim f
     for f in "$@"; do nvcmd+=" ${(q)f}"; done
-    # --ratio sizes the current pane (claude): 0.4 → claude ~40%, nvim ~60%
-    right=$(herdr pane split --current --direction right --ratio 0.4 --cwd "$PWD" --no-focus | jq -r '.result.pane.pane_id') || return
+    # No git repo (or file args): claude (50%), nvim (50%), with a terminal below nvim.
+    right=$(herdr pane split --current --direction right --ratio 0.5 --cwd "$PWD" --no-focus | jq -r '.result.pane.pane_id') || return
     [[ -n "$right" && "$right" != null ]] || { echo "kk: herdr split failed" >&2; return 1; }
+    # nvim keeps the top 70% of its column; the terminal gets the bottom 30% of the height.
+    term=$(herdr pane split "$right" --direction down --ratio 0.70 --cwd "$PWD" --no-focus | jq -r '.result.pane.pane_id') || return
+    [[ -n "$term" && "$term" != null ]] || { echo "kk: herdr split failed" >&2; return 1; }
     herdr pane run "$right" "$nvcmd"
+    # term left as a plain shell — a normal terminal pane.
     claude
 }
 alias sshdev='ssh sfeng-dev.coder'
