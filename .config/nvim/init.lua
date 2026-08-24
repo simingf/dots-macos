@@ -302,6 +302,15 @@ require("lazy").setup({
 			options = {
 				mode = "buffers", -- every buffer is a tab (not vim tabpages)
 				diagnostics = "nvim_lsp",
+				-- close via Snacks so the window layout survives: the default
+				-- `bdelete %d` collapses the edit window when the last buffer
+				-- goes, letting neo-tree expand to fill the screen.
+				close_command = function(n)
+					Snacks.bufdelete(n)
+				end,
+				right_mouse_command = function(n)
+					Snacks.bufdelete(n)
+				end,
 				offsets = {
 					{
 						filetype = "neo-tree",
