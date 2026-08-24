@@ -924,7 +924,38 @@ require("lazy").setup({
 		enabled = not IS_SSH,
 		event = "VeryLazy",
 		dependencies = { "folke/snacks.nvim" },
-		config = true,
+		-- kk launches `claude` and nvim concurrently. claude's startup sweeps
+		-- ~/.claude/ide and deletes our freshly-written <port>.lock ~3s later,
+		-- leaving the WebSocket server healthy but undiscoverable by /ide. Re-
+		-- assert the lock for the running server for the first ~20s until it
+		-- sticks (claude only sweeps once, at startup).
+		config = function()
+			require("claudecode").setup({})
+			local cc = require("claudecode")
+			local lockfile = require("claudecode.lockfile")
+			local uv = vim.uv or vim.loop
+			local timer = uv.new_timer()
+			local elapsed = 0
+			timer:start(
+				2000,
+				2000,
+				vim.schedule_wrap(function()
+					elapsed = elapsed + 2000
+					local port = cc.state and cc.state.port
+					local token = cc.state and cc.state.auth_token
+					if port and token then
+						local path = lockfile.lock_dir .. "/" .. port .. ".lock"
+						if vim.fn.filereadable(path) == 0 then
+							pcall(lockfile.create, port, token)
+						end
+					end
+					if elapsed >= 20000 then
+						timer:stop()
+						timer:close()
+					end
+				end)
+			)
+		end,
 		keys = {
 			{ "<leader>a", nil, desc = "claude code" },
 			{ "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "toggle claude terminal" },
