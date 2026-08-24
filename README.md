@@ -42,8 +42,9 @@ dots-macos/
 ├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
 ├── .claude/                            # file-level symlinks → ~/.claude/ (runtime state in that dir)
 │   ├── CLAUDE.md                       # global Claude Code instructions
-│   ├── settings.json                   # Claude Code settings (permissions, model, statusLine)
-│   └── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
+│   ├── settings.json                   # Claude Code settings (permissions, model, statusLine, notify hooks)
+│   ├── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
+│   └── hooks/agent-notify.sh           # Stop/Notification → desktop toast (herdr toast replica; no-op under herdr)
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
 │   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux

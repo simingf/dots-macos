@@ -77,6 +77,7 @@ User commits/pushes from each sibling repo themselves.
 | `.claude/CLAUDE.md` | byte-identical | byte-identical | Global Claude Code instructions. Platform-agnostic. |
 | `.claude/settings.json` | byte-identical | — | Claude Code settings (contains work MCP allowlist). File-level symlink. |
 | `.claude/statusline-command.sh` | byte-identical | byte-identical | Status-line renderer. File-level symlink. |
+| `.claude/hooks/agent-notify.sh` | byte-identical | — | Stop/Notification → desktop toast (`terminal-notifier`/`osascript` Mac, `notify-send` Linux); no-ops under herdr (`HERDR_ENV=1`) and where no notifier exists. Wired in `.claude/settings.json`. Un-ignored via a `!.claude/hooks/agent-notify.sh` negation in `.gitignore` — **sibling `.gitignore`s need the same negation** to track the synced copy (herdr's own `herdr-agent-state.sh` stays ignored). |
 | `Documents/PowerShell/Profile.ps1` (in dots-windows) | — | partial | Hand-translated subset of `.zshrc`. |
 | `.bashrc`, `vendor/`, `setup.sh` | Linux-only | — | |
 | `AppData/Local/Packages/Microsoft.WindowsTerminal_…/`, `scripts/apply.ps1` | — | Windows-only | |

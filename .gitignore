@@ -9,11 +9,15 @@ Library/Application Support/Code/User/*
 !Library/Application Support/Code/User/settings.json
 !Library/Application Support/Code/User/keybindings.json
 
-# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh
+# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh, and our own hook
+# (herdr-agent-state.sh stays ignored — it's herdr-managed and overwritten on integration update).
 .claude/*
 !.claude/CLAUDE.md
 !.claude/settings.json
 !.claude/statusline-command.sh
+!.claude/hooks/
+.claude/hooks/*
+!.claude/hooks/agent-notify.sh
 
 # Alfred — ignore passwords, machine-local prefs, and Remote app icons
 .config/alfred/Alfred.alfredpreferences/snippets/passwords/
