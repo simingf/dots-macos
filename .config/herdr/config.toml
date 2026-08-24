@@ -1,3 +1,4 @@
+onboarding = false
 # herdr configuration
 # Ported from ~/.tmux.conf keybinds + ghostty Rose Pine theme (trying herdr in place of tmux).
 # herdr's model differs from tmux (session->workspace, window->tab), so a few tmux binds
