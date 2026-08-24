@@ -368,7 +368,15 @@ _sup_resolve() {
     return 0
 }
 
-alias claude='HERDR_AGENT=claude SHELL=/bin/bash declawd --yolo'
+# declawd can launch either Claude or Codex. HerdR honors HERDR_AGENT, so set
+# it from the requested mode rather than always marking every run as Claude.
+claude() {
+    local arg agent=claude
+    for arg in "$@"; do
+        [[ "$arg" == "--codex" ]] && agent=codex
+    done
+    HERDR_AGENT="$agent" SHELL=/bin/bash command declawd --yolo "$@"
+}
 
 # _kk_recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
 # was most recently visited (zoxide frecency order → recency-weighted); if none
