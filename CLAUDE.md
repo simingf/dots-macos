@@ -66,7 +66,7 @@ User commits/pushes from each sibling repo themselves.
 | `.tmux.conf` | byte-identical | — | Inline portability via `if-shell 'test "$(uname)" = Linux' ...`; path differences use `$DOTFILES_DIR/scripts/...` exported per-host from `.zshrc`. |
 | `.config/nvim/init.lua` | byte-identical | byte-identical | Runtime guards `IS_SSH` (Linux dev box) and `HAS_DOTNET` (work Mac only) gate Mason/blink-Rust/roslyn. |
 | `.config/nvim/lazy-lock.json` | byte-identical | byte-identical | |
-| `scripts/tmux-fzf-*.sh` | byte-identical | — | Called from `.tmux.conf` via `$DOTFILES_DIR`. |
+| `scripts/tmux-fzf-*.sh`, `scripts/tmux-agents.sh` | byte-identical | — | Called from `.tmux.conf` via `$DOTFILES_DIR`. `tmux-agents.sh` detects agent panes by the OSC title captured in `#{pane_title}` (braille spinner = working, idle marker = idle) — powers `prefix a` picker, the `prefix A` / `prefix c`-seeded left sidebar (a clickable fzf panel), and the status-bar count. |
 | `.config/yazi/{yazi,keymap,theme}.toml` + `flavors/rose-pine.yazi/{flavor.toml,tmtheme.xml}` | byte-identical | — | Linux `yazi`+`ya` binaries vendored under `dots-linux/vendor/bin/`. New yazi files must be added to `IDENTICAL["linux"]` in `sync-dotfiles.py`. |
 | `Library/Application Support/lazygit/config.yml` | — | byte-identical | |
 | `Library/Application Support/Code/User/{settings,keybindings}.json` | — | byte-identical | LF line endings (Mac normalized). |
