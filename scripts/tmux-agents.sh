@@ -114,8 +114,16 @@ __lines() {
 # Double-click or enter switches session (s:) or jumps to the agent pane (a:) WITHOUT closing the panel;
 # self-refreshes ~every 2s (start:reload seeds it, load:reload re-runs after a sleep so the chain loops).
 _panel() {
-  fzf --read0 --ansi --layout=reverse --no-input --info=hidden \
-      --gap=1 --gap-line=' ' --highlight-line --pointer='' --marker='' \
+  # Fancy visual flags need a recent fzf (--gap/--gap-line, --highlight-line,
+  # --no-input; ~0.52+). Debian ships 0.44, which aborts on an unknown flag —
+  # killing the pane. Probe --help and add only what's supported so the sidebar
+  # still renders (just plainer) on old fzf.
+  local extra=() help; help=$(fzf --help 2>&1)
+  case "$help" in *--no-input*)       extra+=(--no-input) ;; esac
+  case "$help" in *--gap-line*)       extra+=(--gap=1 --gap-line=' ') ;; esac
+  case "$help" in *--highlight-line*) extra+=(--highlight-line) ;; esac
+  fzf --read0 --ansi --layout=reverse --info=hidden \
+      ${extra[@]+"${extra[@]}"} --pointer='' --marker='' \
       --header='spaces ' --header-first --delimiter='\t' --with-nth=2 \
       --color='bg+:#26233a,fg+:-1,gutter:-1,header:#6e6a86,pointer:-1' \
       --bind "start:reload('$0' __lines)" \
@@ -130,8 +138,11 @@ _panel() {
 _sidebar_open() {
   tmux list-panes -F '#{@agent_sidebar}' | grep -q '^1$' && return 0
   local pane
-  pane=$(tmux split-window -h -b -l 40 -d -P -F '#{pane_id}' "'$0' panel")
-  tmux set-option -p -t "$pane" @agent_sidebar 1
+  pane=$(tmux split-window -h -b -l 40 -d -P -F '#{pane_id}' "'$0' panel") || return 0
+  # If the panel command dies immediately (e.g. fzf too old), the pane is already
+  # gone — tag it defensively so a stale pane never surfaces "no such pane".
+  [ -n "$pane" ] && tmux set-option -p -t "$pane" @agent_sidebar 1 2>/dev/null
+  return 0
 }
 
 # sidebar: TOGGLE the panel — open it (left, via _sidebar_open) or, if this window already has one,
