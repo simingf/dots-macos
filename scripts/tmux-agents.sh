@@ -19,6 +19,15 @@ set -euo pipefail
 # non-login setups misses ~/.local/bin. Pick the vendored one explicitly when present.
 FZF="$HOME/.local/bin/fzf"; [ -x "$FZF" ] || FZF=fzf
 
+# grep matches the braille spinner range in AGENT_RE below. C / C.UTF-8 ship a
+# minimal collation, so GNU grep errors ("Invalid collation character") on the
+# multibyte range and _list skips every pane — agents never show. If the ambient
+# locale can't handle the range (e.g. a dev box defaulting to C.UTF-8), switch to
+# a full UTF-8 locale. No-op where it already works (macOS, en_US.UTF-8 boxes).
+if ! printf '⠿' | grep -qE '[⠀-⣿]' 2>/dev/null; then
+    export LC_ALL=en_US.UTF-8
+fi
+
 # What marks a pane as an agent — matched against the OSC title only. Braille = a working spinner
 # frame (generic across agents); "Claude Code"/✳✶✻✽ = an idle agent. Add markers here for other agents.
 AGENT_RE='[⠀-⣿]|Claude Code|[✳✶✻✽]'
