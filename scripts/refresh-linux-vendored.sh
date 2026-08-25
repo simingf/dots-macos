@@ -57,6 +57,16 @@ cp "$TMPDIR/yazi-x86_64-unknown-linux-musl/yazi" "$DOTS_LINUX/vendor/bin/yazi"
 cp "$TMPDIR/yazi-x86_64-unknown-linux-musl/ya"   "$DOTS_LINUX/vendor/bin/ya"
 echo "  yazi, ya ✓"
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya}
+# fzf ships no musl asset; linux_amd64 is a static (CGO-disabled) Go binary that
+# runs on glibc and musl alike. Vendored so the box beats Debian's apt fzf 0.44
+# (too old for the agent sidebar panel's flags).
+gh release download --repo junegunn/fzf \
+  --pattern 'fzf-*-linux_amd64.tar.gz' \
+  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+tar -xzf "$TMPDIR"/fzf-*-linux_amd64.tar.gz -C "$TMPDIR" fzf
+cp "$TMPDIR/fzf" "$DOTS_LINUX/vendor/bin/fzf"
+echo "  fzf ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf}
 
 echo "done."
