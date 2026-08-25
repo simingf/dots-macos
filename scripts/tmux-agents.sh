@@ -14,6 +14,11 @@
 #   jump <target>      switch to an agent pane by target (used by the picker and panel binds)
 set -euo pipefail
 
+# Prefer a vendored fzf over an old system one: Debian's apt fzf (0.44) is too old
+# for the panel's flags, and tmux resolves bare `fzf` from the server PATH, which on
+# non-login setups misses ~/.local/bin. Pick the vendored one explicitly when present.
+FZF="$HOME/.local/bin/fzf"; [ -x "$FZF" ] || FZF=fzf
+
 # What marks a pane as an agent — matched against the OSC title only. Braille = a working spinner
 # frame (generic across agents); "Claude Code"/✳✶✻✽ = an idle agent. Add markers here for other agents.
 AGENT_RE='[⠀-⣿]|Claude Code|[✳✶✻✽]'
@@ -65,7 +70,7 @@ __fzf() {
   rows=$(_sorted) || true
   [ -n "$rows" ] || { tmux display-message "No agents running"; return 0; }
   sel=$(printf '%s\n' "$rows" | _fmt \
-        | fzf --ansi --no-sort --delimiter='\t' --with-nth=2 --prompt='agent> ' \
+        | "$FZF" --ansi --no-sort --delimiter='\t' --with-nth=2 --prompt='agent> ' \
         | cut -f1)
   [ -n "$sel" ] && _jump "$sel"
 }
@@ -118,11 +123,11 @@ _panel() {
   # --no-input; ~0.52+). Debian ships 0.44, which aborts on an unknown flag —
   # killing the pane. Probe --help and add only what's supported so the sidebar
   # still renders (just plainer) on old fzf.
-  local extra=() help; help=$(fzf --help 2>&1)
+  local extra=() help; help=$("$FZF" --help 2>&1)
   case "$help" in *--no-input*)       extra+=(--no-input) ;; esac
   case "$help" in *--gap-line*)       extra+=(--gap=1 --gap-line=' ') ;; esac
   case "$help" in *--highlight-line*) extra+=(--highlight-line) ;; esac
-  fzf --read0 --ansi --layout=reverse --info=hidden \
+  "$FZF" --read0 --ansi --layout=reverse --info=hidden \
       ${extra[@]+"${extra[@]}"} --pointer='' --marker='' \
       --header='spaces ' --header-first --delimiter='\t' --with-nth=2 \
       --color='bg+:#26233a,fg+:-1,gutter:-1,header:#6e6a86,pointer:-1' \
