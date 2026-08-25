@@ -583,13 +583,6 @@ pnpm() { _nvm_load && pnpm "$@"; }
 source <(fzf --zsh)
 eval "$(zoxide init --cmd cd zsh)"
 
-# Launch/attach herdr on shell startup.
-# Skip when already inside herdr ($HERDR_ENV), inside tmux, non-interactive, or under VSCode/Cursor.
-# No `exec`: zsh stays underneath, so quitting herdr returns to this prompt instead of closing the terminal.
-if [[ "${HERDR_ENV:-}" != 1 && -z "$TMUX" && $- == *i* && "$TERM_PROGRAM" != "vscode" ]] && command -v herdr >/dev/null 2>&1; then
-    herdr
-fi
-
 # AI agents (Claude Code, etc.) shell out to standard commands and expect
 # native behavior. Drop aliases that shadow coreutils so `rm` actually deletes
 # (not trash), `ls`/`rg` emit plain output (no eza/ripgrep icons+hyperlinks),
