@@ -52,6 +52,9 @@ add-zsh-hook precmd _run_pending_clear_ls
 # Guard on interactive: Claude Code's Bash tool sources a snapshot that strips
 # _-prefixed funcs (drops _clear_ls) but keeps chpwd, then cd's non-interactively
 # → "command not found: _clear_ls". The guard is baked into the captured body.
+# _suppress_chpwd: set by gotopr while it bounces through dirs. Initialized here so
+# the guard never reads an unset global (and to keep it off until gotopr sets it).
+typeset -g _suppress_chpwd=0
 chpwd() {
     [[ -o interactive ]] || return
     ((_suppress_chpwd)) || _clear_ls

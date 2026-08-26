@@ -1,6 +1,6 @@
 # yazi wrapper — quitting with `q` lands the shell in yazi's last cwd
 y() {
-    local tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+    local cwd tmp="$(mktemp -t yazi-cwd.XXXXXX)"
     yazi "$@" --cwd-file="$tmp"
     if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
         builtin cd -- "$cwd"
@@ -167,7 +167,7 @@ _kk_recent_nested_repo() {
     # Primary: zoxide db, highest frecency first → most-recently-visited wins.
     while IFS= read -r d; do
         [[ -n "$d" && "$d" == "$base"* ]] || continue
-        rel="${d#$base}"
+        rel="${d#"$base"}"
         ((${#${(s:/:)rel}} <= 2)) || continue # only 1–2 levels below the folder
         [[ -e "$d/.git" ]] && {
             print -r -- "$d"
@@ -214,6 +214,10 @@ pullall() {
 # goto PR (https://github.rbx.com/Roblox/creator-cu/pull/267/files)
 gotopr() {
     local url="$1"
+    [[ -z "$url" ]] && {
+        echo "usage: gotopr <pr-url>" >&2
+        return 1
+    }
     local repo=$(echo "$url" | sed 's|.*/\([^/]*\)/pull/.*|\1|')
     local pr=$(echo "$url" | sed 's|.*/pull/\([0-9]*\).*|\1|')
     local org=$(echo "$url" | sed 's|.*/\([^/]*\)/[^/]*/pull/.*|\1|')
@@ -221,25 +225,26 @@ gotopr() {
 
     echo "➡️ PR #$pr in $host/$org/$repo"
 
+    # suppress the chpwd clear+ls while we bounce through dirs; the `always` block
+    # resets it even on error/interrupt/return, so it can't leak for the session.
     _suppress_chpwd=1
+    {
+        mkdir -p ~/git/pr-reviews
+        echo "➡️ cd ~/git/pr-reviews/..."
+        builtin cd ~/git/pr-reviews/
 
-    mkdir -p ~/git/pr-reviews
-    echo "➡️ cd ~/git/pr-reviews/..."
-    builtin cd ~/git/pr-reviews/
+        if [[ -d "$repo" ]]; then
+            echo "➡️ Repo found, fetching latest..."
+            builtin cd "$repo" && git fetch --prune
+        else
+            echo "➡️ Repo not found, cloning $repo..."
+            git clone "https://${host}/${org}/${repo}.git"
+            builtin cd "$repo"
+        fi
 
-    if [ -d "$repo" ]; then
-        echo "➡️ Repo found, fetching latest..."
-        builtin cd "$repo" && git fetch --prune
-    else
-        echo "➡️ Repo not found, cloning $repo..."
-        git clone "https://${host}/${org}/${repo}.git"
-        builtin cd "$repo"
-    fi
-
-    echo "➡️ Checking out PR #$pr..."
-    gh pr checkout "$pr"
-
-    _suppress_chpwd=0
+        echo "➡️ Checking out PR #$pr..."
+        gh pr checkout "$pr"
+    } always { _suppress_chpwd=0 }
 }
 
 # vscode/cursor
@@ -255,11 +260,11 @@ k() {
 
 # python
 p() {
-    if [[ "$@" == "" ]]; then
-        echo "python: no file given"
-    else
-        python3 "$@"
+    if (( $# == 0 )); then
+        echo "python: no file given" >&2
+        return 1
     fi
+    python3 "$@"
 }
 
 # spotify_player — viuer's kitty-graphics probe deadlocks under tmux (passthrough is

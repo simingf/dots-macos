@@ -38,6 +38,6 @@ npx() { _nvm_load && npx "$@"; }
 yarn() { _nvm_load && yarn "$@"; }
 pnpm() { _nvm_load && pnpm "$@"; }
 
-# Shell integrations
-source <(fzf --zsh)
-eval "$(zoxide init --cmd cd zsh)"
+# Shell integrations (guarded so a missing tool doesn't error on every startup)
+command -v fzf >/dev/null && source <(fzf --zsh)
+command -v zoxide >/dev/null && eval "$(zoxide init --cmd cd zsh)"

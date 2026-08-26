@@ -2,31 +2,28 @@
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 
 # Download Zinit, if it's not there yet
-if [ ! -d "$ZINIT_HOME" ]; then
-    mkdir -p "$(dirname $ZINIT_HOME)"
+if [[ ! -d "$ZINIT_HOME" ]]; then
+    mkdir -p "$(dirname "$ZINIT_HOME")"
     git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 fi
-
-# Source/Load zinit
 source "${ZINIT_HOME}/zinit.zsh"
 
-# Add in zsh plugins
-zinit light zsh-users/zsh-syntax-highlighting
-zinit light zsh-users/zsh-completions
-zinit light zsh-users/zsh-autosuggestions
-zinit light Aloxaf/fzf-tab
-
-# Add in snippets
-zinit snippet OMZP::sudo
-zinit snippet OMZP::command-not-found
-
-# Load completions
+# Extra completion dirs — on fpath before compinit (run via atinit in the turbo block).
 fpath=($HOME/.docker/completions $HOME/.zfunc $fpath)
-autoload -Uz compinit
-# Skip the security check / dump rebuild if the cache is < 24h old.
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
-    compinit
-else
-    compinit -C
-fi
-zinit cdreplay -q
+
+# Turbo (deferred) plugin loading — sourced ~after the first prompt (`wait lucid`) so
+# startup stays fast. Single sequential block; order honors fzf-tab's rule:
+# completions (fpath) → compinit (atinit) → fzf-tab → autosuggestions → highlighting last.
+zinit wait lucid for \
+    blockf \
+        zsh-users/zsh-completions \
+    atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
+        Aloxaf/fzf-tab \
+    atload"_zsh_autosuggest_start" \
+        zsh-users/zsh-autosuggestions \
+    zsh-users/zsh-syntax-highlighting
+
+# snippets (deferred too)
+zinit wait lucid for \
+    OMZP::sudo \
+    OMZP::command-not-found
