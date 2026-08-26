@@ -1,21 +1,16 @@
--- title
+-- title: show the file name (tail) in the terminal/window title. `%t` is the
+-- statusline-format tail, updated automatically — no autocmd needed, and it can't
+-- misfire on a filename containing `%`.
 vim.opt.title = true
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
-	callback = function()
-		local title = vim.fn.expand("%:t")
-		if title == "" then
-			title = "[No Name]"
-		end
-		vim.opt.titlestring = title
-	end,
-})
+vim.o.titlestring = "%t"
 
 -- highlight when yanking (copying) text
 vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking (copying) text",
 	group = vim.api.nvim_create_augroup("highlight-yank", { clear = true }),
 	callback = function()
-		vim.hl.on_yank()
+		local hl = vim.hl or vim.highlight
+		hl.on_yank()
 	end,
 })
 -- auto-reload buffers when the file changes on disk (e.g. edits from an agent

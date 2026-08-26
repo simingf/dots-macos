@@ -5,7 +5,7 @@ return {
 	-- LSP: mason installs servers; nvim-lspconfig ships the per-server default
 	-- configs as lsp/<name>.lua on the runtimepath, consumed by vim.lsp.config.
 	{
-		"williamboman/mason.nvim",
+		"mason-org/mason.nvim",
 		enabled = not env.IS_SSH,
 		opts = {
 			-- Crashdummyy registry provides the `roslyn` LSP package used by roslyn.nvim.
@@ -19,10 +19,10 @@ return {
 	},
 	{ "neovim/nvim-lspconfig" },
 	{
-		"williamboman/mason-lspconfig.nvim",
+		"mason-org/mason-lspconfig.nvim",
 		enabled = not env.IS_SSH,
 		dependencies = {
-			"williamboman/mason.nvim",
+			"mason-org/mason.nvim",
 			"neovim/nvim-lspconfig",
 			"saghen/blink.cmp",
 		},
@@ -77,7 +77,7 @@ return {
 	{
 		"WhoIsSethDaniel/mason-tool-installer.nvim",
 		enabled = not env.IS_SSH,
-		dependencies = { "williamboman/mason.nvim" },
+		dependencies = { "mason-org/mason.nvim" },
 		opts = {
 			ensure_installed = env.HAS_DOTNET and {
 				"goimports",

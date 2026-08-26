@@ -3,13 +3,14 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 -- (<leader>w → <C-w> chain is registered as a which-key proxy in the plugin spec below
 --  so the popup shows the full <C-w>* hint set; ctrl-w is hard to reach otherwise.)
--- Colemak-DH: hjkl ↔ mnei swap. `i` is omitted from operator-pending because it's
--- the text-object prefix (di(, vi", ci{); use `l` for right-movement when needed.
+-- Colemak-DH: hjkl ↔ mnei swap. `i` is remapped only in normal mode — visual and
+-- operator-pending keep it as the text-object prefix (vi(, di", ci{, treesitter
+-- af/if); in those modes plain `l` still moves right (it's remapped only in normal).
 local _nxo = { "n", "x", "o" }
 vim.keymap.set(_nxo, "m", "h")
 vim.keymap.set(_nxo, "n", "j")
 vim.keymap.set(_nxo, "e", "k")
-vim.keymap.set({ "n", "x" }, "i", "l")
+vim.keymap.set("n", "i", "l")
 vim.keymap.set({ "n", "x" }, "j", "n")
 vim.keymap.set(_nxo, "k", "e")
 vim.keymap.set("n", "l", "i")

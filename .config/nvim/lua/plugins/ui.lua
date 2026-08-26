@@ -35,7 +35,9 @@ return {
 	-- status line at bottom
 	{
 		"nvim-lualine/lualine.nvim",
-		dependencies = { "chrisgrieser/nvim-recorder" },
+		-- lualine_c uses the "diagnostic-message" component from lualine-diagnostic-message;
+		-- declare it a dependency so it's on the rtp before lualine configures (no load-order luck).
+		dependencies = { "chrisgrieser/nvim-recorder", "Isrothy/lualine-diagnostic-message" },
 		config = function()
 			local recorder = require("recorder")
 			require("lualine").setup({
@@ -97,9 +99,6 @@ return {
 				extensions = {},
 			})
 		end,
-	},
-	{
-		"Isrothy/lualine-diagnostic-message",
 	},
 
 	-- bufferline: open buffers as clickable tabs across the top. Mouse clicks
@@ -265,17 +264,9 @@ return {
 	{
 		"lukas-reineke/indent-blankline.nvim",
 		event = "VeryLazy",
-		config = function()
-			require("ibl").setup({
-				enabled = true,
-				scope = {
-					enabled = true,
-				},
-				indent = {
-					char = "▏",
-				},
-			})
-		end,
+		main = "ibl", -- setup module is `ibl`, not the plugin name
+		-- enabled + scope.enabled are ibl v3 defaults; only the char is an override.
+		opts = { indent = { char = "▏" } },
 	},
 
 	-- highlight all occurences of a word

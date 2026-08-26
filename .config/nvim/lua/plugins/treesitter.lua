@@ -32,21 +32,26 @@ return {
 		"nvim-treesitter/nvim-treesitter-textobjects",
 		branch = "main",
 		config = function()
-			pcall(function()
-				require("nvim-treesitter-textobjects").setup({
-					select = {
-						enable = true,
-						lookahead = true,
-						keymaps = {
-							["af"] = "@function.outer",
-							["if"] = "@function.inner",
-							["ac"] = "@class.outer",
-							["ic"] = "@class.inner",
-							["as"] = { query = "@scope", query_group = "locals" },
-						},
-					},
-				})
-			end)
+			-- main branch's setup() only takes { select = { lookahead, ... } } — it has
+			-- no keymaps/enable fields (those are silently dropped). Bind manually via
+			-- select_textobject in visual + operator-pending modes.
+			require("nvim-treesitter-textobjects").setup({ select = { lookahead = true } })
+			local sel = require("nvim-treesitter-textobjects.select").select_textobject
+			local objs = {
+				["af"] = "@function.outer",
+				["if"] = "@function.inner",
+				["ac"] = "@class.outer",
+				["ic"] = "@class.inner",
+			}
+			for lhs, obj in pairs(objs) do
+				vim.keymap.set({ "x", "o" }, lhs, function()
+					sel(obj, "textobjects")
+				end, { desc = "textobject " .. obj })
+			end
+			-- scope capture is @local.scope in group "locals" on the main branch
+			vim.keymap.set({ "x", "o" }, "as", function()
+				sel("@local.scope", "locals")
+			end, { desc = "textobject scope" })
 		end,
 	},
 	{
