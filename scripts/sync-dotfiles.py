@@ -43,6 +43,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         (".claude/settings.json", ".claude/settings.json"),
         (".claude/statusline-command.sh", ".claude/statusline-command.sh"),
         (".claude/hooks/agent-notify.sh", ".claude/hooks/agent-notify.sh"),
+        (".config/zsh/mux-tmux.zsh", ".config/zsh/mux-tmux.zsh"),
     ],
     "windows": [
         (".config/nvim/init.lua", "AppData/Local/nvim/init.lua"),

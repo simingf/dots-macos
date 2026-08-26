@@ -35,6 +35,7 @@ dots-macos/
 │   ├── ohmyposh/, ripgrep/, gh/        # byte-identical with dots-windows
 │   ├── spotify-player/                 # app.toml, keymap.toml, theme.toml
 │   ├── yazi/                           # file manager (byte-identical with dots-linux)
+│   ├── zsh/                            # ordered config modules (NN-*.zsh) sourced by the .zshrc loader; mux-{herdr,tmux}.zsh sourced per session by 95-session.zsh
 │   └── topgrade.toml, karabiner/, kitty/
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
