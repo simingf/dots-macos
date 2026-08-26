@@ -514,13 +514,62 @@ require("lazy").setup({
 		"folke/snacks.nvim",
 		priority = 1000, -- load early so vim.notify is snacks.notifier asap
 		lazy = false,
+		init = function()
+			-- snacks.image can't auto-detect ghostty inside tmux: tmux reports our
+			-- overridden `xterm-256color` (ghostty config) as client_termname, and the
+			-- XTVERSION reply can't return through tmux's one-way passthrough. Flag it
+			-- explicitly under ghostty. Key off GHOSTTY_RESOURCES_DIR — it's set by
+			-- ghostty and survives into the tmux session env, whereas TERM_PROGRAM gets
+			-- overwritten to "tmux" inside tmux. (Unset over SSH, so linux/windows no-op.)
+			if vim.env.GHOSTTY_RESOURCES_DIR or vim.env.TERM_PROGRAM == "ghostty" then
+				vim.env.SNACKS_GHOSTTY = "1"
+			end
+			-- Switching buffers (bufferline) away from and back to an image drops the
+			-- kitty image — snacks deletes it on hide, then only re-places (by id) on
+			-- return, but the data is gone, so nothing shows. Reloading the buffer on
+			-- entry (what <leader>ri does) forces a fresh transmit. The `reloading` flag
+			-- stops the :edit from re-triggering this handler. ghostty only.
+			if vim.env.GHOSTTY_RESOURCES_DIR or vim.env.TERM_PROGRAM == "ghostty" then
+				local reloading = false
+				vim.api.nvim_create_autocmd("BufEnter", {
+					group = vim.api.nvim_create_augroup("snacks_image_rerender", { clear = true }),
+					callback = function(ev)
+						if reloading or vim.bo[ev.buf].filetype ~= "image" then
+							return
+						end
+						reloading = true
+						vim.schedule(function()
+							if vim.bo.filetype == "image" then
+								pcall(vim.cmd, "edit")
+							end
+							reloading = false
+						end)
+					end,
+				})
+			end
+		end,
 		opts = {
 			picker = { ui_select = true }, -- also replaces vim.ui.select
 			notifier = { enabled = true },
 			bigfile = { enabled = true },
 			quickfile = { enabled = true },
+			image = { enabled = true }, -- inline image preview (kitty graphics; needs chafa/imagemagick)
 		},
 		keys = {
+			{
+				"<leader>ri",
+				function()
+					-- Re-render a standalone image that nvim dropped on a tabpage redraw.
+					-- Reloading the buffer re-runs snacks' image attach → fresh transmit.
+					-- (<leader>i is taken by window-nav, so this lives under <leader>r.)
+					if vim.bo.filetype == "image" then
+						vim.cmd("edit")
+					else
+						vim.notify("Not an image buffer", vim.log.levels.WARN)
+					end
+				end,
+				desc = "re-render image",
+			},
 			{
 				"<leader>tt",
 				function()
@@ -701,7 +750,7 @@ require("lazy").setup({
 						"bash", "c", "c_sharp", "cpp", "go", "lua", "python",
 						"toml", "json", "yaml",
 						"javascript", "typescript",
-						"markdown", "markdown_inline",
+						"markdown", "markdown_inline", "latex",
 						"vim", "vimdoc",
 					})
 				end)
@@ -739,6 +788,14 @@ require("lazy").setup({
 		config = function()
 			require("treesitter-context").setup({ max_lines = 3 })
 		end,
+	},
+
+	-- render-markdown: inline markdown rendering (headings, code blocks, tables, checkboxes)
+	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		ft = { "markdown" },
+		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+		opts = {},
 	},
 
 	-- blink.cmp: autocomplete (fast Rust-based replacement for nvim-cmp)

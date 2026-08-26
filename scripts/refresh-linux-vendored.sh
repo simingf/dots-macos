@@ -67,6 +67,15 @@ tar -xzf "$TMPDIR"/fzf-*-linux_amd64.tar.gz -C "$TMPDIR" fzf
 cp "$TMPDIR/fzf" "$DOTS_LINUX/vendor/bin/fzf"
 echo "  fzf ✓"
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf}
+# glow: markdown renderer for yazi's *.md previewer (glow.yazi plugin). Without it
+# the plugin falls back to raw syntax-highlighted markdown.
+gh release download --repo charmbracelet/glow \
+  --pattern 'glow_*_Linux_x86_64.tar.gz' \
+  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+tar -xzf "$TMPDIR"/glow_*_Linux_x86_64.tar.gz -C "$TMPDIR"
+find "$TMPDIR" -type f -name glow -exec cp {} "$DOTS_LINUX/vendor/bin/glow" \;
+echo "  glow ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow}
 
 echo "done."

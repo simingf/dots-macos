@@ -37,6 +37,8 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         (".config/yazi/theme.toml", ".config/yazi/theme.toml"),
         (".config/yazi/flavors/rose-pine.yazi/flavor.toml", ".config/yazi/flavors/rose-pine.yazi/flavor.toml"),
         (".config/yazi/flavors/rose-pine.yazi/tmtheme.xml", ".config/yazi/flavors/rose-pine.yazi/tmtheme.xml"),
+        (".config/yazi/package.toml", ".config/yazi/package.toml"),
+        (".config/yazi/plugins/glow.yazi/main.lua", ".config/yazi/plugins/glow.yazi/main.lua"),
         (".claude/CLAUDE.md", ".claude/CLAUDE.md"),
         (".claude/settings.json", ".claude/settings.json"),
         (".claude/statusline-command.sh", ".claude/statusline-command.sh"),

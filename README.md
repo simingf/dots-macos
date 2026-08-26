@@ -58,6 +58,7 @@ dots-macos/
 ├── manual/
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
 │   └── ...                             # other configs requiring manual import (not stow-managed)
+├── learnings/                          # debugging write-ups / lessons learned (Mac-only, not synced)
 └── Brewfile
 ```
 

@@ -136,6 +136,11 @@ if ! command -v ani-cli >/dev/null 2>&1; then
   install -m 0755 "$anicli_tmp/ani-cli/ani-cli" "$(brew --prefix)/bin/ani-cli"
 fi
 
+step "mermaid-cli (npm — snacks.image mermaid diagram rendering in nvim)"
+if command -v npm >/dev/null 2>&1 && ! command -v mmdc >/dev/null 2>&1; then
+  npm install -g @mermaid-js/mermaid-cli
+fi
+
 step "Default file handlers (Launch Services plist)"
 # We patch ~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist
 # directly instead of shelling out to `duti`, for two reasons:
