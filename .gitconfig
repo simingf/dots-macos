@@ -15,13 +15,13 @@
 [maintenance]
 	repo = /Users/sfeng/git/roblox/deployment
 [credential "https://github.com"]
-	helper =
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = 
 	username = simingf
+	helper = !/opt/homebrew/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper =
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = 
 	username = simingf
+	helper = !/opt/homebrew/bin/gh auth git-credential
 [credential "https://github.rbx.com"]
 	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
