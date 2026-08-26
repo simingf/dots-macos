@@ -63,8 +63,9 @@ User commits/pushes from each sibling repo themselves.
 
 | File / dir | linux | windows | Rule |
 |---|---|---|---|
-| `.tmux.conf` | byte-identical | — | Inline portability via `if-shell 'test "$(uname)" = Linux' ...`; path differences use `$DOTFILES_DIR/scripts/...` exported per-host from `.zshrc`. |
-| `.config/nvim/init.lua` | byte-identical | byte-identical | Runtime guards `IS_SSH` (Linux dev box) and `HAS_DOTNET` (work Mac only) gate Mason/blink-Rust/roslyn. |
+| `.tmux.conf` | byte-identical | — | Unified `C-Space` prefix on both (no uname split). `$DOTFILES_DIR` (used by the `scripts/*.sh` binds/hooks) is resolved into tmux's own global env at load — `run-shell 'tmux set-environment -g DOTFILES_DIR "$HOME/dots-$([ "$(uname)" = Linux ] && echo linux || echo macos)"'` — so it works even on a persistent server started without the shell export. Remaining platform branch: `if-shell '[ -x /usr/bin/zsh ]'` for default-shell. |
+| `.config/nvim/init.lua` | byte-identical | byte-identical | Thin loader: requires `config.{options,keymaps,autocmds}` then `config.lazy`. |
+| `.config/nvim/lua/**` | byte-identical | byte-identical | Config split, lazy.nvim standard layout: `lua/config/*.lua` (options, keymaps, autocmds, `env`, lazy bootstrap) + `lua/plugins/*.lua` (topical: deps/ui/editor/navigation/treesitter/lsp/coding/git/ai) auto-imported via `import = "plugins"`. Whole tree **dir-mirrored** by `sync-dotfiles.py` (`IDENTICAL_DIRS`) — add a plugin file, it auto-syncs. Host guards live in `lua/config/env.lua`. |
 | `.config/nvim/lazy-lock.json` | byte-identical | byte-identical | |
 | `scripts/tmux-fzf-*.sh`, `scripts/tmux-agents.sh` | byte-identical | — | Called from `.tmux.conf` via `$DOTFILES_DIR`. `tmux-agents.sh` detects agent panes by the OSC title captured in `#{pane_title}` (braille spinner = working, idle marker = idle) — powers `prefix a` picker, the `prefix A` / `prefix c`-seeded left sidebar (a clickable fzf panel), and the status-bar count. |
 | `.config/yazi/{yazi,keymap,theme}.toml` + `flavors/rose-pine.yazi/{flavor.toml,tmtheme.xml}` | byte-identical | — | Linux `yazi`+`ya` binaries vendored under `dots-linux/vendor/bin/`. New yazi files must be added to `IDENTICAL["linux"]` in `sync-dotfiles.py`. |
@@ -94,8 +95,8 @@ User commits/pushes from each sibling repo themselves.
 
 ## Editing conventions
 
-- `init.lua` runtime guards: `local IS_SSH = (vim.env.SSH_CONNECTION or "") ~= ""` and `local HAS_DOTNET = vim.fn.executable("dotnet") == 1`. Gate Mason / Rust-fuzzy / roslyn — don't introduce host-specific files.
-- `.tmux.conf` portability: `if-shell 'test "$(uname)" = Linux' '<linux-cmd>' '<mac-cmd>'`. Path differences via `$DOTFILES_DIR` exported from `.zshrc`.
+- nvim runtime guards live in `.config/nvim/lua/config/env.lua` (`return { IS_SSH = (vim.env.SSH_CONNECTION or "") ~= "", HAS_DOTNET = vim.fn.executable("dotnet") == 1 }`). Plugin files that gate on them do `local env = require("config.env")` and read `env.IS_SSH` / `env.HAS_DOTNET` (Mason / Rust-fuzzy / roslyn). Don't introduce host-specific files — keep the byte-identical tree + guards.
+- `.tmux.conf` portability: platform branches use `if-shell '<test>' '<a>' '<b>'` (e.g. `[ -x /usr/bin/zsh ]` for default-shell). `$DOTFILES_DIR` (for `scripts/*.sh` binds/hooks) is resolved into tmux's global env at the top of `.tmux.conf` via `run-shell 'tmux set-environment -g DOTFILES_DIR ...'` — tmux doesn't expand `~`/`$HOME`, so sh resolves it; this survives a server started without the shell export.
 - VS Code JSON files: LF only.
 - Symlinks: relative paths only — never hardcode `/Users/sfeng/`.
 - **Plists: never symlink.** macOS `cfprefsd` atomically replaces plist files, breaking symlinks. Store app plists in `manual/preferences/` and restore via `cp` in `scripts/setup.sh`. To snapshot: `cp ~/Library/Preferences/<domain>.plist manual/preferences/`.

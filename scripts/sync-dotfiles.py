@@ -59,6 +59,14 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
     ],
 }
 
+# (mac-reldir, target-reldir) — whole directory trees kept byte-identical,
+# mirrored recursively so new/renamed/deleted files propagate without listing
+# each one. Used for the nvim lua/ config tree (grows as plugins are added).
+IDENTICAL_DIRS: dict[str, list[tuple[str, str]]] = {
+    "linux": [(".config/nvim/lua", ".config/nvim/lua")],
+    "windows": [(".config/nvim/lua", "AppData/Local/nvim/lua")],
+}
+
 TARGETS = {"linux": HOME / "dots-linux", "windows": HOME / "dots-windows"}
 
 
@@ -66,6 +74,29 @@ def files_equal(a: Path, b: Path) -> bool:
     if not a.exists() or not b.exists():
         return False
     return filecmp.cmp(a, b, shallow=False)
+
+
+def mirror_dir(src_dir: Path, dst_dir: Path, src_rel: str, apply: bool) -> int:
+    """Make dst_dir a byte-identical mirror of src_dir (copy drift, remove extras)."""
+    drift = 0
+    src_files = {p.relative_to(src_dir) for p in src_dir.rglob("*") if p.is_file()}
+    for rel in sorted(src_files):
+        s, d = src_dir / rel, dst_dir / rel
+        if files_equal(s, d):
+            continue
+        drift += 1
+        print(f"   {'copy' if apply else 'would copy'}  {src_rel}/{rel}")
+        if apply:
+            d.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(s, d)
+    if dst_dir.exists():
+        for p in sorted(dst_dir.rglob("*")):
+            if p.is_file() and p.relative_to(dst_dir) not in src_files:
+                drift += 1
+                print(f"   {'remove' if apply else 'would remove'}  {src_rel}/{p.relative_to(dst_dir)}")
+                if apply:
+                    p.unlink()
+    return drift
 
 
 def sync_target(name: str, target: Path, apply: bool) -> int:
@@ -88,6 +119,13 @@ def sync_target(name: str, target: Path, apply: bool) -> int:
         if apply:
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
+
+    for src_rel, dst_rel in IDENTICAL_DIRS.get(name, []):
+        src = SRC / src_rel
+        if not src.exists():
+            print(f"   ! source missing: {src_rel}/")
+            continue
+        drift += mirror_dir(src, target / dst_rel, src_rel, apply)
 
     if drift == 0 and apply:
         print("   in sync")
