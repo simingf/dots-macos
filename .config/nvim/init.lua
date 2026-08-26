@@ -691,6 +691,9 @@ require("lazy").setup({
 			},
 		},
 		opts = {
+			-- when the tree is the only window left (e.g. :q'd the last file),
+			-- close it too so nvim quits instead of leaving a fullscreen tree.
+			close_if_last_window = true,
 			filesystem = {
 				-- auto-refresh the tree when files change on disk out-of-band
 				-- (agents, git, mv) — off by default, so the sidebar otherwise
