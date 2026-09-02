@@ -1,11 +1,5 @@
 # file location: ${HOME}/dots-macos/Brewfile
 # Usage: brew bundle install --file=~/dots-macos/Brewfile
-#
-# Aliases:
-#   alias bbd='brew bundle dump --force --file=~/dots-macos/Brewfile'
-#   alias bbi='brew bundle install --file=~/dots-macos/Brewfile'
-#   alias bbc='brew bundle check --file=~/dots-macos/Brewfile'
-#   alias bbclean='brew bundle cleanup --file=~/dots-macos/Brewfile'
 
 # Install all casks to /Applications and adopt any existing app already present
 cask_args appdir: "/Applications", fontdir: "/Library/Fonts", adopt: true
@@ -109,6 +103,7 @@ cask "iina"
 cask "istherenet"
 cask "karabiner-elements"
 cask "keyboardcleantool"
+cask "kitty"
 cask "linearmouse"
 cask "lookaway"
 cask "miniconda"

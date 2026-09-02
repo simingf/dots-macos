@@ -6,6 +6,10 @@ Getting inline image / PDF / markdown previews working in Neovim (snacks.image) 
 Yazi under Ghostty — and especially inside tmux — took several non-obvious fixes.
 Captured here so it isn't re-derived from scratch.
 
+> **Using herdr instead of tmux?** nvim (snacks.image) images do **not** render under herdr,
+> though `icat`/yazi do. It's a renderer/protocol gap, not a config bug — see §6 for the
+> what-works-where matrix and why.
+
 ## TL;DR — what it takes
 
 **CLI tools** (`Brewfile`): `chafa` (image fallback renderer), `poppler` (`pdftoppm`, PDF),
@@ -77,6 +81,77 @@ capture the reply, the bytes land in the buffer as literal text (`ostty 1.3.1…
   custom snacks `config` to skip the probe **broke image rendering entirely** (even
   `<leader>ri`). Replacing `opts` with a custom `config`, and/or the seed itself, is unsafe.
 
+### 6. Switched multiplexer to herdr → nvim images don't render (but icat does)
+After moving the daily driver from tmux to **herdr** (`~/.config/herdr`), standalone/markdown
+images stopped rendering in nvim — while `icat`, `kitten icat`, and `chafa -f kitty` still drew
+fine in the same herdr pane. This is **not a regression of the tmux setup**: the image feature
+was built and tuned under tmux (commit "previews under ghostty + tmux", 2026-08-26) and had
+**never** worked under herdr — herdr's `kitty_graphics` defaults to `false`, so herdr wasn't
+even attempting graphics until the flag was flipped (uncommitted, added while debugging this).
+
+**What works where** (current state: herdr 0.8.2, `kitty_graphics = true`):
+
+| renderer path | icat / chafa (`a=T` one-shot) | nvim snacks.image (`a=t` store + `a=p` place-by-id) |
+|---|---|---|
+| Ghostty raw            | ✅ | ✅ |
+| tmux (passthrough→Ghostty) | ✅ | ✅ |
+| herdr (native re-render)   | ✅ | ❌ |
+
+**Why — it's about who renders and which kitty sub-protocol they implement:**
+- Ghostty raw and **tmux with `allow-passthrough on`** both end with **Ghostty** doing the
+  drawing — tmux just forwards the raw escapes. Ghostty implements the *full* kitty protocol,
+  including the store-image-by-id (`a=t`) + place-by-id (`a=p`) model snacks uses. snacks worked
+  under tmux because **Ghostty**, not tmux, rendered it.
+- **herdr does not pass through.** Its clients use `render_encoding=SemanticFrame` (visible in
+  `herdr-server.log`): herdr re-renders every pane itself and, with `kitty_graphics=true`, paints
+  kitty graphics with its *own* implementation. That implementation handles the one-shot
+  `a=T` "direct file frames" (what icat/chafa/`kitten icat` emit) but not snacks' store+place.
+
+So the same nvim/snacks config renders or not depending purely on the renderer underneath.
+
+**Confirmed (observed / read from source):**
+- icat/chafa render in herdr, snacks does not (tested in-pane).
+- chafa emits `_Ga=T,f=32,…` — one-shot transmit-and-display (captured control codes).
+- snacks transmits `{ t="f", i=id, f=100 }` → defaults to `a=t` (store by id, no display;
+  `image.lua:146`), then places with `a="p"` by id — in **both** the placeholder path
+  (`placement.lua:551`) and the fallback path (`render_fallback`, `placement.lua:415`).
+- herdr release notes describe only "direct file frames"; no mention of placeholders or
+  place-by-id. `render_encoding=SemanticFrame` in the server log = herdr re-renders, not passthrough.
+
+**Speculative / NOT yet confirmed:**
+- That herdr's kitty impl *specifically* lacks `a=t`/`a=p` (store+place-by-id) is **inferred**
+  from "direct file frames" + snacks failing — herdr logs graphics at INFO level with no
+  passthrough/reject trace, so it was never directly observed rejecting the command.
+- **Second suspect, unverified:** herdr may report zero cell-pixel geometry to the pane
+  (`herdr-server.log` shows `cell_*_px=0` on most client connections; only the newest showed
+  `8×18`). snacks sizes images from pixel geometry and renders nothing if it's `0` — this could
+  be the real (or a compounding) blocker. Decisive check never captured: in the failing nvim,
+  `:checkhealth snacks` (image section) + `:lua =require("snacks.image.terminal").size()`.
+  Run those before filing a herdr issue to say precisely which gap it is.
+
+**Tried and reverted (do NOT re-attempt without new info):**
+- Forcing `placeholders = false` for the ghostty env under herdr (`vim.env.HERDR_ENV == "1"`,
+  mutating `require("snacks.image.terminal").envs()` in the snacks `init`). This routes snacks to
+  its direct-placement fallback, but that fallback *still* places by id (`a=p`), so it's
+  **insufficient** — images stayed blank (confirmed: `env().placeholders` read `false`, still
+  nothing). It also degrades bare-ghostty (markdown inline → floating window, since `doc.inline`
+  gates on `env().placeholders`). Reverted. Only worth revisiting if herdr adds place-by-id AND
+  still lacks unicode placeholders.
+- `edit` → `edit!` in the `<leader>ri` keymap and `BufEnter` reload, to swallow the E37 from the
+  probe leak. Reverted too: the E37 is a herdr-only artifact (§5's `extended-keys` fix means no
+  leak under tmux, and bare ghostty captures the reply cleanly), and images don't render under
+  herdr anyway, so `<leader>ri` is moot there. Plain `edit` stays correct for the tmux/ghostty
+  paths where images actually work.
+
+**Also unaffected under herdr:** the tmux machinery (§2–§5: `allow-passthrough`, `extended-keys`,
+the `client_termname` path) is all gated behind `if vim.env.TMUX` in snacks — none runs under
+herdr. Only the `SNACKS_GHOSTTY` guard (fires via `GHOSTTY_RESOURCES_DIR`) and the `BufEnter`
+reload still apply.
+
+**Practical workaround:** for inline nvim image/PDF/math previews, use a tmux pane or bare
+Ghostty; inside herdr, use `icat`/yazi for quick viewing until herdr's kitty graphics gains
+place-by-id (and non-zero pane pixel geometry).
+
 ## Debugging lessons
 
 - **Disambiguate "tab" immediately**: bufferline (buffers → `BufEnter`) vs tabpages
@@ -98,5 +173,7 @@ capture the reply, the bytes land in the buffer as literal text (`ostty 1.3.1…
 - `.config/yazi/{yazi.toml, package.toml, plugins/glow.yazi/}` — markdown preview (glow plugin
   patched for the yazi 26.x API).
 - `.tmux.conf` — `allow-passthrough on`, `update-environment TERM`/`TERM_PROGRAM`.
-- `.config/nvim/init.lua` — snacks `image` enabled, `render-markdown.nvim`, `latex` parser,
-  the `SNACKS_GHOSTTY` guard, the `BufEnter` reload, and `<leader>ri`.
+- `.config/nvim/lua/plugins/ui.lua` — snacks `image` enabled, the `SNACKS_GHOSTTY` guard, the
+  herdr `placeholders=false` override (§6), the `BufEnter` reload, and `<leader>ri` (uses
+  `:edit!`). (`render-markdown.nvim` / `latex` parser live in their own `lua/plugins/*` files
+  since the config was split into the lazy.nvim layout.)

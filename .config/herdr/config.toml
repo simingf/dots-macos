@@ -8,6 +8,11 @@ onboarding = false
 # (tmux MNEI resize + [ ] pane-swap (left/right) are emulated via one-shot [[keys.command]]
 #  binds at the end. tmux P last-pane is native — see last_pane below.)
 
+[experimental]
+# Render the kitty graphics protocol natively for attached clients so `icat` / kitten image
+# previews work inside herdr under ghostty. Apply with `herdr server reload-config`.
+kitty_graphics = true
+
 [theme]
 name = "rose-pine"
 

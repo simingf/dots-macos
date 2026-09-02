@@ -226,6 +226,15 @@ if [ -f "$ghostty_ti" ]; then
   cp "$ghostty_ti" "$HOME/.terminfo/78/xterm-ghostty"
 fi
 
+step "kitten on PATH (for icat image previews)"
+# kitty cask ships the `kitten` binary inside the app bundle; symlink it onto PATH so the
+# `icat` alias (kitten icat) works under ghostty. Ghostty stays the terminal — kitten just
+# renders the kitty graphics protocol into it.
+kitten_bin="/Applications/kitty.app/Contents/MacOS/kitten"
+if [ -x "$kitten_bin" ]; then
+  ln -sf "$kitten_bin" "$HOME/.local/bin/kitten"
+fi
+
 step "Alfred sync folder"
 alfred_prefs="$HOME/Library/Application Support/Alfred/prefs.json"
 mkdir -p "$(dirname "$alfred_prefs")"
