@@ -4,6 +4,12 @@ term = xterm-ghostty
 # Theme
 theme = Rose Pine
 
+# Iris-forward accents — shared #ceacf6 across tmux / nvim / lazygit
+cursor-color = #ceacf6
+cursor-text = #191724
+selection-background = #ceacf6
+selection-foreground = #191724
+
 # Fonts
 font-family = JetBrainsMono Nerd Font Mono
 font-size = 14

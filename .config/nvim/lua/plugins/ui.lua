@@ -28,6 +28,21 @@ return {
 		"rose-pine/neovim",
 		name = "rose-pine",
 		config = function()
+			require("rose-pine").setup({
+				palette = {
+					-- custom brighter iris — shared #ceacf6 across tmux / ghostty / lazygit
+					main = { iris = "#ceacf6" },
+					moon = { iris = "#ceacf6" },
+				},
+				highlight_groups = {
+					-- iris-forward: structural accents pick up the shared iris
+					WinSeparator = { fg = "iris" },
+					FloatBorder = { fg = "iris" },
+					CursorLineNr = { fg = "iris", bold = true },
+					PmenuSel = { fg = "base", bg = "iris" },
+					Visual = { bg = "iris", blend = 25 },
+				},
+			})
 			vim.cmd("colorscheme rose-pine")
 		end,
 	},
@@ -40,10 +55,33 @@ return {
 		dependencies = { "chrisgrieser/nvim-recorder", "Isrothy/lualine-diagnostic-message" },
 		config = function()
 			local recorder = require("recorder")
+			-- iris-forward rose-pine lualine theme — normal mode = iris (#ceacf6), shared palette
+			local p = {
+				base = "#191724", surface = "#1f1d2e", overlay = "#26233a",
+				muted = "#6e6a86", subtle = "#908caa", text = "#e0def4",
+				love = "#eb6f92", gold = "#f6c177", rose = "#ebbcba",
+				pine = "#31748f", foam = "#9ccfd8", iris = "#ceacf6",
+			}
+			local rose_pine_iris = {
+				normal = {
+					a = { fg = p.base, bg = p.iris, gui = "bold" },
+					b = { fg = p.text, bg = p.overlay },
+					c = { fg = p.subtle, bg = p.surface },
+				},
+				insert = { a = { fg = p.base, bg = p.foam, gui = "bold" } },
+				visual = { a = { fg = p.base, bg = p.rose, gui = "bold" } },
+				replace = { a = { fg = p.base, bg = p.love, gui = "bold" } },
+				command = { a = { fg = p.base, bg = p.gold, gui = "bold" } },
+				inactive = {
+					a = { fg = p.muted, bg = p.surface },
+					b = { fg = p.muted, bg = p.surface },
+					c = { fg = p.muted, bg = p.surface },
+				},
+			}
 			require("lualine").setup({
 				options = {
 					icons_enabled = true,
-					theme = "auto",
+					theme = rose_pine_iris,
 					-- component_separators = { left = '', right = '' },
 					component_separators = "|",
 					-- section_separators = { left = '', right = '' },
@@ -131,6 +169,12 @@ return {
 						separator = true,
 					},
 				},
+			},
+			-- iris-forward: selected buffer tab picks up the shared iris (matches tmux window tabs)
+			highlights = {
+				buffer_selected = { fg = "#ceacf6", bold = true, italic = false },
+				numbers_selected = { fg = "#ceacf6" },
+				indicator_selected = { fg = "#ceacf6" },
 			},
 		},
 		keys = {
