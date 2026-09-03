@@ -34,7 +34,7 @@ FZF="$HOME/.local/bin/fzf"; [ -x "$FZF" ] || FZF=fzf
 # Fixed sidebar width (cols). tmux redistributes pane sizes when the client's terminal resizes (e.g.
 # plugging/unplugging a monitor), which would grow the sidebar; a client-resized hook calls `fix-width`
 # to snap it back to this. Single source of truth for _sidebar_open (-l) and _fix_width (-x).
-SIDEBAR_COLS=20
+SIDEBAR_COLS=25
 
 # grep matches the braille spinner range in AGENT_RE below. C / C.UTF-8 ship a
 # minimal collation, so GNU grep errors ("Invalid collation character") on the
@@ -180,7 +180,14 @@ __lines() {
         IRIS=$'\033[38;2;196;167;231m'
   local att name widx wact wname disp vis tst tdot agents st target window pane_id acolor aglyph sess focus foctarget
   focus=$(_focused_pane); foctarget=${focus#*$'\t'}; [ "$foctarget" = "$focus" ] && foctarget=""
-  agents=$(_agents_status)
+  # Order the flat agent list in the SAME space/tab order as the tree above (session name alpha, then
+  # window index, then pane index) so an agent lines up with its tab. Decorate-sort-undecorate on the
+  # target (field 2 = session:window.pane); zero-pad the indices so lexical sort is numeric. The per-tab
+  # dot scan below matches by index($2,pre), not order, so reordering here is safe for both.
+  agents=$(_agents_status | awk -F'\t' '{
+      c=index($2,":"); s=substr($2,1,c-1); r=substr($2,c+1); d=index(r,".");
+      printf "%s\t%09d\t%09d\t%s\n", s, substr(r,1,d-1), substr(r,d+1), $0
+    }' | sort -t$'\t' -k1,1 -k2,2 -k3,3 | cut -f4-)
   tmux list-sessions -F '#{session_attached}	#{session_name}' 2>/dev/null | sort -t$'\t' -k2,2 | while IFS=$'\t' read -r att name; do
     printf '%s\t%s%s%s\0' "s:$name" "$TXT" "$name" "$R"                 # space row: name only, no dot
     tmux list-windows -t "$name" -F '#{window_index}	#{window_active}	#{window_name}' 2>/dev/null \
@@ -336,12 +343,17 @@ _fix_width() {
 # reap: close window $1 when its only remaining pane(s) are the sidebar — so exiting your last real
 # pane closes the tab instead of leaving a lone sidebar. Wired to window-layout-changed in .tmux.conf.
 _reap() {
-  local win="${1:-}" total nonsb
+  local win="${1:-}"
   [ -n "$win" ] || return 0
-  total=$(tmux list-panes -t "$win" -F x 2>/dev/null | wc -l | tr -d ' ')
-  [ "${total:-0}" -ge 1 ] || return 0                                   # window already gone
-  nonsb=$(tmux list-panes -t "$win" -F '#{@agent_sidebar}' 2>/dev/null | grep -vc '^1$' || true)
-  if [ "${nonsb:-1}" = 0 ]; then tmux kill-window -t "$win" 2>/dev/null || true; fi
+  # Close the window only when the agent sidebar is the SOLE surviving pane, so exiting your last real pane
+  # closes the tab instead of leaving a lone sidebar. Evaluated in a single awk pass over one list-panes:
+  # kill iff there is ≥1 pane, ≥1 sidebar pane, and 0 real panes. This can NEVER kill a window that still
+  # holds a real pane — it avoids the previous two-call race (a second list-panes returning empty during
+  # layout churn read as "0 real panes" → wrongly nuked a live tab).
+  tmux list-panes -t "$win" -F '#{@agent_sidebar}' 2>/dev/null | awk '
+    { n++; if ($0 == "1") sb++; else real++ }
+    END { exit (n > 0 && sb > 0 && real == 0) ? 0 : 1 }' \
+    && tmux kill-window -t "$win" 2>/dev/null || true
 }
 
 case "${1:-pick}" in
