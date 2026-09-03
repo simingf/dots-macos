@@ -52,5 +52,11 @@ restore
 case "$mode" in
     window)  tmux rename-window  -- "$name" ;;
     session) tmux rename-session -- "$name" ;;
-    new)     tmux new-session -d -A -s "$name"; tmux switch-client -t "$name" ;;   # -A: reuse if it exists, then switch to it
+    # 'new' must create+switch AFTER the popup closes. Running new-session/switch-client from INSIDE the
+    # display-popup manipulates the client's session while the overlay is still up — that breaks -E's
+    # auto-close and leaves the popup as a bare interactive shell (dismissable only by typing `exit`).
+    # Defer it detached via nohup (survives the popup pty closing), ~0.2s later — past this script's exit,
+    # which triggers the popup teardown. Name passed via env so spaces/specials stay intact; -A reuses an
+    # existing session. Portable: macOS + Linux both ship nohup/sh/sleep.
+    new)     RENAME_NAME="$name" nohup sh -c 'sleep 0.2; tmux new-session -d -A -s "$RENAME_NAME" && tmux switch-client -t "$RENAME_NAME"' >/dev/null 2>&1 & ;;
 esac
