@@ -74,10 +74,12 @@ navigate_workspace_up = "e"
 split_vertical = "prefix+backslash"
 split_horizontal = "prefix+minus"
 
-# Resize: herdr exposes only `resize_mode` (enter, then move) — the in-mode
-# movement keys are hardcoded h/j/k/l + arrows and are NOT remappable. Keep the
-# mode on prefix+r; colemak M/N/E/I resize is provided as one-shot binds below.
-resize_mode = "prefix+r"
+# rename tab (tmux `prefix r` -> rename-window). Takes over prefix+r from resize_mode.
+rename_tab = "prefix+r"
+
+# resize_mode (enter-then-move, hardcoded h/j/k/l) dropped — resize is covered by the
+# one-shot colemak M/N/E/I binds below. Cleared explicitly so herdr's default doesn't re-bind it.
+resize_mode = ""
 
 # Already herdr defaults, matching tmux (listed for reference, not overrides):
 #   new_tab   = "prefix+c"   (tmux `c` new-window)
