@@ -363,17 +363,42 @@ _refresh_agents() {
   ( trap 'rmdir "$lock" 2>/dev/null' EXIT; sleep 0.4; _refresh ) &
 }
 
-# mark-read: you switched into a pane — if it's an agent showing "unread" (blue), flip it to "read" (gray),
-# then refresh so its dot and the follow-focus gray highlight update. Wired to pane-focus-in. Only touches
-# unread (leaves working/waiting), and refreshes regardless so the highlight tracks focus into any pane.
+# mark-read: you switched into a pane (keyboard nav, tab/session switch, or click). First `_deflect` — if you
+# landed on the sidebar, bounce to the tab's last real pane so it's never keyboard-focused; running it here
+# (not as its own hook) covers window/session switches too, since those don't fire after-select-pane, and it
+# means _focused_pane below reads the real pane you end up on. Then, if that pane is an agent showing "unread"
+# (blue), flip it to "read" (gray), and refresh so its dot and the follow-focus gray highlight update. Only
+# touches unread (leaves working/waiting), and refreshes regardless so the highlight tracks focus into any pane.
 _mark_read() {
   local fp pid f
+  _deflect                                                             # bounce off the sidebar before reading focus
   fp=$(_focused_pane); pid=${fp%%$'\t'*}
   if [ -n "$pid" ]; then
     f=$(_statef "$pid")
     [ "$(cat "$f" 2>/dev/null || true)" = unread ] && printf 'read' > "$f"
   fi
   _refresh
+}
+
+# _deflect: bounce focus off the agent sidebar so it's never the *keyboard*-focused pane. The panel is
+# click-only (mouse events route to the pane under the cursor regardless of which pane is active), so if a
+# pane switch lands ON the sidebar — keyboard nav (select-pane -L into the leftmost pane) or a click on a
+# no-op row — we redirect to the window's most-recently-active real pane. Wired to after-select-pane. The
+# check reads the CURRENT attached active pane (not the pane the hook fired for), so a click that already
+# jumped elsewhere via `activate` leaves a non-sidebar pane active and this no-ops — never fighting the jump.
+_deflect() {
+  local row win target
+  row=$(tmux list-panes -a -F '#{session_attached}	#{window_active}	#{pane_active}	#{@agent_sidebar}	#{window_id}' 2>/dev/null \
+    | awk -F'\t' '$1>=1 && $2==1 && $3==1 {print $4"|"$5; exit}')
+  [ "${row%%|*}" = 1 ] || return 0                                     # active pane isn't the sidebar → nothing to do
+  win=${row#*|}
+  tmux select-pane -t "$win" -l 2>/dev/null                           # most-recently-active pane in the tab
+  # last-pane can be unset (sidebar was the first pane ever selected) or itself the sidebar — fall back to the
+  # first real pane so we always leave the sidebar.
+  if [ "$(tmux display-message -p -t "$win" '#{@agent_sidebar}' 2>/dev/null)" = 1 ]; then
+    target=$(tmux list-panes -t "$win" -F '#{@agent_sidebar}	#{pane_id}' 2>/dev/null | awk -F'\t' '$1!="1"{print $2; exit}')
+    [ -n "$target" ] && tmux select-pane -t "$target" 2>/dev/null || true
+  fi
 }
 
 # _sidebar_open: create the panel as a fixed-width ($SIDEBAR_COLS) LEFT split in the current window (tagged @agent_sidebar,
@@ -434,6 +459,7 @@ case "${1:-pick}" in
   refresh)      _refresh ;;           # internal: invoked by the structural tmux hooks (live sidebar reload)
   refresh-agents) _refresh_agents ;;  # internal: invoked by the pane-title-changed hook (debounced agent-state reload)
   mark-read)    _mark_read ;;         # internal: invoked by the pane-focus-in hook (unread → read + follow focus)
+  deflect)      _deflect ;;           # internal: called by _mark_read on every focus change (bounce focus off the sidebar); also runnable standalone
   fix-width)    _fix_width ;;         # internal: invoked by the client-resized hook (pin sidebar width)
   reap)         _reap "${2:-}" ;;     # internal: invoked by the window-layout-changed hook
   *) echo "tmux-agents: unknown mode '${1}' (expected: pick|count|sidebar)" >&2; exit 1 ;;
