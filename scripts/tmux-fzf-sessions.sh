@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# fzf session switcher in a centered rounded tmux popup.
+# fzf session switcher in a centered tmux popup.
 # Height = session count + 5 (prompt + info + 2 borders + 1 pad), clamped by tmux to fit.
 set -euo pipefail
 
@@ -10,7 +10,7 @@ sel=$(tmux list-sessions -F "#{session_attached} #{session_last_attached} #{sess
         | sort -k1,1n -k2,2nr \
         | cut -d" " -f3- \
         | awk -F"|" "{ print \$1 \"|\" NR \": \" \$2 }" \
-        | fzf --no-sort --delimiter="[|]" --with-nth=2 --prompt="session> " \
+        | fzf --no-sort --delimiter="[|]" --with-nth=2 --prompt="session> " --color=prompt:#ceacf6 \
         | cut -d"|" -f1) \
   && [ -n "$sel" ] && tmux switch-client -t "$sel"
 ' || true

@@ -1,5 +1,5 @@
 # Term
-term = xterm-256color
+term = xterm-ghostty
 
 # Theme
 theme = Rose Pine
@@ -20,6 +20,9 @@ macos-titlebar-style = hidden
 keybind = clear
 keybind = cmd+n=new_window
 keybind = cmd+w=close_surface
+keybind = cmd+c=copy_to_clipboard
+keybind = cmd+v=paste_from_clipboard
+keybind = cmd+backspace=text:\x15
 keybind = cmd+equal=increase_font_size:1
 keybind = cmd+plus=increase_font_size:1
 keybind = cmd+minus=decrease_font_size:1

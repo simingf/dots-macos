@@ -62,7 +62,7 @@ sel=$(
           'NF { printf "%s%s%d%s%-16s %s\n", pid, us, NR, us, loc, $0 }' "$snap"
     done \
   | fzf --delimiter="$us" --with-nth=3 --prompt='content> ' --exact \
-        --color='hl:#ceacf6,hl+:#ceacf6' \
+        --color='hl:#ceacf6,hl+:#ceacf6,prompt:#ceacf6' \
         --preview-window='right:55%:wrap' \
         --preview='"$self" --preview {1} {2} {q}'
 ) || exit 0
