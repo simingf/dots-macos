@@ -6,10 +6,12 @@
 # find agent panes and to detect "working". Requires a UTF-8 LC_CTYPE (inherited from the tmux client) so
 # grep matches the braille block — every real ghostty/tmux session provides one.
 #
-# Finer status (needs-answer / done-unread / read) can't be read from the title — it comes from Claude
-# Code lifecycle hooks writing /tmp/agent-status-<uid>-<pane> (see .claude/hooks/agent-status.sh): Stop →
-# unread (or read if you're already looking), Notification → waiting. pane-focus-in flips unread → read
-# (`mark-read`). The sidebar dot colors it: yellow=working, red=needs answer, blue=done-unread, gray=read.
+# Finer status (needs-answer / done-unread / read / compacting) can't be read from the title — it comes
+# from Claude Code lifecycle hooks writing /tmp/agent-status-<uid>-<pane> (see .claude/hooks/agent-status.sh):
+# Stop → unread (or read if you're already looking), AskUserQuestion/Notification → waiting, PreCompact →
+# compacting (PostCompact/UserPromptSubmit clear it), SessionEnd → removed. pane-focus-in flips unread →
+# read (`mark-read`). Dots: yellow ●=working, blue ●=needs answer, red ●=errored (StopFailure), gray ●=done-unread,
+# gray ○ (hollow)=read, purple ●=compacting; a centered · marks a tab with no agent.
 #
 # Modes:
 #   pick    (default)  fzf popup → switch to the chosen agent pane
@@ -99,11 +101,13 @@ _hl() {
 # working = live braille spinner; otherwise the Claude-hook state file (waiting/unread/read), default read.
 # Consumed by __lines for BOTH the per-tab dot and the agents section, so they never disagree.
 _agents_status() {
-  local state target activity window title pane_id st
+  local state target activity window title pane_id st sfval
   _sorted | while IFS=$'\t' read -r state target activity window title pane_id; do
-    if [ "$state" = 0 ]; then st=working
-    else case "$(cat "$(_statef "$pane_id")" 2>/dev/null || true)" in
-           waiting) st=waiting ;; unread) st=unread ;; active) st=working ;; *) st=read ;;
+    sfval="$(cat "$(_statef "$pane_id")" 2>/dev/null || true)"
+    if [ "$sfval" = compacting ]; then st=compacting                # compaction overrides the working spinner
+    elif [ "$state" = 0 ]; then st=working
+    else case "$sfval" in
+           waiting) st=waiting ;; errored) st=errored ;; unread) st=unread ;; active) st=working ;; *) st=read ;;
          esac
     fi
     printf '%s\t%s\t%s\t%s\n' "$st" "$target" "$window" "$pane_id"
@@ -172,8 +176,9 @@ _count() {
 # `refresh` can dedup on one cksum. Field 1 = dispatch token (s: / w: / a: / '-'), field 2 = shown text.
 __lines() {
   local R=$'\033[0m' MUTE=$'\033[38;2;110;106;134m' TXT=$'\033[1;38;2;224;222;244m' \
-        FOAM=$'\033[38;2;156;207;216m' GOLD=$'\033[38;2;246;193;119m' LOVE=$'\033[38;2;235;111;146m'
-  local att name widx wact wname disp vis tst tdot agents st target window pane_id acolor sess focus foctarget
+        FOAM=$'\033[38;2;156;207;216m' GOLD=$'\033[38;2;246;193;119m' LOVE=$'\033[38;2;235;111;146m' \
+        IRIS=$'\033[38;2;196;167;231m'
+  local att name widx wact wname disp vis tst tdot agents st target window pane_id acolor aglyph sess focus foctarget
   focus=$(_focused_pane); foctarget=${focus#*$'\t'}; [ "$foctarget" = "$focus" ] && foctarget=""
   agents=$(_agents_status)
   tmux list-sessions -F '#{session_attached}	#{session_name}' 2>/dev/null | sort -t$'\t' -k2,2 | while IFS=$'\t' read -r att name; do
@@ -181,12 +186,13 @@ __lines() {
     tmux list-windows -t "$name" -F '#{window_index}	#{window_active}	#{window_name}' 2>/dev/null \
     | while IFS=$'\t' read -r widx wact wname; do
         tst=$(printf '%s\n' "$agents" | awk -F'\t' -v pre="$name:$widx." '
-          index($2,pre)==1 { r["read"]=0;r["unread"]=1;r["working"]=2;r["waiting"]=3;
-                             if(r[$1]>=b){b=r[$1];s=$1} } END{print s}')   # best status of any agent in this tab
+          index($2,pre)==1 { r["read"]=0;r["unread"]=1;r["working"]=2;r["compacting"]=3;r["waiting"]=4;r["errored"]=5;
+                             if(r[$1]>=b){b=r[$1];s=$1} } END{print s}')   # best (most-urgent) status of any agent in this tab
         case "$tst" in
-          working) tdot="${GOLD}●${R}" ;; waiting) tdot="${LOVE}●${R}" ;;
-          unread)  tdot="${FOAM}●${R}" ;; read)    tdot="${MUTE}●${R}" ;;
-          *)       tdot="${MUTE}·${R}" ;;                                # no agent in this tab → centered middot
+          working)    tdot="${GOLD}●${R}" ;; waiting)    tdot="${FOAM}●${R}" ;;   # needs answer = blue
+          errored)    tdot="${LOVE}●${R}" ;; compacting) tdot="${IRIS}●${R}" ;;   # errored = red
+          unread)     tdot="${MUTE}●${R}" ;; read)       tdot="${MUTE}○${R}" ;;   # done: filled gray = unread, hollow ring = read
+          *)          tdot="${MUTE}·${R}" ;;                              # no agent in this tab → centered middot
         esac
         disp="  ${tdot} ${MUTE}${wname}${R}"; vis=$(( 4 + ${#wname} ))
         [ "${att:-0}" -ge 1 ] && [ "$wact" = 1 ] && disp=$(_hl "$disp" "$vis")   # attached space's active tab → gray bg
@@ -197,11 +203,13 @@ __lines() {
   printf '%s\t%s\0' '-' "${MUTE}agents${R}"                              # section divider (no-op on click)
   printf '%s\n' "$agents" | while IFS=$'\t' read -r st target window pane_id; do
     [ -n "$target" ] || continue
+    aglyph='●'
     case "$st" in
-      working) acolor=$GOLD ;; waiting) acolor=$LOVE ;; unread) acolor=$FOAM ;; *) acolor=$MUTE ;;
+      working) acolor=$GOLD ;; waiting) acolor=$FOAM ;; errored) acolor=$LOVE ;; compacting) acolor=$IRIS ;;
+      unread) acolor=$MUTE ;; read) acolor=$MUTE; aglyph='○' ;; *) acolor=$MUTE ;;
     esac
     sess=${target%%:*}
-    disp="${acolor}●${R} ${TXT}${sess}${R} ${MUTE}· ${window}${R}"; vis=$(( 5 + ${#sess} + ${#window} ))
+    disp="${acolor}${aglyph}${R} ${TXT}${sess}${R} ${MUTE}· ${window}${R}"; vis=$(( 5 + ${#sess} + ${#window} ))
     [ -n "$foctarget" ] && [ "$target" = "$foctarget" ] && disp=$(_hl "$disp" "$vis")   # focused agent → gray bg
     printf '%s\t%s\0' "a:$target" "$disp"
   done
@@ -239,13 +247,28 @@ _live_socks() {
   | while IFS= read -r pid; do s=$(_sock "$pid"); [ -S "$s" ] && printf '%s\n' "$s"; done
 }
 
+# _prune: delete status files whose pane no longer exists — orphans left when a session ends by kill/crash
+# (VPN-drop API errors, `tmux kill-pane`, etc.) so SessionEnd never fired to clean up. Cheap (one list-panes
+# + a glob loop); keeps /tmp tidy and stops a stale file from mis-coloring a new pane that reuses the id
+# after a tmux server restart. Matches _statef's digits-only key.
+_prune() {
+  local live f d
+  live=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null | tr -d '%')
+  for f in "/tmp/agent-status-${UID:-0}"-*; do
+    [ -e "$f" ] || continue                                              # no matches → literal glob, skip
+    d=${f##*-}
+    printf '%s\n' "$live" | grep -qx "$d" || rm -f "$f"
+  done
+}
+
 # refresh: push a flash-free reload into every open sidebar — but only when the panel's rendered content
 # actually changed. We dedup on a cksum of __lines (identical across sidebars, since the list is now
 # pane-independent): a stored sig equal to the current one means nothing visible changed, so we skip the
 # POST entirely. reload-sync swaps the list atomically (no clear-then-repaint flicker). Wired to the
 # structural hooks (immediate) and, via _refresh_agents, pane-title-changed. No-op when no sidebar has a
-# live socket, or curl/fzf --listen is unavailable.
+# live socket, or curl/fzf --listen is unavailable. Prunes orphaned status files first (any refresh trigger).
 _refresh() {
+  _prune
   command -v curl >/dev/null 2>&1 || return 0
   local socks sig sigf sock; socks=$(_live_socks); [ -n "$socks" ] || return 0
   sig=$(__lines | cksum); sigf="/tmp/agent-sidebar-sig-${UID:-0}"

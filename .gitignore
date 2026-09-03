@@ -18,6 +18,7 @@ Library/Application Support/Code/User/*
 !.claude/hooks/
 .claude/hooks/*
 !.claude/hooks/agent-notify.sh
+!.claude/hooks/agent-status.sh
 
 # Alfred — ignore passwords, machine-local prefs, and Remote app icons
 .config/alfred/Alfred.alfredpreferences/snippets/passwords/

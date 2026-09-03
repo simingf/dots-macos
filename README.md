@@ -45,7 +45,8 @@ dots-macos/
 │   ├── CLAUDE.md                       # global Claude Code instructions
 │   ├── settings.json                   # Claude Code settings (permissions, model, statusLine, notify hooks)
 │   ├── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
-│   └── hooks/agent-notify.sh           # Stop/Notification → desktop toast (herdr toast replica; no-op under herdr)
+│   ├── hooks/agent-notify.sh           # Stop/Notification → desktop toast (herdr toast replica; no-op under herdr)
+│   └── hooks/agent-status.sh           # Stop/Notification → /tmp/agent-status-* state file → agent sidebar dot color
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
 │   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux
