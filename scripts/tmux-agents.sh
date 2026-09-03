@@ -34,7 +34,7 @@ FZF="$HOME/.local/bin/fzf"; [ -x "$FZF" ] || FZF=fzf
 # Fixed sidebar width (cols). tmux redistributes pane sizes when the client's terminal resizes (e.g.
 # plugging/unplugging a monitor), which would grow the sidebar; a client-resized hook calls `fix-width`
 # to snap it back to this. Single source of truth for _sidebar_open (-l) and _fix_width (-x).
-SIDEBAR_COLS=25
+SIDEBAR_COLS=24
 
 # grep matches the braille spinner range in AGENT_RE below. C / C.UTF-8 ship a
 # minimal collation, so GNU grep errors ("Invalid collation character") on the
@@ -247,12 +247,12 @@ __lines() {
     END {
       for (i=1; i<=nS; i++) {                        # spaces, each with its tabs nested
         s = sord[i]
-        printf "s:%s\t%s%s%s%c", s, TXT, s, R, 0     # space row: name only, no dot
+        printf "s:%s\t%s%s%s%c", s, MUTE, s, R, 0    # session row: name only, no dot; muted (tabs below are the emphasis, matching the agents section)
         m = split(word[s], wl, " ")
         for (j=1; j<=m; j++) {
           idx = wl[j]; k = s":"idx
-          disp = "  " dotstr((k in tbest) ? tbest[k] : "") " " MUTE wname[k] R
-          vis = 4 + length(wname[k])
+          disp = dotstr((k in tbest) ? tbest[k] : "") " " TXT wname[k] R   # tab name bright (emphasized), like the agents section; no indent
+          vis = 2 + length(wname[k])                   # dot + 1 space + name
           if (satt[s] >= 1 && wact[k] == 1) disp = hl(disp, vis)   # attached space active tab → gray bg
           printf "w:%s:%s\t%s%c", s, idx, disp, 0
         }
@@ -270,9 +270,8 @@ __lines() {
         else if (st=="errored")    col = LOVE
         else if (st=="compacting") col = IRIS
         else if (st=="read")       glyph = "○"       # read = hollow gray ring; unread/other = filled gray
-        ses = atgt[i]; sub(/:.*/, "", ses)
-        disp = col glyph R " " TXT ses R " " MUTE "· " awin[i] R
-        vis = 5 + length(ses) + length(awin[i])
+        disp = col glyph R " " TXT awin[i] R                       # dot + tab; no indent
+        vis = 2 + length(awin[i])                                  # dot + 1 space + tab name
         if (foc != "" && atgt[i] == foc) disp = hl(disp, vis)     # focused agent → gray bg
         printf "a:%s\t%s%c", atgt[i], disp, 0
       }
@@ -280,8 +279,8 @@ __lines() {
   ' <(printf '%s\n' "$agents") <(printf '%s\n' "$P" | sort -t$'\t' -k2,2 -k3,3n -k6,6n)
 }
 
-# panel: the live, clickable sidebar UI — runs inside the sidebar pane. A "spaces" header over the
-# space/tab tree, an "agents" divider over the agent list. A single left-click (or enter) switches
+# panel: the live, clickable sidebar UI — runs inside the sidebar pane. A "sessions" header over the
+# session/tab tree, an "agents" divider over the agent list. A single left-click (or enter) switches
 # session (s:) / selects a tab (w:) / jumps to the agent pane (a:) WITHOUT closing the panel. The gray
 # "you are here" backgrounds are rendered by __lines itself (active tab + focused agent), so fzf's own
 # current-line highlight is disabled (bg+:-1, no --highlight-line). Refresh is event-driven, not polled
@@ -296,8 +295,8 @@ _panel() {
   case "$help" in *--listen*) sock=$(_sock "${TMUX_PANE:-}"); rm -f "$sock" 2>/dev/null; extra+=(--listen="$sock") ;; esac
   "$FZF" --read0 --ansi --layout=reverse --info=hidden \
       ${extra[@]+"${extra[@]}"} --pointer='' --marker='' --ellipsis='' \
-      --header='spaces ' --header-first --delimiter='\t' --with-nth=2 \
-      --color='bg+:-1,fg+:-1,gutter:-1,header:#6e6a86,pointer:-1' \
+      --header='sessions ' --header-first --delimiter='\t' --with-nth=2 \
+      --color='bg+:-1,fg+:-1:regular,gutter:-1,header:#6e6a86,pointer:-1' \
       --bind "start:reload('$0' __lines)" \
       --bind "left-click:execute-silent('$0' activate {1})+reload('$0' __lines)" \
       --bind "enter:execute-silent('$0' activate {1})+reload('$0' __lines)" \
