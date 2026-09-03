@@ -55,8 +55,9 @@ dots-macos/
 │   ├── duti.conf                       # default app associations (used by setup.sh)
 │   ├── iina-cli-activate.sh            # open IINA via /usr/bin/open for tmux GUI compat
 │   ├── tag-casks-orange.sh             # Finder tag paid casks for visibility
-│   ├── tmux-fzf-*.sh                   # session/window pickers, called from .tmux.conf, byte-identical with dots-linux
-│   └── tmux-agents.sh                  # agent picker/count/sidebar (prefix a/A, left panel auto-seeded on prefix c); detects panes by OSC title
+│   ├── tmux-fzf-*.sh                   # prefix s/w = session/window pickers; prefix f = pane-content grep; centered rounded popups, called from .tmux.conf, byte-identical with dots-linux
+│   ├── tmux-agents.sh                  # agent picker/count/sidebar (prefix a/A, left panel auto-seeded on prefix c); detects panes by OSC title
+│   └── tmux-rename.sh                  # prefix r/R: rename window/session via display-popup (Escape cancels), called from .tmux.conf, byte-identical with dots-linux
 ├── manual/
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
 │   └── ...                             # other configs requiring manual import (not stow-managed)
