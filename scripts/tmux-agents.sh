@@ -54,13 +54,24 @@ AGENT_RE='[⠀-⣿]|Claude Code|[✳✶✻✽]'
 # window = tmux window (tab) name; title = the task summary the agent sets. TAB-delimited (titles keep
 # spaces). The match tests the TITLE only, so a window merely *named* "node"/"agent" never false-matches.
 _list() {
-  local target activity window title state pane_id
-  tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}	#{window_activity}	#{window_name}	#{pane_title}	#{pane_id}' \
-  | while IFS=$'\t' read -r target activity window title pane_id; do
-      printf '%s' "$title" | grep -qE "$AGENT_RE" || continue          # agent pane? (match the OSC title only)
-      if printf '%s' "$title" | grep -qE '^[⠀-⣿]'; then state=0; else state=1; fi   # braille prefix → working
-      printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$state" "$target" "$activity" "$window" "$title" "$pane_id"
-    done
+  # One list-panes, then whole-stream greps instead of 2 greps PER pane (which scaled with pane count and
+  # dominated the sidebar's refresh latency). Title goes first so the marker regex anchors to the title (not
+  # window names); one grep filters to agent panes, two more split working (braille prefix) vs idle. awk only
+  # REORDERS fields back to state/target/activity/window/title/pane_id — no multibyte matching, since this
+  # awk build mishandles the braille range (matches everything), so detection stays in grep.
+  local agents
+  # __lines pre-fetches ONE list-panes for the whole render and hands it in via $_PANES (a 12-field
+  # superset), so we project the 5 fields we need from it instead of a second tmux round-trip. Standalone
+  # callers (count/pick/__fzf) leave $_PANES unset and we fetch our own. Either way the rest is shared.
+  if [ -n "${_PANES:-}" ]; then
+    agents=$(printf '%s\n' "$_PANES" | awk -F'\t' '{print $12"\t"$2":"$3"."$6"\t"$10"\t"$5"\t"$11}')
+  else
+    agents=$(tmux list-panes -a -F '#{pane_title}	#{session_name}:#{window_index}.#{pane_index}	#{window_activity}	#{window_name}	#{pane_id}' 2>/dev/null)
+  fi
+  agents=$(printf '%s\n' "$agents" | grep -E "^[^	]*(${AGENT_RE})") || true
+  [ -n "$agents" ] || return 0
+  printf '%s\n' "$agents" | grep -E  '^[⠀-⣿]' | awk -F'\t' '{print "0\t"$2"\t"$3"\t"$4"\t"$1"\t"$5}'   # braille prefix → working
+  printf '%s\n' "$agents" | grep -vE '^[⠀-⣿]' | awk -F'\t' '{print "1\t"$2"\t"$3"\t"$4"\t"$1"\t"$5}'   # else idle/waiting
 }
 
 # _sorted: working agents first, then idle; within a group, most-recently-active first.
@@ -87,16 +98,6 @@ _focused_pane() {
   | awk -F'\t' '$1>=1 && $2==1 && $3==1 && $4!=1 {print $5"\t"$6; exit}' || true
 }
 
-# _hl: wrap display text ($1, may contain resets) as a full-width gray-bg row; $2 = its visible column
-# width. Re-asserts the bg after every reset so internal fg changes don't clear it, then pads to the
-# sidebar width (fzf truncates any overshoot, so the bar fills the pane). Used for active tab + active agent.
-_hl() {
-  local R=$'\033[0m' BG=$'\033[48;2;38;35;58m' d pad
-  d="${BG}${1//$R/$R$BG}"
-  pad=$(( SIDEBAR_COLS - ${2:-0} )); [ "$pad" -gt 0 ] || pad=0
-  printf '%s%*s%s' "$d" "$pad" '' "$R"
-}
-
 # _agents_status: augment _sorted with each agent's status word — "status\ttarget\twindow\tpane_id".
 # working = live braille spinner; otherwise the Claude-hook state file (waiting/unread/read), default read.
 # Consumed by __lines for BOTH the per-tab dot and the agents section, so they never disagree.
@@ -105,9 +106,10 @@ _agents_status() {
   _sorted | while IFS=$'\t' read -r state target activity window title pane_id; do
     sfval="$(cat "$(_statef "$pane_id")" 2>/dev/null || true)"
     if [ "$sfval" = compacting ]; then st=compacting                # compaction overrides the working spinner
+    elif [ "$sfval" = errored ]; then st=errored                    # an API/tool error overrides a stale spinner: on error the title often keeps its last braille frame, so state=0 lingers even though the agent isn't working
     elif [ "$state" = 0 ]; then st=working
     else case "$sfval" in
-           waiting) st=waiting ;; errored) st=errored ;; unread) st=unread ;; active) st=working ;; *) st=read ;;
+           waiting) st=waiting ;; unread) st=unread ;; active) st=working ;; *) st=read ;;
          esac
     fi
     printf '%s\t%s\t%s\t%s\n' "$st" "$target" "$window" "$pane_id"
@@ -178,48 +180,104 @@ __lines() {
   local R=$'\033[0m' MUTE=$'\033[38;2;110;106;134m' TXT=$'\033[1;38;2;224;222;244m' \
         FOAM=$'\033[38;2;156;207;216m' GOLD=$'\033[38;2;246;193;119m' LOVE=$'\033[38;2;235;111;146m' \
         IRIS=$'\033[38;2;196;167;231m'
-  local att name widx wact wname disp vis tst tdot agents st target window pane_id acolor aglyph sess focus foctarget
-  focus=$(_focused_pane); foctarget=${focus#*$'\t'}; [ "$foctarget" = "$focus" ] && foctarget=""
-  # Order the flat agent list in the SAME space/tab order as the tree above (session name alpha, then
-  # window index, then pane index) so an agent lines up with its tab. Decorate-sort-undecorate on the
-  # target (field 2 = session:window.pane); zero-pad the indices so lexical sort is numeric. The per-tab
-  # dot scan below matches by index($2,pre), not order, so reordering here is safe for both.
+  local P agents BG=$'\033[48;2;38;35;58m'
+  # ONE list-panes drives the entire render — the space tree, window tree, focus highlight, sidebar height,
+  # and the agent list all derive from this in awk, instead of ~7 separate tmux round-trips (2× list-sessions,
+  # list-windows -a, per-session list-windows, and 3× list-panes via _focused_pane/_list/H) that dominated
+  # refresh latency. Every window/session has ≥1 pane, so list-panes -a covers the full tree. 12 fields,
+  # TAB-separated, pane_title last (it may contain spaces): attached, session, win_idx, win_active, win_name,
+  # pane_idx, pane_active, @sidebar, pane_height, win_activity, pane_id, pane_title.
+  P=${__PANES_FROZEN:-$(tmux list-panes -a -F '#{session_attached}	#{session_name}	#{window_index}	#{window_active}	#{window_name}	#{pane_index}	#{pane_active}	#{@agent_sidebar}	#{pane_height}	#{window_activity}	#{pane_id}	#{pane_title}' 2>/dev/null)}   # $__PANES_FROZEN lets a test inject a fixed snapshot for a deterministic byte-diff
+  # Order the flat agent list in the SAME space/tab order as the tree (session name alpha, then window
+  # index, then pane index) so each agent lines up with its tab. Decorate-sort-undecorate on the target
+  # (field 2 = session:window.pane); zero-pad the indices so the lexical sort is numeric. Detection +
+  # status precedence stay in the proven _agents_status/_list pipeline (one place to fix status bugs);
+  # the render awk below only lays it out.
+  _PANES="$P"                                                            # _agents_status → _sorted → _list reads this instead of re-querying tmux
   agents=$(_agents_status | awk -F'\t' '{
       c=index($2,":"); s=substr($2,1,c-1); r=substr($2,c+1); d=index(r,".");
       printf "%s\t%09d\t%09d\t%s\n", s, substr(r,1,d-1), substr(r,d+1), $0
     }' | sort -t$'\t' -k1,1 -k2,2 -k3,3 | cut -f4-)
-  tmux list-sessions -F '#{session_attached}	#{session_name}' 2>/dev/null | sort -t$'\t' -k2,2 | while IFS=$'\t' read -r att name; do
-    printf '%s\t%s%s%s\0' "s:$name" "$TXT" "$name" "$R"                 # space row: name only, no dot
-    tmux list-windows -t "$name" -F '#{window_index}	#{window_active}	#{window_name}' 2>/dev/null \
-    | while IFS=$'\t' read -r widx wact wname; do
-        tst=$(printf '%s\n' "$agents" | awk -F'\t' -v pre="$name:$widx." '
-          index($2,pre)==1 { r["read"]=0;r["unread"]=1;r["working"]=2;r["compacting"]=3;r["waiting"]=4;r["errored"]=5;
-                             if(r[$1]>=b){b=r[$1];s=$1} } END{print s}')   # best (most-urgent) status of any agent in this tab
-        case "$tst" in
-          working)    tdot="${GOLD}●${R}" ;; waiting)    tdot="${FOAM}●${R}" ;;   # needs answer = blue
-          errored)    tdot="${LOVE}●${R}" ;; compacting) tdot="${IRIS}●${R}" ;;   # errored = red
-          unread)     tdot="${MUTE}●${R}" ;; read)       tdot="${MUTE}○${R}" ;;   # done: filled gray = unread, hollow ring = read
-          *)          tdot="${MUTE}·${R}" ;;                              # no agent in this tab → centered middot
-        esac
-        disp="  ${tdot} ${MUTE}${wname}${R}"; vis=$(( 4 + ${#wname} ))
-        [ "${att:-0}" -ge 1 ] && [ "$wact" = 1 ] && disp=$(_hl "$disp" "$vis")   # attached space's active tab → gray bg
-        printf '%s\t%s\0' "w:$name:$widx" "$disp"
-      done
-  done
-  printf '%s\t%s\0' '-' ''                                               # blank spacer above the divider
-  printf '%s\t%s\0' '-' "${MUTE}agents${R}"                              # section divider (no-op on click)
-  printf '%s\n' "$agents" | while IFS=$'\t' read -r st target window pane_id; do
-    [ -n "$target" ] || continue
-    aglyph='●'
-    case "$st" in
-      working) acolor=$GOLD ;; waiting) acolor=$FOAM ;; errored) acolor=$LOVE ;; compacting) acolor=$IRIS ;;
-      unread) acolor=$MUTE ;; read) acolor=$MUTE; aglyph='○' ;; *) acolor=$MUTE ;;
-    esac
-    sess=${target%%:*}
-    disp="${acolor}${aglyph}${R} ${TXT}${sess}${R} ${MUTE}· ${window}${R}"; vis=$(( 5 + ${#sess} + ${#window} ))
-    [ -n "$foctarget" ] && [ "$target" = "$foctarget" ] && disp=$(_hl "$disp" "$vis")   # focused agent → gray bg
-    printf '%s\t%s\0' "a:$target" "$disp"
-  done
+  unset _PANES
+  # ONE awk renders the whole panel — replacing the per-session / per-window / per-tab / pad bash loops
+  # (each forked awk+sort, and THAT spawn count, not the tmux round-trips, was the refresh cost). Two
+  # inputs: pass 1 = the agent list (builds the per-tab dot map + the ordered agent rows), pass 2 = the $P
+  # snapshot (space/window tree, focus highlight, sidebar height + counts for the mid-height pad); END emits.
+  # To tweak the look later: dotstr() = tab-dot color/glyph, the agents-section loop = agent rows, hl() =
+  # the gray "you are here" bar. Output = NUL-delimited "token<TAB>text"; identical across sidebars
+  # (attached/active/focus are global), so `refresh` dedups on one cksum. token: s:/w:/a: dispatch or '-'.
+  awk -F'\t' \
+      -v cols="$SIDEBAR_COLS" -v R="$R" -v BG="$BG" -v MUTE="$MUTE" -v TXT="$TXT" \
+      -v FOAM="$FOAM" -v GOLD="$GOLD" -v LOVE="$LOVE" -v IRIS="$IRIS" '
+    function dotstr(st) {                            # tab dot = most-urgent agent status in that tab
+      if (st=="working")    return GOLD "●" R        # working = yellow
+      if (st=="waiting")    return FOAM "●" R        # needs answer = blue
+      if (st=="errored")    return LOVE "●" R        # errored = red
+      if (st=="compacting") return IRIS "●" R        # compacting = purple
+      if (st=="unread")     return MUTE "●" R        # done, unread = filled gray
+      if (st=="read")       return MUTE "○" R        # done, read = hollow gray
+      return MUTE "·" R                              # no agent in this tab → centered middot
+    }
+    function hl(t, vis,   pad) {                     # wrap a row in a full-width gray bg (active tab / focused agent)
+      gsub(Rre, R BG, t)                             # re-assert bg after every internal reset so fg changes do not clear it
+      pad = cols - vis; if (pad < 0) pad = 0
+      return BG t sprintf("%*s", pad, "") R          # pad to sidebar width (fzf truncates any overshoot)
+    }
+    BEGIN {
+      Rre = R; sub(/\[/, "\\[", Rre)                 # escape the [ in ESC[0m so gsub matches the reset literally
+      rank["read"]=0; rank["unread"]=1; rank["working"]=2; rank["compacting"]=3; rank["waiting"]=4; rank["errored"]=5
+    }
+    # pass 1 — agent list: status <TAB> target(sess:win.pane) <TAB> window <TAB> pane_id, pre-sorted sess/win/pane
+    FNR==NR {
+      if ($0 == "") next
+      tab = $2; sub(/\.[0-9]+$/, "", tab)            # tab key = session:window (drop .pane)
+      if (!(tab in tbest) || rank[$1] >= trank[tab]) { tbest[tab]=$1; trank[tab]=rank[$1] }   # most-urgent status wins
+      na++; ast[na]=$1; atgt[na]=$2; awin[na]=$3     # ordered rows for the agents section
+      next
+    }
+    # pass 2 — panes (12 fields), pre-sorted sess/win/pane so first-seen order = sessions alpha, windows ascending
+    {
+      if ($0 == "") next
+      if (foc=="" && $1>=1 && $4==1 && $7==1 && $8!=1) foc = $2":"$3"."$6   # focused, non-sidebar pane
+      if (H=="" && $8==1) H = $9                                            # a sidebar pane height
+      if (!($2 in seenS)) { seenS[$2]=1; sord[++nS]=$2; satt[$2]=$1 }       # sessions in order
+      k = $2":"$3
+      if (!(k in seenW)) { seenW[k]=1; nW++; word[$2]=word[$2] (word[$2]==""?"":" ") $3; wact[k]=$4; wname[k]=$5 }  # windows per session
+    }
+    END {
+      for (i=1; i<=nS; i++) {                        # spaces, each with its tabs nested
+        s = sord[i]
+        printf "s:%s\t%s%s%s%c", s, TXT, s, R, 0     # space row: name only, no dot
+        m = split(word[s], wl, " ")
+        for (j=1; j<=m; j++) {
+          idx = wl[j]; k = s":"idx
+          disp = "  " dotstr((k in tbest) ? tbest[k] : "") " " MUTE wname[k] R
+          vis = 4 + length(wname[k])
+          if (satt[s] >= 1 && wact[k] == 1) disp = hl(disp, vis)   # attached space active tab → gray bg
+          printf "w:%s:%s\t%s%c", s, idx, disp, 0
+        }
+      }
+      if (H == "") H = 0                             # anchor the agents section ~mid-height with blank spacers
+      pad = int(H/2) - nS - nW - 2; if (pad < 1) pad = 1
+      for (i=1; i<pad; i++) printf "-\t%c", 0        # (pad-1) blanks; the rule takes the row at ~mid-height
+      rule = ""; for (i=0; i<cols; i++) rule = rule "─"
+      printf "-\t%s%s%s%c", MUTE, rule, R, 0         # horizontal border above the agents section
+      printf "-\t%sagents%s%c", MUTE, R, 0           # section label (no-op on click)
+      for (i=1; i<=na; i++) {                        # flat agent list, dot = status
+        st = ast[i]; glyph = "●"; col = MUTE
+        if      (st=="working")    col = GOLD
+        else if (st=="waiting")    col = FOAM
+        else if (st=="errored")    col = LOVE
+        else if (st=="compacting") col = IRIS
+        else if (st=="read")       glyph = "○"       # read = hollow gray ring; unread/other = filled gray
+        ses = atgt[i]; sub(/:.*/, "", ses)
+        disp = col glyph R " " TXT ses R " " MUTE "· " awin[i] R
+        vis = 5 + length(ses) + length(awin[i])
+        if (foc != "" && atgt[i] == foc) disp = hl(disp, vis)     # focused agent → gray bg
+        printf "a:%s\t%s%c", atgt[i], disp, 0
+      }
+    }
+  ' <(printf '%s\n' "$agents") <(printf '%s\n' "$P" | sort -t$'\t' -k2,2 -k3,3n -k6,6n)
 }
 
 # panel: the live, clickable sidebar UI — runs inside the sidebar pane. A "spaces" header over the
@@ -277,12 +335,20 @@ _prune() {
 _refresh() {
   _prune
   command -v curl >/dev/null 2>&1 || return 0
-  local socks sig sigf sock; socks=$(_live_socks); [ -n "$socks" ] || return 0
-  sig=$(__lines | cksum); sigf="/tmp/agent-sidebar-sig-${UID:-0}"
-  [ "$sig" = "$(cat "$sigf" 2>/dev/null)" ] && return 0                 # nothing visible changed → no reload
+  local socks sig sigf cf tmp sock; socks=$(_live_socks); [ -n "$socks" ] || return 0
+  cf="/tmp/agent-sidebar-content-${UID:-0}"; sigf="/tmp/agent-sidebar-sig-${UID:-0}"; tmp="$cf.$$"
+  # Render the panel ONCE into a file (bash can't hold the NUL-delimited output in a var), cksum it for the
+  # dedup, then have each sidebar's reload just `cat` the file. Previously the reload ran `'$0' __lines`,
+  # so __lines (~0.15s) ran a SECOND time on the fzf side — that's what made the active highlight lag ~0.5s
+  # after a click. Now the fzf side just cats a ready file, so the highlight updates as soon as one render
+  # finishes. $$-suffixed temp + atomic mv so parallel refreshes (several hooks fire per switch) don't clash.
+  __lines > "$tmp" 2>/dev/null
+  sig=$(cksum < "$tmp")
+  if [ "$sig" = "$(cat "$sigf" 2>/dev/null)" ]; then rm -f "$tmp"; return 0; fi   # nothing visible changed → no reload
   printf '%s' "$sig" > "$sigf"
+  mv -f "$tmp" "$cf"                                                    # atomic publish before any reader cats it
   printf '%s\n' "$socks" | while IFS= read -r sock; do
-    curl -s --unix-socket "$sock" "http://localhost/" --data-binary "reload-sync('$0' __lines)" >/dev/null 2>&1 || true
+    curl -s --unix-socket "$sock" "http://localhost/" --data-binary "reload-sync(cat '$cf')" >/dev/null 2>&1 || true
   done
 }
 
