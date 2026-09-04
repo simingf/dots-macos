@@ -48,10 +48,10 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | herdr | `.config/herdr/config.toml` | `accent` | `#ceacf6` |
 | yazi | `.config/yazi/theme.toml` + `flavors/rose-pine.yazi/` | Rose Pine flavor | canonical |
 | spotify-player | `.config/spotify-player/{app,theme}.toml` | `theme = rose_pine` | canonical |
+| btop | `.config/btop/themes/rose-pine.theme` + `btop.conf` | hand-rolled rose-pine flavor (`color_theme = "rose-pine"`) | `#ceacf6` |
+| git | `.gitconfig` | hand-rolled `[color]` (diff/status/branch/decorate); mirrored to linux | `#ceacf6` |
+| ripgrep | `.config/ripgrep/rg.conf` | `--colors` RGB triples (path/line/match) | `#ceacf6` |
 
 ## Not yet themed / off-theme
 
-- **btop** (`.config/btop/btop.conf`) — `color_theme = tokyo-night`. Off-theme; swap for a rose-pine btop theme.
-- **ripgrep** (`.config/ripgrep/rg.conf`) — path/line/match use ANSI names (blue/magenta/green), not iris-forward. `rg --colors` has no truecolor, so no exact `#ceacf6`.
-- **git** (`.gitconfig`) — no `[color]`/pager theming; default ANSI diffs. git supports hex since 2.9 if we want rose-pine.
 - **glow / man-pages / Alfred** — unthemed (`GLAMOUR_STYLE`, `LESS_TERMCAP` unset; Alfred theme is a GUI export).

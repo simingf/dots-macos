@@ -1,0 +1,86 @@
+# Rose Pine (iris-forward) for btop
+# Palette: rose-pine main, iris overridden to bright #ceacf6 (see ~/dots-macos/THEME.md)
+
+# Main background, empty for terminal default, need to be empty if you want transparent background
+theme[main_bg]="#191724"
+
+# Main text color
+theme[main_fg]="#e0def4"
+
+# Title color for boxes
+theme[title]="#e0def4"
+
+# Highlight color for keyboard shortcuts
+theme[hi_fg]="#ceacf6"
+
+# Background color of selected item in processes box
+theme[selected_bg]="#26233a"
+
+# Foreground color of selected item in processes box
+theme[selected_fg]="#ceacf6"
+
+# Color of inactive/disabled text
+theme[inactive_fg]="#6e6a86"
+
+# Color of text appearing on top of graphs, i.e uptime and current network graph scaling
+theme[graph_text]="#908caa"
+
+# Background color of the percentage meters
+theme[meter_bg]="#26233a"
+
+# Misc colors for processes box including mini cpu graphs, details memory graph and details status text
+theme[proc_misc]="#9ccfd8"
+
+# CPU, Memory, Network, Proc box outline colors
+theme[cpu_box]="#9ccfd8"
+theme[mem_box]="#31748f"
+theme[net_box]="#f6c177"
+theme[proc_box]="#ceacf6"
+
+# Box divider line and small boxes line color
+theme[div_line]="#403d52"
+
+# Temperature graph color (cool -> warn -> hot)
+theme[temp_start]="#9ccfd8"
+theme[temp_mid]="#f6c177"
+theme[temp_end]="#eb6f92"
+
+# CPU graph colors (cool -> warn -> hot)
+theme[cpu_start]="#9ccfd8"
+theme[cpu_mid]="#f6c177"
+theme[cpu_end]="#eb6f92"
+
+# Mem/Disk free meter (foam)
+theme[free_start]="#9ccfd8"
+theme[free_mid]="#9ccfd8"
+theme[free_end]="#9ccfd8"
+
+# Mem/Disk cached meter (iris)
+theme[cached_start]="#ceacf6"
+theme[cached_mid]="#ceacf6"
+theme[cached_end]="#ceacf6"
+
+# Mem/Disk available meter (subtle)
+theme[available_start]="#908caa"
+theme[available_mid]="#908caa"
+theme[available_end]="#908caa"
+
+# Mem/Disk used meter (cool -> warn -> hot)
+theme[used_start]="#9ccfd8"
+theme[used_mid]="#f6c177"
+theme[used_end]="#eb6f92"
+
+# Download graph colors (foam -> iris)
+theme[download_start]="#9ccfd8"
+theme[download_mid]="#9ccfd8"
+theme[download_end]="#ceacf6"
+
+# Upload graph colors (gold -> love)
+theme[upload_start]="#f6c177"
+theme[upload_mid]="#f6c177"
+theme[upload_end]="#eb6f92"
+
+# Process box color gradient for threads, mem and cpu usage (cool -> warn -> hot)
+theme[process_start]="#9ccfd8"
+theme[process_mid]="#f6c177"
+theme[process_end]="#eb6f92"
