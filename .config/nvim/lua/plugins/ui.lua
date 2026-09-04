@@ -164,6 +164,9 @@ return {
 			options = {
 				mode = "buffers", -- every buffer is a tab (not vim tabpages)
 				diagnostics = "nvim_lsp",
+				-- all tab backgrounds are uniform, so the current buffer is marked
+				-- by a full-width bright-iris underline rather than a bg shift.
+				indicator = { style = "underline" },
 				-- close via Snacks so the window layout survives: the default
 				-- `bdelete %d` collapses the edit window when the last buffer
 				-- goes, letting the explorer sidebar expand to fill the screen.
@@ -184,14 +187,42 @@ return {
 			},
 			-- iris-forward: selected buffer tab picks up the shared iris (matches tmux window tabs)
 			highlights = {
-				-- rose-pine themes the empty area (fill) darker than the tabs (#0d0c13);
-				-- match it to the editor bg (#191724, = selected-tab bg) so the tabline is uniform.
+				-- fill, unselected, visible, and selected tabs all share the editor bg
+				-- so the tabline reads as one flat surface; the current buffer stands
+				-- out via a bright-iris underline (see indicator) instead of a bg shift.
 				fill = { bg = "#191724" },
-				buffer_selected = { fg = "#ceacf6", bold = true, italic = false },
-				numbers_selected = { fg = "#ceacf6" },
-				indicator_selected = { fg = "#ceacf6" },
+				buffer_selected = { fg = "#ceacf6", bg = "#191724", bold = true, italic = false, underline = true, sp = "#ceacf6" },
+				numbers_selected = { fg = "#ceacf6", bg = "#191724" },
+				indicator_selected = { fg = "#ceacf6", bg = "#191724" },
 			},
 		},
+		config = function(_, opts)
+			-- bufferline darkens inactive-tab backgrounds by default (#12111b for
+			-- unselected, #171521 for visible), which made unselected tabs read as a
+			-- separate shade. Override bg to the editor bg on every unselected/visible
+			-- element so the whole tabline is one flat surface — the current buffer is
+			-- marked by its bright-iris underline (indicator) instead of a bg shift.
+			-- Done through highlights opts so bufferline applies it itself (no race).
+			opts.highlights = opts.highlights or {}
+			for _, k in ipairs({
+				"background", "buffer_visible",
+				"close_button", "close_button_visible",
+				"modified", "modified_visible",
+				"duplicate", "duplicate_visible",
+				"numbers", "numbers_visible",
+				"separator", "separator_visible",
+				"pick", "pick_visible",
+				"indicator_visible",
+				"diagnostic", "diagnostic_visible",
+				"hint", "hint_visible", "hint_diagnostic", "hint_diagnostic_visible",
+				"info", "info_visible", "info_diagnostic", "info_diagnostic_visible",
+				"warning", "warning_visible", "warning_diagnostic", "warning_diagnostic_visible",
+				"error", "error_visible", "error_diagnostic", "error_diagnostic_visible",
+			}) do
+				opts.highlights[k] = vim.tbl_extend("force", opts.highlights[k] or {}, { bg = "#191724" })
+			end
+			require("bufferline").setup(opts)
+		end,
 		keys = {
 			{ "[b", "<cmd>BufferLineCyclePrev<cr>", desc = "prev buffer" },
 			{ "]b", "<cmd>BufferLineCycleNext<cr>", desc = "next buffer" },
