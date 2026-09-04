@@ -68,4 +68,19 @@ return {
 		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
 		opts = {},
 	},
+
+	-- markdown-preview: live browser preview (real HTML tables wrap per-column).
+	-- enabled off on the headless Linux dev box (no browser, no internet for the build binary).
+	{
+		"iamcco/markdown-preview.nvim",
+		enabled = not env.IS_SSH,
+		cmd = { "MarkdownPreview", "MarkdownPreviewStop", "MarkdownPreviewToggle" },
+		ft = { "markdown" },
+		keys = {
+			{ "<leader>p", "<cmd>MarkdownPreviewToggle<cr>", desc = "markdown preview" },
+		},
+		build = function()
+			vim.fn["mkdp#util#install"]()
+		end,
+	},
 }
