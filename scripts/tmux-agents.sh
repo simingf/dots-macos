@@ -177,7 +177,7 @@ _count() {
 # background too. Attached/active/focus are all global, so the output is identical in every sidebar and
 # `refresh` can dedup on one cksum. Field 1 = dispatch token (s: / w: / a: / '-'), field 2 = shown text.
 __lines() {
-  local R=$'\033[0m' MUTE=$'\033[38;2;110;106;134m' TXT=$'\033[1;38;2;224;222;244m' \
+  local R=$'\033[0m' BOLD=$'\033[1m' MUTE=$'\033[38;2;110;106;134m' TXT=$'\033[1;38;2;224;222;244m' \
         FOAM=$'\033[38;2;156;207;216m' GOLD=$'\033[38;2;246;193;119m' LOVE=$'\033[38;2;235;111;146m' \
         IRIS=$'\033[38;2;196;167;231m'
   local P agents BG=$'\033[48;2;38;35;58m'
@@ -207,7 +207,7 @@ __lines() {
   # the gray "you are here" bar. Output = NUL-delimited "token<TAB>text"; identical across sidebars
   # (attached/active/focus are global), so `refresh` dedups on one cksum. token: s:/w:/a: dispatch or '-'.
   awk -F'\t' \
-      -v cols="$SIDEBAR_COLS" -v R="$R" -v BG="$BG" -v MUTE="$MUTE" -v TXT="$TXT" \
+      -v cols="$SIDEBAR_COLS" -v R="$R" -v BOLD="$BOLD" -v BG="$BG" -v MUTE="$MUTE" -v TXT="$TXT" \
       -v FOAM="$FOAM" -v GOLD="$GOLD" -v LOVE="$LOVE" -v IRIS="$IRIS" '
     function dotstr(st) {                            # tab dot = most-urgent agent status in that tab
       if (st=="working")    return GOLD "●" R        # working = yellow
@@ -262,7 +262,7 @@ __lines() {
       for (i=1; i<pad; i++) printf "-\t%c", 0        # (pad-1) blanks; the rule takes the row at ~mid-height
       rule = ""; for (i=0; i<cols; i++) rule = rule "─"
       printf "-\t%s%s%s%c", MUTE, rule, R, 0         # horizontal border above the agents section
-      printf "-\t%sagents%s%c", MUTE, R, 0           # section label (no-op on click)
+      printf "-\t%s%sagents%s%c", BOLD, MUTE, R, 0   # section label, bold (no-op on click)
       for (i=1; i<=na; i++) {                        # flat agent list, dot = status
         st = ast[i]; glyph = "●"; col = MUTE
         if      (st=="working")    col = GOLD
@@ -296,7 +296,7 @@ _panel() {
   "$FZF" --read0 --ansi --layout=reverse --info=hidden \
       ${extra[@]+"${extra[@]}"} --pointer='' --marker='' --ellipsis='' \
       --header='sessions ' --header-first --delimiter='\t' --with-nth=2 \
-      --color='bg+:-1,fg+:-1:regular,gutter:-1,header:#6e6a86,pointer:-1' \
+      --color='bg+:-1,fg+:-1:regular,gutter:-1,header:#6e6a86:bold,pointer:-1' \
       --bind "start:reload('$0' __lines)" \
       --bind "left-click:execute-silent('$0' activate {1})+reload('$0' __lines)" \
       --bind "enter:execute-silent('$0' activate {1})+reload('$0' __lines)" \
