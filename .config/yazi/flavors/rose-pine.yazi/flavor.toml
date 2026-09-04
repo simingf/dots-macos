@@ -11,7 +11,7 @@ overall = { bg = "#191724" }
 # : Manager {{{
 
 [mgr]
-cwd = { fg = "#9ccfd8" }
+cwd = { fg = "#ceacf6" }
 
 # Find
 find_keyword  = { fg = "#f6c177", bold = true, italic = true, underline = true }
@@ -222,32 +222,32 @@ footer  = { fg = "#191724", bg = "#e0def4" }
 
 [filetype]
 rules = [
-  # Images
-  { mime = "image/*", fg = "#c4a7e7" },
+  # Images — warm rose, kept distinct from the iris folder accent
+  { mime = "image/*", fg = "#ebbcba" },
 
-  # Media
+  # Media (audio/video)
   { mime = "{audio,video}/*", fg = "#f6c177" },
 
   # Archives
   { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#eb6f92" },
 
-  # Documents
-  { mime = "application/{pdf,doc,rtf}", fg = "#ebbcba" },
+  # Documents — foam (info/readable)
+  { mime = "application/{pdf,doc,rtf}", fg = "#9ccfd8" },
 
   # Empty files
   # { mime = "inode/empty", fg = "#eb6f92" },
 
   # Special files
   { url = "*", is = "orphan", fg = "#191724", bg = "#eb6f92" },
-  { url = "*", is = "exec", fg = "#9ccfd8" },
+  { url = "*", is = "exec", fg = "#31748f" },
 
   # Dummy files
   { url = "*", is = "dummy", fg = "#191724", bg = "#eb6f92" },
   { url = "*/", is = "dummy", fg = "#191724", bg = "#eb6f92" },
 
-  # Fallback
+  # Fallback — files stay readable text; folders take the dominant iris accent
   { url = "*", fg = "#e0def4" },
-  { url = "*/", fg = "#31748f" }
+  { url = "*/", fg = "#ceacf6" }
 ]
 
 # : }}}

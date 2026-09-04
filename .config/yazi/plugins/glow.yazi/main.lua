@@ -4,8 +4,13 @@
 local M = {}
 
 function M:peek(job)
+	-- Rose Pine glamour style ships alongside this plugin; resolve via $HOME so
+	-- the byte-identical copy works on both mac and the linux box (both stow to
+	-- ~/.config). Falls back to glow's built-in "dark" if HOME is somehow unset.
+	local home = os.getenv("HOME")
+	local style = home and home .. "/.config/yazi/plugins/glow.yazi/rose-pine.json" or "dark"
 	local child = Command("glow")
-		:arg({ "--style", "dark", "--width", tostring(job.area.w), tostring(job.file.path) })
+		:arg({ "--style", style, "--width", tostring(job.area.w), tostring(job.file.path) })
 		:env("CLICOLOR_FORCE", "1")
 		:stdout(Command.PIPED)
 		:stderr(Command.PIPED)

@@ -27,7 +27,7 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 
 - **Dominant accent = iris `#ceacf6`** — anything active, selected, or primary (active borders, current tab, prompt caret, selection, pointer, path).
 - Semantic colors are shared: **gold** = activity/search/time, **love** = error, **foam** = secondary/info, **muted** = inactive/dim, **subtle** = secondary text.
-- Tools driven by upstream rose-pine themes (VS Code, kitty, yazi, spotify-player, and anything under Claude's `dark-ansi` / ghostty ANSI) render the **canonical** iris `#c4a7e7`; hand-rolled configs use the brighter `#ceacf6`.
+- Tools driven by upstream rose-pine themes (VS Code, kitty, spotify-player, and anything under Claude's `dark-ansi` / ghostty ANSI) render the **canonical** iris `#c4a7e7`; hand-rolled configs use the brighter `#ceacf6`. (yazi ships the upstream flavor but its filetype/path accents are hand-tuned to `#ceacf6` — see below.)
 
 ## Where theming lives
 
@@ -46,12 +46,13 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | Claude Code | `.claude/settings.json` (`theme = dark-ansi`) + `.claude/statusline-command.sh` | ANSI-inherited UI + iris statusline | UI canonical / statusline `#ceacf6` |
 | borders | `.config/borders/bordersrc` | JankyBorders `active_color` | `#ceacf6` |
 | herdr | `.config/herdr/config.toml` | `accent` | `#ceacf6` |
-| yazi | `.config/yazi/theme.toml` + `flavors/rose-pine.yazi/` | Rose Pine flavor | canonical |
+| yazi | `.config/yazi/theme.toml` + `flavors/rose-pine.yazi/` | Rose Pine flavor; filetype rules + `[mgr].cwd` path hand-tuned iris-forward (folders + path = iris; images→rose, docs→foam, exec→pine for differentiation) | folders/path `#ceacf6`, rest canonical |
 | spotify-player | `.config/spotify-player/{app,theme}.toml` | `theme = rose_pine` | canonical |
 | btop | `.config/btop/themes/rose-pine.theme` + `btop.conf` | hand-rolled rose-pine flavor (`color_theme = "rose-pine"`) | `#ceacf6` |
 | git | `.gitconfig` | hand-rolled `[color]` (diff/status/branch/decorate); mirrored to linux | `#ceacf6` |
 | ripgrep | `.config/ripgrep/rg.conf` | `--colors` RGB triples (path/line/match) | `#ceacf6` |
+| glow (yazi md preview) | `.config/yazi/plugins/glow.yazi/rose-pine.json` | hand-rolled glamour style; `glow --style <json>` from `main.lua`. Themes all prose chrome (headings/emph/links/inline-code/quotes/lists/hr). Fenced-code syntax tokens use glow 3.0.0's built-in 256-color chroma (style JSON's `chroma` block is inert in this binary; kept for newer glow on the linux box). | `#ceacf6` prose |
 
 ## Not yet themed / off-theme
 
-- **glow / man-pages / Alfred** — unthemed (`GLAMOUR_STYLE`, `LESS_TERMCAP` unset; Alfred theme is a GUI export).
+- **man-pages / Alfred** — unthemed (`LESS_TERMCAP` unset; Alfred theme is a GUI export).
