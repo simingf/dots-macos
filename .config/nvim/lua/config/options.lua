@@ -27,11 +27,19 @@ vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 -- disable showing current mode since lualine shows
 vim.opt.showmode = false
+-- reclaim the empty command-line row below the statusline. It auto-expands back
+-- to one line while typing a command (:/ ) or when a message needs to display.
+vim.opt.cmdheight = 0
 -- enable hexademical colors instead of only 256 colors
 vim.opt.termguicolors = true
 -- configure how new splits should be opened
 vim.opt.splitright = true
 vim.opt.splitbelow = true
+-- persist undo history across sessions (survives quit/reopen)
+vim.opt.undofile = true
+-- faster idle response: CursorHold-driven autoread checktime + which-key popup
+-- (default 4000ms). Lower = snappier disk-change reloads and hint menus.
+vim.opt.updatetime = 250
 -- diagnostic config
 local signs_text = {
 	[vim.diagnostic.severity.ERROR] = "",

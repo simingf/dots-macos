@@ -1,76 +1,75 @@
 return {
 
-	-- neo-tree: docked VSCode-style file-explorer sidebar. <leader>` focuses it
-	-- (opening if closed) and jumps back out when already inside; opening a
-	-- directory (`nvim .`) hijacks netrw and shows the tree.
+	-- snacks.explorer: docked file-tree sidebar (replaces neo-tree). Configured as
+	-- an extra spec on snacks.nvim — lazy deep-merges it with the main snacks spec
+	-- in ui.lua. Behaviors ported 1:1 from the old neo-tree setup:
+	-- • replace_netrw: `nvim <dir>` hijacks netrw and opens the tree focused
+	--   (snacks wires this on first BufEnter). `nvim <file>` shows it as an
+	--   unfocused sidebar via the VimEnter init below. no args → stays lazy.
+	-- • watch (source default) auto-refreshes on out-of-band disk changes
+	--   (agents, git, mv) — the old use_libuv_file_watcher equivalent.
+	-- • hidden+ignored show dotfiles/gitignored dimmed; `H`/`I` toggle at runtime.
+	-- • Colemak-DH: `i` (right) opens/expands, `m` (left) collapses; `n`/`e` fall
+	--   through to the global down/up remaps for list navigation.
+	-- Sidebar defaults to width 40, position left — same as before.
 	{
-		"nvim-neo-tree/neo-tree.nvim",
-		branch = "v3.x",
-		cmd = "Neotree",
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-tree/nvim-web-devicons",
-			"MunifTanjim/nui.nvim",
+		"folke/snacks.nvim",
+		opts = {
+			explorer = { replace_netrw = true },
+			picker = {
+				sources = {
+					explorer = {
+						hidden = true, -- show dotfiles (dimmed)
+						ignored = true, -- show gitignored (dimmed)
+						win = {
+							list = {
+								keys = {
+									["i"] = "confirm", -- Colemak right: open file / expand dir
+									["m"] = "explorer_close", -- Colemak left: collapse dir
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		init = function()
-			-- directory arg (`nvim .`): load neo-tree eagerly so it hijacks netrw
-			-- in place. file arg(s): show it as a sidebar (no focus steal) once
-			-- startup finishes. no args: stay lazy behind the keymap/cmd.
-			local argc = vim.fn.argc(-1)
-			if argc == 0 then
-				return
-			end
-			local stat = vim.uv.fs_stat(vim.fn.argv(0))
-			if argc == 1 and stat and stat.type == "directory" then
-				require("neo-tree")
-			else
-				vim.api.nvim_create_autocmd("VimEnter", { once = true, command = "Neotree show" })
-			end
+			-- file arg(s): show the explorer as an unfocused sidebar once startup
+			-- finishes (dir args are handled by replace_netrw; no args stay lazy).
+			vim.api.nvim_create_autocmd("VimEnter", {
+				once = true,
+				callback = function()
+					if vim.fn.argc(-1) == 0 then
+						return
+					end
+					local stat = vim.uv.fs_stat(vim.fn.argv(0))
+					if stat and stat.type == "directory" then
+						return
+					end
+					local cur = vim.api.nvim_get_current_win()
+					Snacks.explorer()
+					vim.schedule(function()
+						if vim.api.nvim_win_is_valid(cur) then
+							pcall(vim.api.nvim_set_current_win, cur)
+						end
+					end)
+				end,
+			})
 		end,
 		keys = {
 			{
 				"<leader>`",
 				function()
-					-- focus toggle: when already in the tree, jump back to the
-					-- previous window; otherwise open (if closed) and focus it.
-					if vim.bo.filetype == "neo-tree" then
+					-- focus toggle: in the tree → jump back to the previous window;
+					-- otherwise reveal the current file in the tree (opening if closed).
+					local p = Snacks.picker.get({ source = "explorer" })[1]
+					if p and p:is_focused() then
 						vim.cmd("wincmd p")
 					else
-						vim.cmd("Neotree focus")
+						Snacks.explorer.reveal()
 					end
 				end,
 				desc = "focus / leave file tree",
-			},
-		},
-		opts = {
-			-- when the tree is the only window left (e.g. :q'd the last file),
-			-- close it too so nvim quits instead of leaving a fullscreen tree.
-			close_if_last_window = true,
-			filesystem = {
-				-- auto-refresh the tree when files change on disk out-of-band
-				-- (agents, git, mv) — off by default, so the sidebar otherwise
-				-- only updates on its own actions or a manual `R`.
-				use_libuv_file_watcher = true,
-				-- show all hidden items (dotfiles + gitignored), displayed dimmed.
-				-- `H` toggles them off/on at runtime.
-				filtered_items = {
-					visible = true,
-					hide_dotfiles = false,
-					hide_gitignored = false,
-				},
-			},
-			window = {
-				position = "left",
-				width = 40,
-				-- Colemak-DH: `i` (right) opens/expands, `m` (left) collapses.
-				-- `n` (down) falls through to the global remap; neo-tree binds `e`
-				-- to toggle_auto_expand_width, so release it ("none" skips the
-				-- buffer-local map) to let the global `e`→up remap through.
-				mappings = {
-					["i"] = "open",
-					["m"] = "close_node",
-					["e"] = "none",
-				},
 			},
 		},
 	},

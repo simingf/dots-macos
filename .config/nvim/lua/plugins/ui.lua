@@ -44,6 +44,18 @@ return {
 				},
 			})
 			vim.cmd("colorscheme rose-pine")
+			-- snacks pickers (incl. the explorer sidebar) default their window bg to
+			-- NormalFloat — rose-pine's lighter "surface" (#1f1d2e) — so the sidebar
+			-- reads as a paler purple than the editor. Link the base picker groups to
+			-- Normal (#191724) so they match. Also applies to the floating pickers.
+			-- Re-run on every ColorScheme since rose-pine clears custom groups on load.
+			local function match_picker_bg()
+				for _, g in ipairs({ "SnacksPicker", "SnacksPickerList", "SnacksPickerInput", "SnacksPickerBox" }) do
+					vim.api.nvim_set_hl(0, g, { link = "Normal" })
+				end
+			end
+			vim.api.nvim_create_autocmd("ColorScheme", { callback = match_picker_bg })
+			match_picker_bg()
 		end,
 	},
 
@@ -87,7 +99,7 @@ return {
 					-- section_separators = { left = '', right = '' },
 					section_separators = "",
 					disabled_filetypes = {
-						statusline = { "neo-tree" },
+						statusline = { "snacks_picker_list" },
 						winbar = {},
 					},
 					ignore_focus = {},
@@ -141,7 +153,7 @@ return {
 
 	-- bufferline: open buffers as clickable tabs across the top. Mouse clicks
 	-- select tabs (mouse = "a"); [b / ]b cycle and <leader>bp jumps by letter.
-	-- offsets shifts the bar right of the neo-tree sidebar so they don't overlap;
+	-- offsets shifts the bar right of the explorer sidebar so they don't overlap;
 	-- rose-pine themes the highlights automatically.
 	{
 		"akinsho/bufferline.nvim",
@@ -154,7 +166,7 @@ return {
 				diagnostics = "nvim_lsp",
 				-- close via Snacks so the window layout survives: the default
 				-- `bdelete %d` collapses the edit window when the last buffer
-				-- goes, letting neo-tree expand to fill the screen.
+				-- goes, letting the explorer sidebar expand to fill the screen.
 				close_command = function(n)
 					Snacks.bufdelete(n)
 				end,
@@ -163,7 +175,7 @@ return {
 				end,
 				offsets = {
 					{
-						filetype = "neo-tree",
+						filetype = "snacks_picker_list",
 						text = "File Explorer",
 						highlight = "Directory",
 						separator = true,
@@ -172,6 +184,9 @@ return {
 			},
 			-- iris-forward: selected buffer tab picks up the shared iris (matches tmux window tabs)
 			highlights = {
+				-- rose-pine themes the empty area (fill) darker than the tabs (#0d0c13);
+				-- match it to the editor bg (#191724, = selected-tab bg) so the tabline is uniform.
+				fill = { bg = "#191724" },
 				buffer_selected = { fg = "#ceacf6", bold = true, italic = false },
 				numbers_selected = { fg = "#ceacf6" },
 				indicator_selected = { fg = "#ceacf6" },
@@ -229,14 +244,16 @@ return {
 			bigfile = { enabled = true },
 			quickfile = { enabled = true },
 			image = { enabled = true }, -- inline image preview (kitty graphics; needs chafa/imagemagick)
+			-- indent guides + current-scope highlight (replaced indent-blankline)
+			indent = { indent = { char = "▏" }, scope = { char = "▏" } },
 		},
 		keys = {
 			{
-				"<leader>ri",
+				"<leader>bi",
 				function()
 					-- Re-render a standalone image that nvim dropped on a tabpage redraw.
 					-- Reloading the buffer re-runs snacks' image attach → fresh transmit.
-					-- (<leader>i is taken by window-nav, so this lives under <leader>r.)
+					-- (grouped with buffer ops under <leader>b; acts on the current image buffer.)
 					if vim.bo.filetype == "image" then
 						vim.cmd("edit")
 					else
@@ -302,15 +319,6 @@ return {
 				desc = "close buffer",
 			},
 		},
-	},
-
-	-- indentation indicators on the left
-	{
-		"lukas-reineke/indent-blankline.nvim",
-		event = "VeryLazy",
-		main = "ibl", -- setup module is `ibl`, not the plugin name
-		-- enabled + scope.enabled are ibl v3 defaults; only the char is an override.
-		opts = { indent = { char = "▏" } },
 	},
 
 	-- highlight all occurences of a word
