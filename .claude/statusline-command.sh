@@ -20,17 +20,17 @@ fi
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty' 2>/dev/null)
 [ -n "$cost_usd" ] && cost=$(printf '$%.2f' "$cost_usd")
 
-# Blue path, grey git, dim model, green cost
+# iris path, subtle git, muted model, foam cost — rose-pine (iris #ceacf6)
 if [ -n "$branch" ] && [ -n "$cost" ]; then
-  printf '\033[34m%s\033[0m \033[38;5;244m%s\033[0m  \033[2m%s\033[0m  \033[32m%s\033[0m' \
+  printf '\033[38;2;206;172;246m%s\033[0m \033[38;2;144;140;170m%s\033[0m  \033[38;2;110;106;134m%s\033[0m  \033[38;2;156;207;216m%s\033[0m' \
     "$short_cwd" "$branch" "$model" "$cost"
 elif [ -n "$branch" ]; then
-  printf '\033[34m%s\033[0m \033[38;5;244m%s\033[0m  \033[2m%s\033[0m' \
+  printf '\033[38;2;206;172;246m%s\033[0m \033[38;2;144;140;170m%s\033[0m  \033[38;2;110;106;134m%s\033[0m' \
     "$short_cwd" "$branch" "$model"
 elif [ -n "$cost" ]; then
-  printf '\033[34m%s\033[0m  \033[2m%s\033[0m  \033[32m%s\033[0m' \
+  printf '\033[38;2;206;172;246m%s\033[0m  \033[38;2;110;106;134m%s\033[0m  \033[38;2;156;207;216m%s\033[0m' \
     "$short_cwd" "$model" "$cost"
 else
-  printf '\033[34m%s\033[0m  \033[2m%s\033[0m' \
+  printf '\033[38;2;206;172;246m%s\033[0m  \033[38;2;110;106;134m%s\033[0m' \
     "$short_cwd" "$model"
 fi

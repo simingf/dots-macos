@@ -27,3 +27,26 @@ zinit wait lucid for \
 zinit wait lucid for \
     OMZP::sudo \
     OMZP::command-not-found
+
+# zsh-syntax-highlighting — rose-pine, iris-forward (reserved words = iris #ceacf6)
+typeset -gA ZSH_HIGHLIGHT_STYLES
+ZSH_HIGHLIGHT_STYLES[default]='fg=#e0def4'
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#eb6f92'
+ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=#ceacf6'
+ZSH_HIGHLIGHT_STYLES[alias]='fg=#9ccfd8'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=#9ccfd8'
+ZSH_HIGHLIGHT_STYLES[function]='fg=#9ccfd8'
+ZSH_HIGHLIGHT_STYLES[command]='fg=#9ccfd8'
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=#9ccfd8,italic'
+ZSH_HIGHLIGHT_STYLES[commandseparator]='fg=#908caa'
+ZSH_HIGHLIGHT_STYLES[path]='fg=#e0def4,underline'
+ZSH_HIGHLIGHT_STYLES[globbing]='fg=#f6c177'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#f6c177'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#f6c177'
+ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#9ccfd8'
+ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#ebbcba'
+ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#ebbcba'
+ZSH_HIGHLIGHT_STYLES[comment]='fg=#6e6a86'
+
+# zsh-autosuggestions ghost text — muted
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#6e6a86'

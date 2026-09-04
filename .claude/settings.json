@@ -147,7 +147,7 @@
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "skipDangerousModePermissionPrompt": true,
-  "theme": "auto",
+  "theme": "dark-ansi",
   "verbose": true,
   "tui": "fullscreen"
 }

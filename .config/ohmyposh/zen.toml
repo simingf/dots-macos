@@ -4,16 +4,20 @@ final_space = true
 
 [palette]
   grey = '#908caa'  # rose pine subtle
+  iris = '#ceacf6'  # custom bright iris (shared accent)
+  gold = '#f6c177'
+  love = '#eb6f92'
+  foam = '#9ccfd8'
 
 [secondary_prompt]
   template = '❯❯ '
-  foreground = 'magenta'
+  foreground = 'p:iris'
   background = 'transparent'
 
 [transient_prompt]
   template = '❯ '
   background = 'transparent'
-  foreground_templates = ['{{if gt .Code 0}}red{{end}}', '{{if eq .Code 0}}magenta{{end}}']
+  foreground_templates = ['{{if gt .Code 0}}p:love{{end}}', '{{if eq .Code 0}}p:iris{{end}}']
 
 [[blocks]]
   type = 'prompt'
@@ -23,7 +27,7 @@ final_space = true
   [[blocks.segments]]
     style = 'plain'
     template = '{{ .Path }} '
-    foreground = 'blue'
+    foreground = 'p:iris'
     background = 'transparent'
     type = 'path'
 
@@ -32,7 +36,7 @@ final_space = true
 
   [[blocks.segments]]
     style = 'plain'
-    template = '{{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }}*{{ end }} <cyan>{{ if gt .Behind 0 }}⇣{{ end }}{{ if gt .Ahead 0 }}⇡{{ end }}</>'
+    template = '{{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }}*{{ end }} <p:foam>{{ if gt .Behind 0 }}⇣{{ end }}{{ if gt .Ahead 0 }}⇡{{ end }}</>'
     foreground = 'p:grey'
     background = 'transparent'
     type = 'git'
@@ -56,7 +60,7 @@ final_space = true
   [[blocks.segments]]
     style = 'plain'
     template = '{{ .FormattedMs }}'
-    foreground = 'yellow'
+    foreground = 'p:gold'
     background = 'transparent'
     type = 'executiontime'
 
@@ -73,4 +77,4 @@ final_space = true
     template = '❯'
     background = 'transparent'
     type = 'text'
-    foreground_templates = ['{{if gt .Code 0}}red{{end}}', '{{if eq .Code 0}}magenta{{end}}']
+    foreground_templates = ['{{if gt .Code 0}}p:love{{end}}', '{{if eq .Code 0}}p:iris{{end}}']
