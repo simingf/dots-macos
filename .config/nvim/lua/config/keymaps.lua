@@ -12,6 +12,10 @@ vim.keymap.set(_nxo, "n", "j")
 vim.keymap.set(_nxo, "e", "k")
 vim.keymap.set("n", "i", "l")
 vim.keymap.set({ "n", "x" }, "j", "n")
+-- symmetric search repeat: J = prev (else backward search stays on `N`, a different
+-- physical row). Join-lines loses its `J` home → moved to <leader>j below (gJ still
+-- joins without a space, since the g-prefix builtin ignores the top-level J map).
+vim.keymap.set({ "n", "x" }, "J", "N")
 vim.keymap.set(_nxo, "k", "e")
 vim.keymap.set("n", "l", "i")
 -- `h`/`H` are claimed by arrow.nvim (buffer / global UI); use `:mark x` to set marks.
@@ -23,6 +27,8 @@ vim.keymap.set("n", "<leader>i", "<C-w>l", { silent = true, desc = "win right" }
 -- splits: match tmux (`\` = vertical divider, `-` = horizontal divider)
 vim.keymap.set("n", "<leader>\\", "<cmd>vsplit<cr>", { silent = true, desc = "vsplit" })
 vim.keymap.set("n", "<leader>-", "<cmd>split<cr>", { silent = true, desc = "hsplit" })
+-- join lines (J reclaimed for search-prev above)
+vim.keymap.set({ "n", "x" }, "<leader>j", "J", { desc = "join lines" })
 -- prevent x or X from modifying the internal register
 vim.keymap.set({ "n", "x" }, "x", '"_x')
 vim.keymap.set({ "n", "x" }, "X", '"_d')
