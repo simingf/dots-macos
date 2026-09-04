@@ -11,7 +11,9 @@ return {
 	-- • hidden+ignored show dotfiles/gitignored dimmed; `H`/`I` toggle at runtime.
 	-- • Colemak-DH: `i` (right) opens/expands, `m` (left) collapses; `n`/`e` fall
 	--   through to the global down/up remaps for list navigation.
-	-- Sidebar defaults to width 40, position left — same as before.
+	-- Sidebar sits on the left; width narrowed to 24 (the sidebar preset defaults
+	-- to width 40 with a matching min_width that would clamp a smaller width, so
+	-- both are overridden below).
 	{
 		"folke/snacks.nvim",
 		opts = {
@@ -21,11 +23,18 @@ return {
 					explorer = {
 						hidden = true, -- show dotfiles (dimmed)
 						ignored = true, -- show gitignored (dimmed)
+						layout = { layout = { width = 24, min_width = 24 } },
 						win = {
 							list = {
 								keys = {
 									["i"] = "confirm", -- Colemak right: open file / expand dir
 									["m"] = "explorer_close", -- Colemak left: collapse dir
+									-- `w`: toggle line wrap for the tree (off by default). Tree
+									-- indent is real leading text + the list has breakindent, so
+									-- wrapped names indent-align under their entry.
+									["w"] = function(self)
+										vim.wo[self.win].wrap = not vim.wo[self.win].wrap
+									end,
 								},
 							},
 						},
@@ -53,6 +62,24 @@ return {
 							pcall(vim.api.nvim_set_current_win, cur)
 						end
 					end)
+				end,
+			})
+
+			-- widen the explorer to 40 cols while focused, restore to 24 on leave.
+			-- safe against snacks refreshes: split layouts resolve to the live window
+			-- width (nvim_win_get_width), not the configured 24, so a direct set
+			-- persists exactly like a manual border drag.
+			local function explorer_win()
+				local p = Snacks.picker.get({ source = "explorer" })[1]
+				return p and p.list and p.list.win and p.list.win:valid() and p.list.win.win or nil
+			end
+			vim.api.nvim_create_autocmd({ "WinEnter", "WinLeave" }, {
+				group = vim.api.nvim_create_augroup("explorer_focus_width", { clear = true }),
+				callback = function(ev)
+					local w = explorer_win()
+					if w and w == vim.api.nvim_get_current_win() then
+						vim.api.nvim_win_set_width(w, ev.event == "WinEnter" and 40 or 24)
+					end
 				end,
 			})
 		end,

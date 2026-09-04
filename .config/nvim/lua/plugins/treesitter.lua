@@ -85,5 +85,26 @@ return {
 			vim.cmd("Lazy! load markdown-preview.nvim")
 			vim.fn["mkdp#util#install"]()
 		end,
+		config = function()
+			-- Widen the preview: mkdp hard-caps #page-ctn at 900px (app/_static/page.css).
+			-- g:mkdp_markdown_css *replaces* the bundled markdown.css, so regenerate it as
+			-- (bundled css + width override) on load — keeps GitHub typography current across
+			-- plugin updates without vendoring a CSS copy into the repo.
+			local base = vim.fn.stdpath("data") .. "/lazy/markdown-preview.nvim/app/_static/markdown.css"
+			local out = vim.fn.stdpath("cache") .. "/mkdp-markdown.css"
+			local css = ""
+			local fh = io.open(base, "r")
+			if fh then
+				css = fh:read("*a")
+				fh:close()
+			end
+			css = css .. "\n#page-ctn{max-width:none!important;padding:8px 5%!important;}\n"
+			local w = io.open(out, "w")
+			if w then
+				w:write(css)
+				w:close()
+				vim.g.mkdp_markdown_css = out
+			end
+		end,
 	},
 }

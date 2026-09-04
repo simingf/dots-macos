@@ -152,7 +152,7 @@ return {
 	},
 
 	-- bufferline: open buffers as clickable tabs across the top. Mouse clicks
-	-- select tabs (mouse = "a"); [b / ]b cycle and <leader>bp jumps by letter.
+	-- select tabs (mouse = "a"); <leader>bi/bm cycle next/prev and <leader>bp jumps by letter.
 	-- offsets shifts the bar right of the explorer sidebar so they don't overlap;
 	-- rose-pine themes the highlights automatically.
 	{
@@ -224,8 +224,8 @@ return {
 			require("bufferline").setup(opts)
 		end,
 		keys = {
-			{ "[b", "<cmd>BufferLineCyclePrev<cr>", desc = "prev buffer" },
-			{ "]b", "<cmd>BufferLineCycleNext<cr>", desc = "next buffer" },
+			{ "<leader>bi", "<cmd>BufferLineCycleNext<cr>", desc = "next buffer" },
+			{ "<leader>bm", "<cmd>BufferLineCyclePrev<cr>", desc = "prev buffer" },
 			{ "<leader>bp", "<cmd>BufferLinePick<cr>", desc = "pick buffer" },
 		},
 	},
@@ -280,7 +280,7 @@ return {
 		},
 		keys = {
 			{
-				"<leader>bi",
+				"<leader>br",
 				function()
 					-- Re-render a standalone image that nvim dropped on a tabpage redraw.
 					-- Reloading the buffer re-runs snacks' image attach → fresh transmit.
