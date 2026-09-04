@@ -5,7 +5,7 @@ return {
 	-- in ui.lua. Behaviors ported 1:1 from the old neo-tree setup:
 	-- • replace_netrw: `nvim <dir>` hijacks netrw and opens the tree focused
 	--   (snacks wires this on first BufEnter). `nvim <file>` shows it as an
-	--   unfocused sidebar via the VimEnter init below. no args → stays lazy.
+	--   unfocused sidebar via the VimEnter autocmd in opts below. no args → lazy.
 	-- • watch (source default) auto-refreshes on out-of-band disk changes
 	--   (agents, git, mv) — the old use_libuv_file_watcher equivalent.
 	-- • hidden+ignored show dotfiles/gitignored dimmed; `H`/`I` toggle at runtime.
@@ -16,36 +16,21 @@ return {
 	-- both are overridden below).
 	{
 		"folke/snacks.nvim",
-		opts = {
-			explorer = { replace_netrw = true },
-			picker = {
-				sources = {
-					explorer = {
-						hidden = true, -- show dotfiles (dimmed)
-						ignored = true, -- show gitignored (dimmed)
-						layout = { layout = { width = 24, min_width = 24 } },
-						win = {
-							list = {
-								keys = {
-									["i"] = "confirm", -- Colemak right: open file / expand dir
-									["m"] = "explorer_close", -- Colemak left: collapse dir
-									-- `w`: toggle line wrap for the tree (off by default). Tree
-									-- indent is real leading text + the list has breakindent, so
-									-- wrapped names indent-align under their entry.
-									["w"] = function(self)
-										vim.wo[self.win].wrap = not vim.wo[self.win].wrap
-									end,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		init = function()
-			-- file arg(s): show the explorer as an unfocused sidebar once startup
-			-- finishes (dir args are handled by replace_netrw; no args stay lazy).
+		-- opts is a *function*, and our startup autocmds are armed here rather than in
+		-- `init`. snacks is split across fragments (ui.lua, ai.lua, here) and lazy
+		-- keeps only ONE `init`/`config` per plugin (last fragment wins — ui.lua's),
+		-- so an `init` here silently never runs. opts-functions instead CHAIN across
+		-- fragments and run when the plugin loads; snacks is lazy=false, so that
+		-- happens during startup, before VimEnter fires — early enough to register it.
+		opts = function(_, opts)
+			local grp = vim.api.nvim_create_augroup("snacks_explorer", { clear = true })
+
+			-- `nvim <file>`: show the explorer as an unfocused sidebar (focus stays on
+			-- the file). dir args are handled by replace_netrw; no args stay lazy.
+			-- `focus = false` opens the picker without it grabbing focus (honored in
+			-- picker:show) — cleaner than opening focused then racing to refocus.
 			vim.api.nvim_create_autocmd("VimEnter", {
+				group = grp,
 				once = true,
 				callback = function()
 					if vim.fn.argc(-1) == 0 then
@@ -55,32 +40,58 @@ return {
 					if stat and stat.type == "directory" then
 						return
 					end
-					local cur = vim.api.nvim_get_current_win()
-					Snacks.explorer()
-					vim.schedule(function()
-						if vim.api.nvim_win_is_valid(cur) then
-							pcall(vim.api.nvim_set_current_win, cur)
-						end
-					end)
+					Snacks.explorer({ focus = false })
 				end,
 			})
 
-			-- widen the explorer to 40 cols while focused, restore to 24 on leave.
-			-- safe against snacks refreshes: split layouts resolve to the live window
-			-- width (nvim_win_get_width), not the configured 24, so a direct set
-			-- persists exactly like a manual border drag.
-			local function explorer_win()
-				local p = Snacks.picker.get({ source = "explorer" })[1]
-				return p and p.list and p.list.win and p.list.win:valid() and p.list.win.win or nil
-			end
+			-- widen the explorer to 40 cols while focused, back to 24 on leave. the
+			-- visible list is a float sized to a hidden root split, so we resize the
+			-- ROOT (setting the float does nothing to the column) and let the float
+			-- follow; snacks resolves splits to the live root width on refresh, so it
+			-- persists. one persistent autocmd that self-locates the explorer picker,
+			-- so it spans close/reopen. focus is read off the float, width set on root.
 			vim.api.nvim_create_autocmd({ "WinEnter", "WinLeave" }, {
-				group = vim.api.nvim_create_augroup("explorer_focus_width", { clear = true }),
+				group = grp,
 				callback = function(ev)
-					local w = explorer_win()
-					if w and w == vim.api.nvim_get_current_win() then
-						vim.api.nvim_win_set_width(w, ev.event == "WinEnter" and 40 or 24)
+					local p = Snacks.picker and Snacks.picker.get({ source = "explorer" })[1]
+					if not (p and p.list and p.list.win and p.list.win:valid()) then
+						return
+					end
+					if p.list.win.win ~= vim.api.nvim_get_current_win() then
+						return
+					end
+					local root = p.layout and p.layout.root and p.layout.root.win
+					if root and vim.api.nvim_win_is_valid(root) then
+						vim.api.nvim_win_set_width(root, ev.event == "WinEnter" and 40 or 24)
 					end
 				end,
+			})
+
+			return vim.tbl_deep_extend("force", opts, {
+				explorer = { replace_netrw = true },
+				picker = {
+					sources = {
+						explorer = {
+							hidden = true, -- show dotfiles (dimmed)
+							ignored = true, -- show gitignored (dimmed)
+							layout = { layout = { width = 24, min_width = 24 } },
+							win = {
+								list = {
+									keys = {
+										["i"] = "confirm", -- Colemak right: open file / expand dir
+										["m"] = "explorer_close", -- Colemak left: collapse dir
+										-- `W`: toggle line wrap for the tree (off by default), matching
+										-- the H/I toggle style. Tree indent is real leading text + the
+										-- list has breakindent, so wrapped names indent-align.
+										["W"] = function(self)
+											vim.wo[self.win].wrap = not vim.wo[self.win].wrap
+										end,
+									},
+								},
+							},
+						},
+					},
+				},
 			})
 		end,
 		keys = {
