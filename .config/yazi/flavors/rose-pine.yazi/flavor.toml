@@ -222,30 +222,32 @@ footer  = { fg = "#191724", bg = "#e0def4" }
 
 [filetype]
 rules = [
-  # Images — warm rose, kept distinct from the iris folder accent
+  # Mirrors $LS_COLORS from .zprofile (zsh `ls` is the source of truth for
+  # filetype/dir colors). Keep in sync with it.
+
+  # Images + media (ls groups mp3/mp4/mov with images → rose)
   { mime = "image/*", fg = "#ebbcba" },
+  { mime = "{audio,video}/*", fg = "#ebbcba" },
 
-  # Media (audio/video)
-  { mime = "{audio,video}/*", fg = "#f6c177" },
+  # Archives (ls: tar/tgz/zip/gz/bz2/xz/7z/rar → gold)
+  { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#f6c177" },
 
-  # Archives
-  { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#eb6f92" },
+  # Transient / noise files (ls: lock/log/bak → muted)
+  { url = "*.lock", fg = "#6e6a86" },
+  { url = "*.log", fg = "#6e6a86" },
+  { url = "*.bak", fg = "#6e6a86" },
 
-  # Documents — foam (info/readable)
-  { mime = "application/{pdf,doc,rtf}", fg = "#9ccfd8" },
+  # Broken symlink (ls: or → love)
+  { url = "*", is = "orphan", fg = "#eb6f92" },
 
-  # Empty files
-  # { mime = "inode/empty", fg = "#eb6f92" },
-
-  # Special files
-  { url = "*", is = "orphan", fg = "#191724", bg = "#eb6f92" },
+  # Executables (ls: ex → pine)
   { url = "*", is = "exec", fg = "#31748f" },
 
-  # Dummy files
+  # Dummy files (yazi internal placeholders — no ls equivalent)
   { url = "*", is = "dummy", fg = "#191724", bg = "#eb6f92" },
   { url = "*/", is = "dummy", fg = "#191724", bg = "#eb6f92" },
 
-  # Fallback — files stay readable text; folders take the dominant iris accent
+  # Fallback — files = text (ls default), directories = iris (ls: di)
   { url = "*", fg = "#e0def4" },
   { url = "*/", fg = "#ceacf6" }
 ]

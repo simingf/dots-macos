@@ -49,13 +49,20 @@ return {
 			-- reads as a paler purple than the editor. Link the base picker groups to
 			-- Normal (#191724) so they match. Also applies to the floating pickers.
 			-- Re-run on every ColorScheme since rose-pine clears custom groups on load.
-			local function match_picker_bg()
+			local function style_picker()
 				for _, g in ipairs({ "SnacksPicker", "SnacksPickerList", "SnacksPickerInput", "SnacksPickerBox" }) do
 					vim.api.nvim_set_hl(0, g, { link = "Normal" })
 				end
+				-- Explorer/picker entry colors mirror $LS_COLORS (zsh `ls` is the source
+				-- of truth): directory = iris, symlink = foam, broken link = love.
+				-- Regular files stay default text; per-extension type color rides on the
+				-- devicon, since snacks paints filenames by category, not extension.
+				vim.api.nvim_set_hl(0, "SnacksPickerDirectory", { fg = "#ceacf6", bold = true })
+				vim.api.nvim_set_hl(0, "SnacksPickerLink", { fg = "#9ccfd8" })
+				vim.api.nvim_set_hl(0, "SnacksPickerLinkBroken", { fg = "#eb6f92" })
 			end
-			vim.api.nvim_create_autocmd("ColorScheme", { callback = match_picker_bg })
-			match_picker_bg()
+			vim.api.nvim_create_autocmd("ColorScheme", { callback = style_picker })
+			style_picker()
 		end,
 	},
 
