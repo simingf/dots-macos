@@ -84,6 +84,10 @@ return {
 									keys = {
 										["i"] = "confirm", -- Colemak right: open file / expand dir
 										["m"] = "explorer_close", -- Colemak left: collapse dir
+										-- `M`: move marked (<Tab>) files into the dir under the cursor
+										-- (falls back to rename the current item if none marked). Rebound
+										-- off lowercase `m` since that's taken by collapse above.
+										["M"] = "explorer_move",
 										-- `W`: toggle line wrap for the tree (off by default), matching
 										-- the H/I toggle style. Tree indent is real leading text + the
 										-- list has breakindent, so wrapped names indent-align. Also flips
