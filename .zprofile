@@ -24,6 +24,7 @@ export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/git/skills-cli/bin:$PATH"
 export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
 path+=/Library/TeX/texbin
+path+=/Applications/Docker.app/Contents/Resources/bin  # Docker Desktop CLI (docker + credential/kube helpers); appended so it can't shadow brew
 
 # Rust (Homebrew's rustup doesn't create ~/.cargo/bin proxies)
 if command -v rustup &>/dev/null; then
