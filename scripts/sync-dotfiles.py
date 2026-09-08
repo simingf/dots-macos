@@ -34,6 +34,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         ("scripts/tmux-fzf-pane-content.sh", "scripts/tmux-fzf-pane-content.sh"),
         ("scripts/tmux-agents.sh", "scripts/tmux-agents.sh"),
         ("scripts/tmux-rename.sh", "scripts/tmux-rename.sh"),
+        ("scripts/tmux-even-columns.sh", "scripts/tmux-even-columns.sh"),
         (".config/yazi/yazi.toml", ".config/yazi/yazi.toml"),
         (".config/yazi/keymap.toml", ".config/yazi/keymap.toml"),
         (".config/yazi/theme.toml", ".config/yazi/theme.toml"),

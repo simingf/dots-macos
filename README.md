@@ -57,6 +57,7 @@ dots-macos/
 │   ├── tag-casks-orange.sh             # Finder tag paid casks for visibility
 │   ├── tmux-fzf-*.sh                   # prefix s/w = session/window pickers; prefix f = pane-content grep; centered rounded popups, called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-agents.sh                  # agent picker/count/sidebar (prefix a/A, left panel auto-seeded on prefix c); detects panes by OSC title
+│   ├── tmux-even-columns.sh            # prefix 0: equal-width columns but keep the agent sidebar's width + preserve vertical stacks; called from .tmux.conf, byte-identical with dots-linux
 │   └── tmux-rename.sh                  # prefix r/R: rename window/session via display-popup (Escape cancels), called from .tmux.conf, byte-identical with dots-linux
 ├── manual/
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
