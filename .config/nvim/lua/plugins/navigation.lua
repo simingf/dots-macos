@@ -74,6 +74,10 @@ return {
 						explorer = {
 							hidden = true, -- show dotfiles (dimmed)
 							ignored = true, -- show gitignored (dimmed)
+							-- surface a `w` title flag when wrap is on, matching the built-in
+							-- h/i flags. deep-merges with the default toggles table; the flag
+							-- lights up while the picker opt `wrap` is true (set by `W` below).
+							toggles = { wrap = "w" },
 							layout = { layout = { width = 24, min_width = 24 } },
 							win = {
 								list = {
@@ -82,9 +86,17 @@ return {
 										["m"] = "explorer_close", -- Colemak left: collapse dir
 										-- `W`: toggle line wrap for the tree (off by default), matching
 										-- the H/I toggle style. Tree indent is real leading text + the
-										-- list has breakindent, so wrapped names indent-align.
+										-- list has breakindent, so wrapped names indent-align. Also flips
+										-- the picker opt `wrap` and redraws the title so the `w` flag
+										-- (registered in `toggles` above) appears/clears like h/i.
 										["W"] = function(self)
-											vim.wo[self.win].wrap = not vim.wo[self.win].wrap
+											local wrap = not vim.wo[self.win].wrap
+											vim.wo[self.win].wrap = wrap
+											local p = Snacks.picker.get({ source = "explorer" })[1]
+											if p then
+												p.opts.wrap = wrap
+												p:update_titles()
+											end
 										end,
 									},
 								},
