@@ -61,44 +61,6 @@ return {
 		end,
 	},
 
-	-- markview: in-buffer markdown/latex rendering (headings, code, tables, callouts).
-	-- author recommends against lazy-loading (late attach can skip the first buffer), so
-	-- lazy=false; loads after the treesitter/devicons deps for parsers + icons.
-	{
-		"OXY2DEV/markview.nvim",
-		lazy = false,
-		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
-		config = function()
-			require("markview").setup()
-			-- iris-forward headings mirroring glow.yazi (THEME.md): h1 base-on-iris label,
-			-- then iris / foam / rose / gold / pine. markview ignores its `highlight_groups`
-			-- spec key in this version; the working path is merging a `heading` override into
-			-- markview.highlights.groups — its own re-applies (render / ColorScheme call
-			-- highlights.setup() → create() from the merged table) then preserve it.
-			local hl = require("markview.highlights")
-			local fg = { "#191724", "#ceacf6", "#9ccfd8", "#ebbcba", "#f6c177", "#31748f" }
-			local headings = function()
-				local out = {}
-				for h = 1, 6 do
-					local v = h == 1 and { fg = fg[1], bg = "#ceacf6", bold = true }
-						or { fg = fg[h], bold = h <= 4 }
-					table.insert(out, { group_name = ("MarkviewHeading%d"):format(h), value = v })
-					table.insert(out, {
-						group_name = ("MarkviewHeading%dSign"):format(h),
-						value = { link = ("MarkviewPalette%dSign"):format(h) },
-					})
-				end
-				return out
-			end
-			hl.setup({ heading = headings })
-			-- re-merge after rose-pine reloads (it clears custom groups on ColorScheme),
-			-- mirroring the snacks explorer pattern in ui.lua.
-			vim.api.nvim_create_autocmd("ColorScheme", { callback = function()
-				hl.setup({ heading = headings })
-			end })
-		end,
-	},
-
 	-- markdown-preview: live browser preview (real HTML tables wrap per-column).
 	-- enabled off on the headless Linux dev box (no browser, no internet for the build).
 	-- build downloads the prebuilt server binary (no node/yarn toolchain needed). lazy runs
@@ -127,25 +89,30 @@ return {
 				fh:close()
 			end
 			css = css .. "\n#page-ctn{max-width:none!important;padding:8px 5%!important;}\n"
-			-- rose-pine (THEME.md): recolor prose chrome to match markview + glow.yazi.
-			-- fenced-code syntax keeps mkdp's default highlight.js theme (same split as glow).
+			-- rose-pine (THEME.md): recolor prose chrome to match glow.yazi (rose-pine.json)
+			-- 1:1 — h1 dark-on-iris label, iris/foam/rose/gold/pine headings (h5/h6 unbold, no
+			-- underlines), gold bold / rose italic / muted strikethrough, iris bold links, love
+			-- inline-code on overlay, muted hr + blockquote. fenced-code syntax keeps mkdp's
+			-- default highlight.js theme (same "not matched" split as the glow row in THEME.md).
 			css = css .. [[
 :root,.markdown-body{--color-canvas-default:#191724;--color-canvas-subtle:#1f1d2e;--color-fg-default:#e0def4;--color-fg-muted:#908caa;--color-fg-subtle:#6e6a86;--color-border-default:#26233a;--color-border-muted:#403d52;--color-accent-fg:#ceacf6;--color-neutral-muted:#26233a;}
 body{background:#191724;}
 .markdown-body{background:#191724;color:#e0def4;}
-.markdown-body h1,.markdown-body h2{color:#ceacf6;border-bottom-color:#26233a;}
+.markdown-body h1{display:inline-block;color:#191724;background:#ceacf6;padding:.1em .4em;border-bottom:none;font-weight:700;}
+.markdown-body h2{color:#ceacf6;border-bottom:none;font-weight:700;}
 .markdown-body h3{color:#9ccfd8;}
 .markdown-body h4{color:#ebbcba;}
-.markdown-body h5{color:#f6c177;}
-.markdown-body h6{color:#31748f;}
-.markdown-body a{color:#ceacf6;}
+.markdown-body h5{color:#f6c177;font-weight:400;}
+.markdown-body h6{color:#31748f;font-weight:400;}
+.markdown-body a{color:#ceacf6;font-weight:700;text-decoration:underline;}
 .markdown-body strong{color:#f6c177;}
 .markdown-body em{color:#ebbcba;}
+.markdown-body del,.markdown-body s{color:#6e6a86;}
 .markdown-body code,.markdown-body tt{background:#26233a;color:#eb6f92;}
 .markdown-body pre{background:#1f1d2e;}
 .markdown-body pre code{background:transparent;color:#e0def4;}
 .markdown-body blockquote{color:#908caa;border-left-color:#6e6a86;}
-.markdown-body hr{background:#26233a;}
+.markdown-body hr{background:#6e6a86;}
 .markdown-body table tr{background:#191724;border-top-color:#26233a;}
 .markdown-body table tr:nth-child(2n){background:#1f1d2e;}
 .markdown-body table th,.markdown-body table td{border-color:#26233a;}

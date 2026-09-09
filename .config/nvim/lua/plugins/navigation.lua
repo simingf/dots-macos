@@ -109,7 +109,7 @@ return {
 										end,
 										-- `o`: open the file under the cursor and preview it in a browser. Markdown
 										-- → markdown-preview (rose-pine themed); html/svg → live-preview. Both reload on
-										-- save; directories are skipped.
+										-- save; directories are skipped. Routing shared with <leader>p (config.preview).
 										["o"] = function()
 											local p = Snacks.picker.get({ source = "explorer" })[1]
 											if not p then
@@ -119,14 +119,8 @@ return {
 											if not item or item.dir then
 												return
 											end
-											local path = Snacks.picker.util.path(item)
 											p:action("confirm") -- open in the main window, not the sidebar
-											local md = path:match("%.md$") or path:match("%.markdown$")
-											if md and vim.fn.exists(":MarkdownPreview") == 2 then
-												vim.cmd("MarkdownPreview") -- rose-pine themed browser md
-											else
-												vim.cmd("LivePreview start " .. vim.fn.fnameescape(path)) -- html/svg (user-styled)
-											end
+											require("config.preview").current()
 										end,
 										-- `W`: toggle line wrap for the tree (off by default), matching
 										-- the H/I toggle style. Tree indent is real leading text + the

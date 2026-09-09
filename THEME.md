@@ -51,8 +51,7 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | btop | `.config/btop/themes/rose-pine.theme` + `btop.conf` | hand-rolled rose-pine flavor (`color_theme = "rose-pine"`) | `#ceacf6` |
 | git | `.gitconfig` | hand-rolled `[color]` (diff/status/branch/decorate); mirrored to linux | `#ceacf6` |
 | ripgrep | `.config/ripgrep/rg.conf` | `--colors` RGB triples (path/line/match) | `#ceacf6` |
-| markview (nvim md in-buffer) | `.config/nvim/lua/plugins/treesitter.lua` | `markview.highlights` `heading` override (merged into `highlights.groups`, re-applied on `ColorScheme`): h1 base-on-iris label, then iris/foam/rose/gold/pine. Inline code/rest inherit markview's rose-pine-derived defaults. | headings `#ceacf6` |
-| markdown-preview (browser md) | `.config/nvim/lua/plugins/treesitter.lua` | `g:mkdp_markdown_css` rose-pine prose override (appended to bundled github-markdown.css) + `g:mkdp_theme = "dark"`. Mirrors glow's palette; fenced-code syntax tokens keep mkdp's highlight.js default (same split as the glow row). | `#ceacf6` prose |
+| markdown-preview (browser md) | `.config/nvim/lua/plugins/treesitter.lua` | `g:mkdp_markdown_css` rose-pine prose override (appended to bundled github-markdown.css) + `g:mkdp_theme = "dark"`. Mirrors the glow row's prose palette 1:1 (h1 dark-on-iris label, iris/foam/rose/gold/pine headings, gold bold / rose italic / muted strikethrough, iris links, love inline-code, muted hr+blockquote); fenced-code syntax tokens keep mkdp's highlight.js default (same "not matched" split as the glow row). | `#ceacf6` prose |
 | glow (yazi md preview) | `.config/yazi/plugins/glow.yazi/rose-pine.json` | hand-rolled glamour style; `glow --style <json>` from `main.lua`. Themes all prose chrome (headings/emph/links/inline-code/quotes/lists/hr). Fenced-code syntax tokens use glow 3.0.0's built-in 256-color chroma (style JSON's `chroma` block is inert in this binary; kept for newer glow on the linux box). | `#ceacf6` prose |
 
 ## Sync contract
@@ -89,5 +88,5 @@ Pick its accent per the convention, add a row to **Where theming lives**, and �
 
 ## Not yet themed / off-theme
 
-- **live-preview.nvim (browser HTML)** — no config CSS hook, so its markdown can't be rose-pined without forking the plugin's bundled `github-markdown.min.css`. Instead the nvim snacks-explorer `o` key (`lua/plugins/navigation.lua`) routes `.md` → markdown-preview (themed) and sends only HTML/SVG to live-preview, where your own file provides the styling. So there's nothing to theme here by design.
+- **live-preview.nvim (browser HTML)** — no config CSS hook, so its markdown can't be rose-pined without forking the plugin's bundled `github-markdown.min.css`. Instead the shared browser-preview router (`lua/config/preview.lua`, reached via the snacks-explorer `o` key and the `<leader>p` keymap) sends `.md` → markdown-preview (themed) and only HTML/SVG → live-preview, where your own file provides the styling. So there's nothing to theme here by design.
 - **man-pages / Alfred** — unthemed (`LESS_TERMCAP` unset; Alfred theme is a GUI export).

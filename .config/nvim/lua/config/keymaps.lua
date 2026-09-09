@@ -43,6 +43,11 @@ vim.keymap.set({ "n", "x", "o" }, "L", "$", { noremap = true, silent = true })
 vim.keymap.set({ "n", "x" }, "<leader>f", function()
 	require("conform").format({ async = true, lsp_format = "fallback" })
 end, { desc = "format" })
+-- browser preview of the current file: md → markdown-preview (themed), else → live-preview.
+-- same routing as the snacks-explorer `o` key (see config.preview).
+vim.keymap.set("n", "<leader>p", function()
+	require("config.preview").current()
+end, { desc = "browser preview" })
 -- toggle format-on-save: :FormatDisable (buffer) or :FormatDisable! (global), :FormatEnable to re-enable
 vim.api.nvim_create_user_command("FormatDisable", function(args)
 	if args.bang then
