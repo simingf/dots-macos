@@ -15,10 +15,7 @@ _kk_split() {
     print -r -- "$id"
 }
 
-# kk: herdr split — claude (LEFT pane), nvim (RIGHT column), plain terminal in the
-# bottom ~30%. In a git repo — or a folder with git repos nested ≤2 deep — it's a
-# 3-pane 35/35/30 split adding lazygit (terminal under lazygit, nvim full-height);
-# otherwise claude/nvim 50/50 (terminal under nvim). Args starting with - go to
+# kk: herdr split — nvim (LEFT) / claude (RIGHT) 50/50. Args starting with - go to
 # claude; other args are files opened in nvim (default: the root, as a dir tree).
 # Outside herdr, just runs claude. Link nvim↔claude with /ide in the claude pane.
 kk() {
@@ -30,27 +27,19 @@ kk() {
         claude "${cflags[@]}"
         return
     fi
-    # roots: a git repo puts everything at its top-level; else nvim/term/claude stay
-    # at $PWD and lazygit (if a repo is nested ≤2 deep) opens the most-recent one.
-    local root paneroot=$PWD lgroot
+    # a git repo roots everything at its top-level; else stay at $PWD
+    local root paneroot=$PWD
     if root=$(git rev-parse --show-toplevel 2>/dev/null) && [[ -n "$root" ]]; then
-        paneroot=$root lgroot=$root
-    else
-        lgroot=$(_kk_recent_nested_repo)
+        paneroot=$root
     fi
     (( ${#files} )) || files=("$paneroot") # no files → open the root as a dir tree
-    local right lg
-    if [[ -n "$lgroot" ]]; then
-        # 0.538 splits the 65% right region into nvim 35% / lazygit 30%; terminal under lazygit
-        right=$(_kk_split --current --direction right --ratio 0.35 --cwd "$paneroot") || return
-        lg=$(_kk_split "$right" --direction right --ratio 0.538 --cwd "$lgroot") || return
-        _kk_split "$lg" --direction down --ratio 0.70 --cwd "$paneroot" >/dev/null || return
-        herdr pane run "$lg" "lazygit"
-    else
-        right=$(_kk_split --current --direction right --ratio 0.5 --cwd "$paneroot") || return
-        _kk_split "$right" --direction down --ratio 0.70 --cwd "$paneroot" >/dev/null || return
-    fi
+    # nvim (LEFT) / claude (RIGHT) 50/50. herdr only splits right/down, so open nvim in
+    # a right split then swap the two panes — claude stays in the current pane (which
+    # --no-focus kept focused), so it lands on the right and keeps focus.
+    local right
+    right=$(_kk_split --current --direction right --ratio 0.5 --cwd "$paneroot") || return
     # (q@) shell-quotes each file, (j) joins them into one command string for herdr
     herdr pane run "$right" "nvim ${(j: :)${(q@)files}}"
-    (cd "$paneroot" && claude "${cflags[@]}") # claude in the left pane, rooted at paneroot
+    herdr pane swap --current --direction right # move claude(current) right, nvim left
+    (cd "$paneroot" && claude "${cflags[@]}") # claude in the current pane, now on the right
 }
