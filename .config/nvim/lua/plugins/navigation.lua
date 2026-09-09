@@ -88,6 +88,25 @@ return {
 										-- (falls back to rename the current item if none marked). Rebound
 										-- off lowercase `m` since that's taken by collapse above.
 										["M"] = "explorer_move",
+										-- `y`: copy the path(s) — item under the cursor, or all <Tab>-marked
+										-- items newline-joined — to the system clipboard, to paste into another
+										-- pane/app (e.g. claude). Absolute (with $HOME shortened to ~) so they
+										-- resolve when claude runs in a different repo. The built-in explorer_yank
+										-- writes to `vim.v.register or "+"`, which on a bare `y` is the unnamed
+										-- register `"` and never reaches the OS clipboard — force `+` here.
+										["y"] = function()
+											local p = Snacks.picker.get({ source = "explorer" })[1]
+											if not p then
+												return
+											end
+											local files = {}
+											for _, item in ipairs(p:selected({ fallback = true })) do
+												files[#files + 1] = vim.fn.fnamemodify(Snacks.picker.util.path(item), ":~")
+											end
+											p.list:set_selected() -- clear marks, matching explorer_yank
+											vim.fn.setreg("+", table.concat(files, "\n"), "l")
+											Snacks.notify.info("Yanked " .. #files .. " path(s) to clipboard")
+										end,
 										-- `W`: toggle line wrap for the tree (off by default), matching
 										-- the H/I toggle style. Tree indent is real leading text + the
 										-- list has breakindent, so wrapped names indent-align. Also flips
