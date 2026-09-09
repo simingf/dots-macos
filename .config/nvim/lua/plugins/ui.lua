@@ -246,10 +246,24 @@ return {
 			-- snacks.image can't auto-detect ghostty inside tmux: tmux reports our
 			-- overridden `xterm-256color` (ghostty config) as client_termname, and the
 			-- XTVERSION reply can't return through tmux's one-way passthrough. Flag it
-			-- explicitly under ghostty. Key off GHOSTTY_RESOURCES_DIR — it's set by
-			-- ghostty and survives into the tmux session env, whereas TERM_PROGRAM gets
-			-- overwritten to "tmux" inside tmux. (Unset over SSH, so linux/windows no-op.)
-			if vim.env.GHOSTTY_RESOURCES_DIR or vim.env.TERM_PROGRAM == "ghostty" then
+			-- explicitly under ghostty. GHOSTTY_RESOURCES_DIR is set by ghostty (and
+			-- TERM_PROGRAM=="ghostty" outside tmux; inside tmux it's overwritten to
+			-- "tmux"). Both are snapshotted into a pane's env at spawn, so a pane that
+			-- outlived a ghostty update (persistent tmux server) loses them and images
+			-- silently break — fall back to tmux's live global env. (Skipped over SSH,
+			-- so linux/windows no-op.)
+			local function is_ghostty()
+				if vim.env.GHOSTTY_RESOURCES_DIR or vim.env.TERM_PROGRAM == "ghostty" then
+					return true
+				end
+				if vim.env.TMUX and not require("config.env").IS_SSH then
+					local v = vim.fn.system({ "tmux", "show-environment", "-g", "GHOSTTY_RESOURCES_DIR" })
+					return vim.v.shell_error == 0 and v:match("^GHOSTTY_RESOURCES_DIR=%S") ~= nil
+				end
+				return false
+			end
+			local ghostty = is_ghostty()
+			if ghostty then
 				vim.env.SNACKS_GHOSTTY = "1"
 			end
 			-- Switching buffers (bufferline) away from and back to an image drops the
@@ -257,7 +271,7 @@ return {
 			-- return, but the data is gone, so nothing shows. Reloading the buffer on
 			-- entry (what <leader>ri does) forces a fresh transmit. The `reloading` flag
 			-- stops the :edit from re-triggering this handler. ghostty only.
-			if vim.env.GHOSTTY_RESOURCES_DIR or vim.env.TERM_PROGRAM == "ghostty" then
+			if ghostty then
 				local reloading = false
 				vim.api.nvim_create_autocmd("BufEnter", {
 					group = vim.api.nvim_create_augroup("snacks_image_rerender", { clear = true }),
