@@ -107,6 +107,27 @@ return {
 											vim.fn.setreg("+", table.concat(files, "\n"), "l")
 											Snacks.notify.info("Yanked " .. #files .. " path(s) to clipboard")
 										end,
+										-- `o`: open the file under the cursor and preview it in a browser. Markdown
+										-- → markdown-preview (rose-pine themed); html/svg → live-preview. Both reload on
+										-- save; directories are skipped.
+										["o"] = function()
+											local p = Snacks.picker.get({ source = "explorer" })[1]
+											if not p then
+												return
+											end
+											local item = p:current()
+											if not item or item.dir then
+												return
+											end
+											local path = Snacks.picker.util.path(item)
+											p:action("confirm") -- open in the main window, not the sidebar
+											local md = path:match("%.md$") or path:match("%.markdown$")
+											if md and vim.fn.exists(":MarkdownPreview") == 2 then
+												vim.cmd("MarkdownPreview") -- rose-pine themed browser md
+											else
+												vim.cmd("LivePreview start " .. vim.fn.fnameescape(path)) -- html/svg (user-styled)
+											end
+										end,
 										-- `W`: toggle line wrap for the tree (off by default), matching
 										-- the H/I toggle style. Tree indent is real leading text + the
 										-- list has breakindent, so wrapped names indent-align. Also flips
@@ -164,5 +185,17 @@ return {
 		opts = {
 			open_for_directories = false,
 		},
+	},
+
+	-- live-preview.nvim: preview HTML/Markdown/AsciiDoc/SVG in a real browser with
+	-- auto-reload. Pure Lua (no Node/Python) so it stays byte-identical across
+	-- mac/linux/windows. Lazy-loaded on :LivePreview; the explorer `o` key (above)
+	-- starts it for the file under the cursor and edits reload the page on save.
+	{
+		"brianhuster/live-preview.nvim",
+		cmd = "LivePreview",
+		config = function()
+			require("livepreview.config").set()
+		end,
 	},
 }
