@@ -269,7 +269,7 @@ return {
 			-- Switching buffers (bufferline) away from and back to an image drops the
 			-- kitty image — snacks deletes it on hide, then only re-places (by id) on
 			-- return, but the data is gone, so nothing shows. Reloading the buffer on
-			-- entry (what <leader>ri does) forces a fresh transmit. The `reloading` flag
+			-- entry (the `:edit` below) forces a fresh transmit. The `reloading` flag
 			-- stops the :edit from re-triggering this handler. ghostty only.
 			if ghostty then
 				local reloading = false

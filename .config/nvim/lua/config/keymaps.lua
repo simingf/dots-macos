@@ -48,6 +48,18 @@ end, { desc = "format" })
 vim.keymap.set("n", "<leader>p", function()
 	require("config.preview").current()
 end, { desc = "browser preview" })
+-- reload the config modules live (options/keymaps/autocmds) so edits to them take
+-- effect without restarting nvim: drop them from the module cache and re-require.
+-- Safe because each is idempotent on re-run (keymaps/options overwrite; autocmds
+-- use clear=true augroups). Plugin *spec* changes aren't covered by this — lazy runs
+-- a plugin's config once; use `:Lazy reload <plugin>` (e.g. snacks.nvim) for those.
+vim.keymap.set("n", "<leader>r", function()
+	for _, m in ipairs({ "config.options", "config.keymaps", "config.autocmds" }) do
+		package.loaded[m] = nil
+		require(m)
+	end
+	vim.notify("reloaded config (options/keymaps/autocmds)", vim.log.levels.INFO)
+end, { desc = "reload nvim config" })
 -- toggle format-on-save: :FormatDisable (buffer) or :FormatDisable! (global), :FormatEnable to re-enable
 vim.api.nvim_create_user_command("FormatDisable", function(args)
 	if args.bang then

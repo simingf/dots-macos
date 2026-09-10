@@ -21,6 +21,9 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 vim.opt.autoread = true
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
 	desc = "reload buffer if the underlying file changed on disk",
+	-- grouped with clear=true so re-sourcing this module (e.g. <leader>r) replaces
+	-- the handler instead of stacking a duplicate checktime on every reload.
+	group = vim.api.nvim_create_augroup("checktime-on-change", { clear = true }),
 	callback = function()
 		if vim.fn.mode() ~= "c" then
 			vim.cmd("checktime")
