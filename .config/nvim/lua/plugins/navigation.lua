@@ -44,26 +44,35 @@ return {
 				end,
 			})
 
-			-- widen the explorer to 40 cols while focused, back to 24 on leave. the
-			-- visible list is a float sized to a hidden root split, so we resize the
-			-- ROOT (setting the float does nothing to the column) and let the float
-			-- follow; snacks resolves splits to the live root width on refresh, so it
-			-- persists. one persistent autocmd that self-locates the explorer picker,
-			-- so it spans close/reopen. focus is read off the float, width set on root.
-			vim.api.nvim_create_autocmd({ "WinEnter", "WinLeave" }, {
+			-- widen the explorer to 40 cols while any of its windows is focused, back to 24
+			-- otherwise. the visible list is a float sized to a hidden root split, so we
+			-- resize the ROOT (setting the float does nothing to the column) and let the
+			-- float follow; snacks resolves splits to the live root width on refresh, so it
+			-- persists. keyed to explorer *membership* (input/list/preview, mirroring snacks'
+			-- own is_picker_win check) rather than the list window alone — pressing `/`
+			-- (toggle_focus) moves focus list→input, which a list-only guard would read as
+			-- "left the explorer" and shrink mid-search. one persistent WinEnter autocmd that
+			-- self-locates the picker, so it spans close/reopen; width set on root.
+			vim.api.nvim_create_autocmd("WinEnter", {
 				group = grp,
-				callback = function(ev)
+				callback = function()
 					local p = Snacks.picker and Snacks.picker.get({ source = "explorer" })[1]
 					if not (p and p.list and p.list.win and p.list.win:valid()) then
 						return
 					end
-					if p.list.win.win ~= vim.api.nvim_get_current_win() then
+					local root = p.layout and p.layout.root and p.layout.root.win
+					if not (root and vim.api.nvim_win_is_valid(root)) then
 						return
 					end
-					local root = p.layout and p.layout.root and p.layout.root.win
-					if root and vim.api.nvim_win_is_valid(root) then
-						vim.api.nvim_win_set_width(root, ev.event == "WinEnter" and 40 or 24)
+					local cur = vim.api.nvim_get_current_win()
+					local in_explorer = false
+					for _, w in ipairs({ p.input, p.list, p.preview }) do
+						if w and w.win and w.win:valid() and w.win.win == cur then
+							in_explorer = true
+							break
+						end
 					end
+					vim.api.nvim_win_set_width(root, in_explorer and 40 or 24)
 				end,
 			})
 
