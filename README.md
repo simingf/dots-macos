@@ -22,7 +22,7 @@ brew bundle install --file=~/dots-macos/Brewfile
 ```
 dots-macos/
 ├── .config/                            # XDG configs (stow → ~/.config/)
-│   ├── nvim/                           # thin init.lua + lua/config/ + lua/plugins/ (topical, lazy-imported) + lazy-lock.json — byte-identical to siblings
+│   ├── nvim/                           # thin init.lua + lua/config/ + lua/plugins/ (topical, lazy-imported) + lazy-lock.json — byte-identical to siblings; FRAGILE.md (mac-only brittle-spots audit) + config/healthcheck.lua guard the plugin-internal hacks
 │   ├── aerospace/                      # tiling WM
 │   ├── alfred/                         # Alfred sync folder (preferences, themes, snippets, workflows)
 │   ├── borders/                        # window border highlights
