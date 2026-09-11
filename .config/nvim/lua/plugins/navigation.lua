@@ -89,6 +89,15 @@ return {
 							toggles = { wrap = "w" },
 							layout = { layout = { width = 24, min_width = 24 } },
 							win = {
+								-- `<Esc>` in the search box (opened with `/`) returns focus to the tree
+								-- instead of closing the picker (snacks' default `cancel`), so `/` then
+								-- `<Esc>` is an in/out pair for filtering. From the tree, `<Esc>` still
+								-- closes. Both modes so one press works whether typing (insert) or normal.
+								input = {
+									keys = {
+										["<Esc>"] = { "toggle_focus", mode = { "i", "n" } },
+									},
+								},
 								list = {
 									keys = {
 										["i"] = "confirm", -- Colemak right: open file / expand dir
