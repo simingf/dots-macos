@@ -4,9 +4,9 @@
 # from .zshrc (defined before the source tail). Byte-identical across mac & linux —
 # no host-specific paths (claude/nvim/lazygit resolve per-platform from .zshrc).
 
-# kk: tmux split matching the herdr kk — nvim (LEFT, full height), claude (MIDDLE),
-# and in a git repo (or a folder with a repo nested ≤2 deep) lazygit (RIGHT-top) +
-# terminal (RIGHT-bottom); otherwise nvim/claude 50/50 with terminal under nvim.
+# kk: tmux split matching the herdr kk — nvim (LEFT, full height, 50%) and claude
+# (RIGHT, 50%). In a git repo (or a folder with a repo nested ≤2 deep), lazygit takes
+# the top 25% of the claude column (claude below it); otherwise plain nvim/claude 50/50.
 # Args starting with - go to claude; others are files opened in nvim (default: the
 # root as a dir tree). Panes run their tool as the command so they close on exit;
 # -d keeps focus on the origin pane, where claude runs last. Outside tmux → claude.
@@ -27,19 +27,11 @@ kk() {
     fi
     (( ${#files} )) || files=("$paneroot") # no files → open the root as a dir tree
     local nvim_cmd="nvim ${(j: :)${(q@)files}}" # (q@) quotes each file, (j) joins
-    local left lg
-    if [[ -n "$lgroot" ]]; then
-        # lazygit + zsh column fixed at 50 cols on the right edge; nvim/claude split the
-        # rest 50/50 (nvim left of claude, via -b); lazygit split down 30% for terminal.
-        lg=$(tmux split-window -h -d -l 50 -c "$lgroot" -P -F '#{pane_id}' "lazygit") || return
-        left=$(tmux split-window -h -b -d -l 50% -c "$paneroot" -P -F '#{pane_id}' "$nvim_cmd") || return
-        tmux split-window -v -d -t "$lg" -l 30% -c "$paneroot" || return
-    else
-        # nvim/claude 50/50 (nvim left, via -b); terminal under nvim (left-bottom 30%).
-        left=$(tmux split-window -h -b -d -l 50% -c "$paneroot" -P -F '#{pane_id}' "$nvim_cmd") || return
-        tmux split-window -v -d -t "$left" -l 30% -c "$paneroot" || return
-    fi
-    (cd "$paneroot" && claude "${cflags[@]}") # claude in the origin pane (right of nvim); -d kept focus here
+    # nvim/claude 50/50 (nvim left of the origin pane, via -b), leaving claude on the right.
+    tmux split-window -h -b -d -l 50% -c "$paneroot" "$nvim_cmd" || return
+    # lazygit as the top 25% of the claude column (above the origin pane, via -b).
+    [[ -n "$lgroot" ]] && { tmux split-window -v -b -d -l 25% -c "$lgroot" "lazygit" || return; }
+    (cd "$paneroot" && claude "${cflags[@]}") # claude in the origin pane (bottom-right, below lazygit); -d kept focus here
 }
 
 # tmux
