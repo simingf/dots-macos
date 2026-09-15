@@ -13,18 +13,43 @@ add-zsh-hook precmd _disable_dec_2031
 _disable_mouse_tracking() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l'; }
 add-zsh-hook precmd _disable_mouse_tracking
 
-# Keybindings
+# Keybindings.
+# Model: the emacs base (bindkey -e) supplies the load-bearing primitives
+# (self-insert, backspace, Enter, Ctrl-A/E, Ctrl-U/K/W, ...). We only layer
+# discretionary overrides on top — never clear the keymap: an empty ZLE keymap
+# can't even type a letter. Plugins bind their own keys at 10-plugins (before
+# this file); those are listed under "plugin-owned" below for reference, not
+# re-bound here. To drop a default: bindkey -r '<seq>' (targeted, not a clear).
 bindkey -e
-bindkey '^p' history-search-backward
-bindkey '^n' history-search-forward
-bindkey '^[w' kill-region
+
+# history recall — ↑/↓ prefix-match (text left of cursor filters; empty = all),
+# keeping the cursor in place and stepping within a multiline buffer before
+# falling through to history. Ctrl-P/N were a redundant second prefix-search →
+# unbound in favor of ↑/↓ (re-add here if muscle memory wins).
+bindkey -r '^p' '^n'
+autoload -U up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search    # ↑  normal cursor mode
+bindkey '^[OA' up-line-or-beginning-search    # ↑  application cursor mode
+bindkey '^[[B' down-line-or-beginning-search  # ↓  normal
+bindkey '^[OB' down-line-or-beginning-search  # ↓  application
+
+# plugin-owned keys (bound by plugins/tools at 10-plugins & 80-tools, not here):
+#   Tab            fzf-completion       (fzf-tab)              completion dropdown
+#   → / End / C-E  autosuggest-accept   (zsh-autosuggestions)  accept whole suggestion
+#   Alt-F          forward-word         (zsh-autosuggestions)  accept one word
+#   Ctrl-R         fzf-history-widget   (fzf)                  fuzzy history overlay
+#   Ctrl-T         fzf-file-widget      (fzf)                  fuzzy file inserter
+#   Alt-C          fzf-cd-widget        (fzf)                  cd into a subdir
+#   Esc Esc        sudo-command-line    (OMZP::sudo)           prepend sudo (prev cmd if empty)
 
 # Completion styling
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls -G $realpath'
-zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls -G $realpath'
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --tree --level=2 --color=always --icons=always --group-directories-first $realpath'
+zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'eza --tree --level=2 --color=always --icons=always --group-directories-first $realpath'
 
 # clear screen + ls in one atomic write (no fork for clear, no flash gap)
 _clear_ls() {
