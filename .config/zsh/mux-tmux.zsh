@@ -1,10 +1,10 @@
-# tmux session module — sourced by .zshrc when inside a real tmux ($TMUX set and
-# HERDR_ENV != 1). Defines the tmux `kk` layout (mirrors the herdr one) plus the
-# tmux session helpers. Relies on _kk_recent_nested_repo() / claude() / _REAL_TMUX
-# from .zshrc (defined before the source tail). Byte-identical across mac & linux —
-# no host-specific paths (claude/nvim/lazygit resolve per-platform from .zshrc).
+# tmux session module — sourced by .zshrc when inside a real tmux ($TMUX set).
+# Defines the tmux `kk` layout plus the tmux session helpers. Relies on
+# _kk_recent_nested_repo() / claude() / _REAL_TMUX from .zshrc (defined before the
+# source tail). Byte-identical across mac & linux — no host-specific paths
+# (claude/nvim/lazygit resolve per-platform from .zshrc).
 
-# kk: tmux split matching the herdr kk — nvim (LEFT, full height, 50%) and claude
+# kk: tmux split — nvim (LEFT, full height, 50%) and claude
 # (RIGHT, 50%). In a git repo (or a folder with a repo nested ≤2 deep), lazygit takes
 # the top 25% of the claude column (claude below it); otherwise plain nvim/claude 50/50.
 # Args starting with - are claude flags; args that are existing paths open in nvim

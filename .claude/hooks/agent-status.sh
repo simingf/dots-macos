@@ -6,8 +6,7 @@
 #   Notification → "waiting" (permission prompt / question / idle-wait — needs your answer)
 # "working" is detected live from the braille spinner title (not here). Always exits 0.
 #
-# Unlike agent-notify.sh this is NOT gated on herdr — the sidebar needs status under herdr too. The two are
-# separate on purpose: notify = desktop toasts (herdr-gated), status = sidebar state (always).
+# Separate from agent-notify.sh on purpose: notify = desktop toasts, status = sidebar state.
 set -u
 
 [ -n "${TMUX_PANE:-}" ] || exit 0                                   # only meaningful inside tmux

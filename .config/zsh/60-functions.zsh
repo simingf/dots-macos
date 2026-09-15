@@ -147,14 +147,9 @@ _sup_resolve() {
     return 0
 }
 
-# declawd can launch either Claude or Codex. HerdR honors HERDR_AGENT, so set
-# it from the requested mode rather than always marking every run as Claude.
+# Launch Claude via the declawd sandbox in --yolo mode.
 claude() {
-    local arg agent=claude
-    for arg in "$@"; do
-        [[ "$arg" == "--codex" ]] && agent=codex
-    done
-    HERDR_AGENT="$agent" SHELL=/bin/bash command declawd --yolo "$@"
+    SHELL=/bin/bash command declawd --yolo "$@"
 }
 
 # _kk_recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
@@ -190,8 +185,8 @@ _kk_recent_nested_repo() {
 
 # kk: base fallback — launch claude with flags + prompt (opening files needs a split
 # layout, so existing-path args are dropped here). Overridden by
-# ~/.config/zsh/mux-{herdr,tmux}.zsh with the full pane layout when sourced inside a
-# herdr or tmux session (see 95-session.zsh).
+# ~/.config/zsh/mux-tmux.zsh with the full pane layout when sourced inside a
+# tmux session (see 95-session.zsh).
 kk() {
     emulate -L zsh
     local a

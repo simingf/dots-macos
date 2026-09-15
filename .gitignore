@@ -9,8 +9,7 @@ Library/Application Support/Code/User/*
 !Library/Application Support/Code/User/settings.json
 !Library/Application Support/Code/User/keybindings.json
 
-# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh, and our own hook
-# (herdr-agent-state.sh stays ignored — it's herdr-managed and overwritten on integration update).
+# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh, and our own hooks.
 .claude/*
 !.claude/CLAUDE.md
 !.claude/settings.json

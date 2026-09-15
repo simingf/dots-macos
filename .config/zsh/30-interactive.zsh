@@ -85,7 +85,7 @@ chpwd() {
     ((_suppress_chpwd)) || _clear_ls
 }
 
-# herdr sets $TMUX/$TMUX_PANE to impersonate tmux but runs no server, so guard
-# on a real server (probed once) — used by the tmux session helpers (tn/ta/dotslg).
+# Guard on a real, reachable tmux server (probed once) — $TMUX can be set with a
+# dead/absent server — used by the tmux session helpers (tn/ta/dotslg).
 _REAL_TMUX=
 [[ -n "$TMUX" ]] && tmux info &>/dev/null && _REAL_TMUX=1

@@ -1,7 +1,7 @@
 # ~/.zshrc — thin loader. Config is split into ordered modules under
 # ~/.config/zsh/ (NN-*.zsh, sourced in numeric order for deterministic load
-# order). Session modules (mux-herdr.zsh / mux-tmux.zsh) have no numeric prefix,
-# so this glob skips them — 95-session.zsh sources the right one conditionally.
+# order). The session module (mux-tmux.zsh) has no numeric prefix, so this glob
+# skips it — 95-session.zsh sources it.
 for _f in ~/.config/zsh/[0-9]*.zsh(N); do
     source "$_f"
 done

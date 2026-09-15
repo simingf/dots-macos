@@ -1,7 +1,7 @@
 #!/bin/sh
 # agent-notify.sh — native desktop notification when the agent finishes a turn (Stop) or needs
-# attention (Notification). The event is passed as $1 from .claude/settings.json (Stop|Notification),
-# mirroring herdr's arg-style hook. The agent pipes the hook JSON on stdin.
+# attention (Notification). The event is passed as $1 from .claude/settings.json (Stop|Notification).
+# The agent pipes the hook JSON on stdin.
 #
 # Title + subtitle come from tmux, via the SAME introspection the agent sidebar (scripts/tmux-agents.sh)
 # reads off a pane: the tmux window (tab) name is the title, and #{pane_title} — the one-line summary
@@ -10,16 +10,12 @@
 # title falls back to the project dir. (The finer sidebar status — working/waiting/unread — is NOT reused
 # here: that's a pane-keyed /tmp state file for coloring dots, orthogonal to a one-shot toast.)
 #
-# This is the plain-tmux/terminal replica of herdr's system toast. Under herdr (HERDR_ENV=1) herdr
-# already toasts on agent state change, so this no-ops to avoid double notifications.
 # Portable: terminal-notifier (or osascript) on macOS, notify-send on Linux; silent no-op if none
 # exist (e.g. a headless dev box). Never fails the hook — always exits 0.
 #
-# Note: Stop fires on EVERY turn completion, so outside herdr you'll get a ping per response. Drop
-# the "Stop" block in settings.json if that's too chatty and keep only "Notification".
+# Note: Stop fires on EVERY turn completion, so you'll get a ping per response. Drop the "Stop"
+# block in settings.json if that's too chatty and keep only "Notification".
 set -u
-
-[ "${HERDR_ENV:-}" = "1" ] && exit 0
 
 event="${1:-}"
 proj=$(basename "$PWD" 2>/dev/null || echo agent)     # the agent runs hooks with cwd = the project dir

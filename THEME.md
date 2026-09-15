@@ -45,7 +45,6 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | lazygit | `Library/Application Support/lazygit/config.yml` | hand-rolled rose-pine | `#ceacf6` |
 | Claude Code | `.claude/settings.json` (`theme = dark-ansi`) + `.claude/statusline-command.sh` | ANSI-inherited UI + iris statusline | UI canonical / statusline `#ceacf6` |
 | borders | `.config/borders/bordersrc` | JankyBorders `active_color` | `#ceacf6` |
-| herdr | `.config/herdr/config.toml` | `accent` | `#ceacf6` |
 | yazi | `.config/yazi/theme.toml` + `flavors/rose-pine.yazi/` | Rose Pine flavor; `[filetype]` rules mirror `LS_COLORS` (dir=iris, images+media=rose, archives=gold, exec=pine, orphan=love, lock/log/bak=muted) + `[mgr].cwd` path = iris | folders/path `#ceacf6`, rest canonical |
 | spotify-player | `.config/spotify-player/{app,theme}.toml` | `theme = rose_pine` | canonical |
 | btop | `.config/btop/themes/rose-pine.theme` + `btop.conf` | hand-rolled rose-pine flavor (`color_theme = "rose-pine"`) | `#ceacf6` |
