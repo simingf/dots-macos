@@ -167,12 +167,19 @@ return {
 				"<leader>`",
 				function()
 					-- focus toggle: in the tree → jump back to the previous window;
-					-- otherwise reveal the current file in the tree (opening if closed).
+					-- otherwise reveal the current file in the tree (opening if closed)
+					-- and focus it. reveal() only re-targets an already-open tree
+					-- without grabbing focus, so focus explicitly (re-fetch in case
+					-- reveal just opened it).
 					local p = Snacks.picker.get({ source = "explorer" })[1]
 					if p and p:is_focused() then
 						vim.cmd("wincmd p")
 					else
 						Snacks.explorer.reveal()
+						p = Snacks.picker.get({ source = "explorer" })[1]
+						if p then
+							p:focus()
+						end
 					end
 				end,
 				desc = "focus / leave file tree",
