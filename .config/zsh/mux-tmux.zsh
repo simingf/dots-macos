@@ -7,16 +7,21 @@
 # kk: tmux split matching the herdr kk — nvim (LEFT, full height, 50%) and claude
 # (RIGHT, 50%). In a git repo (or a folder with a repo nested ≤2 deep), lazygit takes
 # the top 25% of the claude column (claude below it); otherwise plain nvim/claude 50/50.
-# Args starting with - go to claude; others are files opened in nvim (default: the
-# root as a dir tree). Panes run their tool as the command so they close on exit;
+# Args starting with - are claude flags; args that are existing paths open in nvim
+# (default: the root as a dir tree); any other arg is sent to claude as a prompt (like
+# `claude PROMPT`). Panes run their tool as the command so they close on exit;
 # -d keeps focus on the origin pane, where claude runs last. Outside tmux → claude.
 kk() {
     emulate -L zsh
     local a
-    local -a cflags files
-    for a in "$@"; do [[ "$a" == -* ]] && cflags+=("$a") || files+=("${a:a}"); done
+    local -a cflags files cprompt
+    for a in "$@"; do
+        if [[ "$a" == -* ]]; then cflags+=("$a")
+        elif [[ -e "$a" ]]; then files+=("${a:a}")
+        else cprompt+=("$a"); fi
+    done
     if [[ -z "$TMUX" ]]; then
-        claude "${cflags[@]}"
+        claude "${cflags[@]}" "${cprompt[@]}"
         return
     fi
     local root paneroot=$PWD lgroot
@@ -31,7 +36,7 @@ kk() {
     tmux split-window -h -b -d -l 50% -c "$paneroot" "$nvim_cmd" || return
     # lazygit as the top 25% of the claude column (above the origin pane, via -b).
     [[ -n "$lgroot" ]] && { tmux split-window -v -b -d -l 25% -c "$lgroot" "lazygit" || return; }
-    (cd "$paneroot" && claude "${cflags[@]}") # claude in the origin pane (bottom-right, below lazygit); -d kept focus here
+    (cd "$paneroot" && claude "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (bottom-right, below lazygit); -d kept focus here
 }
 
 # tmux

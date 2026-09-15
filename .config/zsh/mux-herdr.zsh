@@ -15,16 +15,21 @@ _kk_split() {
     print -r -- "$id"
 }
 
-# kk: herdr split — nvim (LEFT) / claude (RIGHT) 50/50. Args starting with - go to
-# claude; other args are files opened in nvim (default: the root, as a dir tree).
+# kk: herdr split — nvim (LEFT) / claude (RIGHT) 50/50. Args starting with - are claude
+# flags; args that are existing paths open in nvim (default: the root, as a dir tree);
+# any other arg is sent to claude as a prompt (like `claude PROMPT`).
 # Outside herdr, just runs claude. Link nvim↔claude with /ide in the claude pane.
 kk() {
     emulate -L zsh
     local a
-    local -a cflags files
-    for a in "$@"; do [[ "$a" == -* ]] && cflags+=("$a") || files+=("${a:a}"); done
+    local -a cflags files cprompt
+    for a in "$@"; do
+        if [[ "$a" == -* ]]; then cflags+=("$a")
+        elif [[ -e "$a" ]]; then files+=("${a:a}")
+        else cprompt+=("$a"); fi
+    done
     if [[ "$HERDR_ENV" != 1 ]]; then
-        claude "${cflags[@]}"
+        claude "${cflags[@]}" "${cprompt[@]}"
         return
     fi
     # a git repo roots everything at its top-level; else stay at $PWD
@@ -41,5 +46,5 @@ kk() {
     # (q@) shell-quotes each file, (j) joins them into one command string for herdr
     herdr pane run "$right" "nvim ${(j: :)${(q@)files}}"
     herdr pane swap --current --direction right # move claude(current) right, nvim left
-    (cd "$paneroot" && claude "${cflags[@]}") # claude in the current pane, now on the right
+    (cd "$paneroot" && claude "${cflags[@]}" "${cprompt[@]}") # claude in the current pane, now on the right
 }

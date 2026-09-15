@@ -188,15 +188,19 @@ _kk_recent_nested_repo() {
     [[ -n "$best" ]] && print -r -- "$best"
 }
 
-# kk: base fallback — launch claude (flags only; opening files needs a split
-# layout). Overridden by ~/.config/zsh/mux-{herdr,tmux}.zsh with the full pane
-# layout when sourced inside a herdr or tmux session (see 95-session.zsh).
+# kk: base fallback — launch claude with flags + prompt (opening files needs a split
+# layout, so existing-path args are dropped here). Overridden by
+# ~/.config/zsh/mux-{herdr,tmux}.zsh with the full pane layout when sourced inside a
+# herdr or tmux session (see 95-session.zsh).
 kk() {
     emulate -L zsh
     local a
-    local -a cflags
-    for a in "$@"; do [[ "$a" == -* ]] && cflags+=("$a"); done
-    claude "${cflags[@]}"
+    local -a cflags cprompt
+    for a in "$@"; do
+        if [[ "$a" == -* ]]; then cflags+=("$a")
+        elif [[ ! -e "$a" ]]; then cprompt+=("$a"); fi
+    done
+    claude "${cflags[@]}" "${cprompt[@]}"
 }
 
 # Implementation lives in the babysit-prs skill (portable, worktree-aware) so it
