@@ -17,6 +17,7 @@ tap "nikitabobko/tap", trusted: true
 # ---- Formulae ----
 brew "aria2"
 brew "astroterm"
+brew "awscli"
 brew "black"
 brew "btop"
 brew "cbonsai"
