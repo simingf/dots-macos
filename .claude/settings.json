@@ -11,11 +11,7 @@
       "mcp__mcp-gateway-gmail",
       "mcp__mcp-gateway-gcalendar",
       "mcp__mcp-gateway-gdrive",
-      "mcp__mcp-gateway-ros",
-      "mcp__mcp-gateway-mosaic_mds",
-      "mcp__mcp-gateway-teamcity",
-      "mcp__mcp-gateway-sentry_onprem",
-      "mcp__mcp-gateway-atlassian"
+      "mcp__mcp-gateway-mosaic_mds"
     ],
     "deny": []
   },
