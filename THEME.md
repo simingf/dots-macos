@@ -83,7 +83,9 @@ Bright `#ceacf6` in hand-rolled configs, canonical `#c4a7e7` in upstream-flavor-
 
 Pick its accent per the convention, add a row to **Where theming lives**, and — if it colors files/dirs — mirror `LS_COLORS` per the table above.
 
-> THEME.md is a mac-only doc, but the configs it governs (yazi flavor, nvim lua) sync to the linux/windows repos per the repo `CLAUDE.md` sync contract. A palette edit here still has to be applied + synced there.
+> THEME.md is a mac-only doc, but the configs it governs (yazi flavor, nvim lua, lazygit `config.yml`) sync to the linux/windows repos per the repo `CLAUDE.md` sync contract. A palette edit here still has to be applied + synced there.
+>
+> Linux caveat: the box's shells are non-login and `.zprofile` isn't linked, so `LS_COLORS` (this doc's filetype/dir source of truth) is re-homed to `dots-linux/.config/zsh/00-env.zsh` — keep it byte-identical to the mac `.zprofile` value. The zsh prompt is `vcs_info` (not oh-my-posh) with its path+caret hardcoded to iris `#ceacf6`.
 
 ## Not yet themed / off-theme
 
