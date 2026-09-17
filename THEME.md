@@ -38,7 +38,7 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | tmux | `.tmux.conf` | hand-rolled; active border/status/window/copy-mode | `#ceacf6` |
 | neovim | `.config/nvim/lua/plugins/ui.lua` | rose-pine plugin (palette iris override) + highlight_groups + lualine + bufferline + snacks explorer (dir/symlink/broken groups mirror `LS_COLORS`: dir = iris) | `#ceacf6` |
 | VS Code | `Library/Application Support/Code/User/settings.json` | `workbench.colorTheme = "Rosé Pine"` | canonical |
-| zsh prompt | `.config/ohmyposh/zen.toml` | oh-my-posh palette; path + caret = iris | `#ceacf6` |
+| zsh prompt | `.config/ohmyposh/zen.toml` | oh-my-posh palette; path + caret = iris (mac + linux; linux runs the vendored `oh-my-posh` binary) | `#ceacf6` |
 | zsh fzf | `.config/zsh/80-tools.zsh` | `FZF_DEFAULT_OPTS` (pointer/prompt/marker/border) | `#ceacf6` |
 | zsh syntax | `.config/zsh/10-plugins.zsh` (linux: `80-tools.zsh`) | `ZSH_HIGHLIGHT_STYLES` + autosuggest | `#ceacf6` |
 | zsh files | `.zprofile` | `LS_COLORS` — **canonical filetype/dir palette, source of truth** (dirs=iris, symlink=foam, exec=pine, archives=gold, images+media=rose, lock/log/bak=muted, orphan=love) → ls/eza/completion; mirrored by yazi + nvim snacks explorer | `#ceacf6` |
@@ -85,7 +85,7 @@ Pick its accent per the convention, add a row to **Where theming lives**, and �
 
 > THEME.md is a mac-only doc, but the configs it governs (yazi flavor, nvim lua, lazygit `config.yml`) sync to the linux/windows repos per the repo `CLAUDE.md` sync contract. A palette edit here still has to be applied + synced there.
 >
-> Linux caveat: the box's shells are non-login and `.zprofile` isn't linked, so `LS_COLORS` (this doc's filetype/dir source of truth) is re-homed to `dots-linux/.config/zsh/00-env.zsh` — keep it byte-identical to the mac `.zprofile` value. The zsh prompt is `vcs_info` (not oh-my-posh) with its path+caret hardcoded to iris `#ceacf6`.
+> Linux caveat: the box's shells are non-login and `.zprofile` isn't linked, so `LS_COLORS` (this doc's filetype/dir source of truth) is re-homed to `dots-linux/.config/zsh/00-env.zsh` — keep it byte-identical to the mac `.zprofile` value. The zsh prompt is the same oh-my-posh `zen.toml` as mac, run from the vendored `oh-my-posh` binary (`dots-linux/vendor/bin/`); it falls back to a hardcoded-iris `vcs_info` prompt only if that binary is missing.
 
 ## Not yet themed / off-theme
 

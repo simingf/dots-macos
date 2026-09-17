@@ -50,6 +50,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         (".claude/hooks/agent-status.sh", ".claude/hooks/agent-status.sh"),
         (".config/zsh/mux-tmux.zsh", ".config/zsh/mux-tmux.zsh"),
         ("Library/Application Support/lazygit/config.yml", ".config/lazygit/config.yml"),
+        (".config/ohmyposh/zen.toml", ".config/ohmyposh/zen.toml"),
     ],
     "windows": [
         (".config/nvim/init.lua", "AppData/Local/nvim/init.lua"),

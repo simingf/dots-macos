@@ -76,6 +76,14 @@ tar -xzf "$TMPDIR"/glow_*_Linux_x86_64.tar.gz -C "$TMPDIR"
 find "$TMPDIR" -type f -name glow -exec cp {} "$DOTS_LINUX/vendor/bin/glow" \;
 echo "  glow ✓"
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow}
+# oh-my-posh: prompt engine driving zsh's rose-pine zen theme
+# (.config/ohmyposh/zen.toml). Single static Go binary — no archive to extract.
+gh release download --repo JanDeDobbeleer/oh-my-posh \
+  --pattern 'posh-linux-amd64' \
+  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+cp "$TMPDIR/posh-linux-amd64" "$DOTS_LINUX/vendor/bin/oh-my-posh"
+echo "  oh-my-posh ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh}
 
 echo "done."
