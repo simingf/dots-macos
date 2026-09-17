@@ -1,3 +1,25 @@
+-- On a headless SSH box (Linux devspace) there's no pbcopy/xclip/wl-copy and no
+-- $DISPLAY, so nvim's auto-detected clipboard provider is a no-op — `"+y` / `gy`
+-- write to a register that never leaves nvim. Route the +/* registers through
+-- Neovim's built-in OSC 52 provider instead: the escape sequence rides nvim →
+-- tmux (set-clipboard on / allow-passthrough) → ssh → ghostty → macOS clipboard.
+-- Locally on macOS we keep pbcopy (bidirectional, no size cap), so gate on the
+-- shared IS_SSH runtime guard (this whole tree is byte-identical across hosts).
+-- Paste reads the last-yank register rather than round-tripping an OSC 52 read:
+-- terminals refuse clipboard-read by default, which would hang `gp` — terminal
+-- paste (cmd+v) still works for pulling the Mac clipboard in.
+if require("config.env").IS_SSH and vim.fn.has("nvim-0.10") == 1 then
+	local osc52 = require("vim.ui.clipboard.osc52")
+	local function paste()
+		return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
+	end
+	vim.g.clipboard = {
+		name = "OSC 52",
+		copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+		paste = { ["+"] = paste, ["*"] = paste },
+	}
+end
+
 -- enable absolute line numbers
 vim.opt.number = true
 vim.opt.relativenumber = false
