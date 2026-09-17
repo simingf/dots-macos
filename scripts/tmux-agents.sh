@@ -279,8 +279,10 @@ __lines() {
 }
 
 # panel: the live, clickable sidebar UI — runs inside the sidebar pane. A "sessions" header over the
-# session/tab tree, an "agents" divider over the agent list. A single left-click (or enter) switches
-# session (s:) / selects a tab (w:) / jumps to the agent pane (a:) WITHOUT closing the panel. The gray
+# session/tab tree, an "agents" divider over the agent list. A left-click, double-click, or enter switches
+# session (s:) / selects a tab (w:) / jumps to the agent pane (a:) WITHOUT closing the panel. double-click is
+# bound explicitly because fzf's default double-click action is `accept`, which exits fzf and closes the
+# sidebar pane — an accidental double-click while clicking around would otherwise make the sidebar vanish. The gray
 # "you are here" backgrounds are rendered by __lines itself (active tab + focused agent), so fzf's own
 # current-line highlight is disabled (bg+:-1, no --highlight-line). Refresh is event-driven, not polled
 # (no 2s flash): start:reload seeds the list once, then tmux hooks POST a reload into --listen ($sock)
@@ -298,6 +300,7 @@ _panel() {
       --color='bg+:-1,fg+:-1:regular,gutter:-1,header:#6e6a86:bold,pointer:-1' \
       --bind "start:reload('$0' __lines)" \
       --bind "left-click:execute-silent('$0' activate {1})+reload('$0' __lines)" \
+      --bind "double-click:execute-silent('$0' activate {1})+reload('$0' __lines)" \
       --bind "enter:execute-silent('$0' activate {1})+reload('$0' __lines)" \
       >/dev/null 2>&1 || true
 }
@@ -399,12 +402,15 @@ _deflect() {
   fi
 }
 
-# _sidebar_open: create the panel as a fixed-width ($SIDEBAR_COLS) LEFT split in the current window (tagged @agent_sidebar,
-# focus stays put via -d). No-op if this window already has one — so `prefix c` can call it blindly.
+# _sidebar_open: create the panel as a fixed-width ($SIDEBAR_COLS), full-height split pinned to the window's
+# far-left edge (tagged @agent_sidebar, focus stays put via -d). `-f` spans the whole window height and places
+# it at the left edge regardless of which pane is focused — without it the split takes only the focused pane's
+# area, landing mid-window when you're in a right column. No-op if this window already has one — so `prefix c`
+# can call it blindly.
 _sidebar_open() {
   tmux list-panes -F '#{@agent_sidebar}' | grep -q '^1$' && return 0
   local pane
-  pane=$(tmux split-window -h -b -l "$SIDEBAR_COLS" -c "$HOME" -d -P -F '#{pane_id}' "'$0' panel") || return 0
+  pane=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -c "$HOME" -d -P -F '#{pane_id}' "'$0' panel") || return 0
   # If the panel command dies immediately (e.g. fzf too old), the pane is already
   # gone — tag it defensively so a stale pane never surfaces "no such pane".
   [ -n "$pane" ] && tmux set-option -p -t "$pane" @agent_sidebar 1 2>/dev/null
