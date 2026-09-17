@@ -1,32 +1,22 @@
--- Clipboard: when there's no working *local* clipboard tool — the headless Linux
--- devspace has no pbcopy, and no X/Wayland display for xclip/xsel/wl-copy — nvim's
--- auto-detected provider is a no-op, so `"+y` / `gy` write to a register that
--- never leaves the editor. In that case route the +/* registers through Neovim's
--- built-in OSC 52 provider: the yank rides nvim → tmux (set-clipboard on /
--- allow-passthrough) → ssh → ghostty → macOS clipboard.
+-- Clipboard on the Linux devspace: force Neovim's built-in OSC 52 provider so
+-- `"+y` / `gy` reach the macOS clipboard — the yank rides nvim → tmux
+-- (set-clipboard on / allow-passthrough) → ssh → ghostty → macOS clipboard.
 --
--- Detect on the ABSENCE of a native tool, not on $SSH_CONNECTION: a persistent
--- Coder tmux server can start with no SSH_* in its env, so SSH detection silently
--- misfires there. "Is there a local clipboard?" is the condition we actually care
--- about, and it keeps pbcopy on macOS (bidirectional, no size cap). This tree is
--- byte-identical across hosts, so the choice is made at runtime.
+-- Key purely on OS, not on SSH env or tool presence, because both mislead here:
+--   - SSH_CONNECTION is empty under a persistent Coder tmux server, so SSH
+--     detection silently skips this.
+--   - The box ships xsel/xclip AND sets $DISPLAY, but its X server has no real
+--     clipboard — xsel fails with `BadWindow` (see :checkhealth). So nvim's
+--     auto-detect, and any "is a clipboard tool installed?" check, pick the
+--     broken xsel and gy fails.
+-- The only Linux target in these dotfiles is that headless dev box, which always
+-- wants OSC 52. So: macOS keeps pbcopy, Windows its native clipboard, everything
+-- else → OSC 52. This tree is byte-identical across hosts; the choice is runtime.
 --
 -- Paste reads the last-yank register instead of round-tripping an OSC 52 read
 -- (terminals refuse clipboard-read by default, which would hang `gp`); terminal
 -- paste (cmd+v) still pulls the Mac clipboard in.
-local function has_local_clipboard()
-	if vim.fn.has("mac") == 1 and vim.fn.executable("pbcopy") == 1 then
-		return true
-	end
-	if (vim.env.WAYLAND_DISPLAY or "") ~= "" and vim.fn.executable("wl-copy") == 1 then
-		return true
-	end
-	if (vim.env.DISPLAY or "") ~= "" and (vim.fn.executable("xclip") == 1 or vim.fn.executable("xsel") == 1) then
-		return true
-	end
-	return false
-end
-if not has_local_clipboard() and vim.fn.has("nvim-0.10") == 1 then
+if vim.fn.has("mac") == 0 and vim.fn.has("win32") == 0 and vim.fn.has("nvim-0.10") == 1 then
 	local osc52 = require("vim.ui.clipboard.osc52")
 	local function paste()
 		return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
