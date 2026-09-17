@@ -23,6 +23,7 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/git/skills-cli/bin:$PATH"
 export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
+export PATH="$HOME/.mosaic:$PATH"  # mosaic CLI (Roblox SRE-platform; binary from artifactory, Mac-only work tool)
 path+=/Library/TeX/texbin
 path+=/Applications/Docker.app/Contents/Resources/bin  # Docker Desktop CLI (docker + credential/kube helpers); appended so it can't shadow brew
 path+=$HOME/.docker/bin  # Docker CLI plugins dir (compose/buildx etc.); appended so it can't shadow brew
