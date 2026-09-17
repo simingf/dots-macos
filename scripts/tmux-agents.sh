@@ -149,13 +149,12 @@ __fzf() {
   [ -n "$sel" ] && _jump "$sel"
 }
 
-# pick: bottom-anchored full-width popup (matches tmux-fzf-sessions.sh). Height = agents + 5.
+# pick: centered popup (matches tmux-fzf-sessions.sh / tmux-fzf-windows.sh). Height = agents + 5.
 _pick() {
-  local n y
+  local n
   n=$(_list | wc -l | tr -d ' ')
   [ "$n" -gt 0 ] || { tmux display-message "No agents running"; return 0; }
-  y=$(tmux display-message -p '#{client_height}')
-  tmux display-popup -E -x 0 -y "$y" -w 100% -h "$((n + 5))" "'$0' __fzf" || true
+  tmux display-popup -E -w 70% -h "$((n + 5))" -T ' agents ' "'$0' __fzf" || true
 }
 
 # count: compact "✳ <working>/<total>" for status-right; prints nothing when none run so the bar stays
