@@ -417,13 +417,110 @@ _sidebar_open() {
   return 0
 }
 
-# sidebar: TOGGLE the panel — open it (left, via _sidebar_open) or, if this window already has one,
-# close it. Self-heals if you closed it manually (`x`/esc). Per-window: a split can only live in one
-# window, so each window tracks its own.
+# _csum: tmux layout_checksum (layout-custom.c) over a layout body — excludes the leading "csum,".
+# Same algorithm as tmux-even-columns.sh; needed to re-sign a rewritten layout for select-layout.
+_csum() {
+  local s=$1 c=0 i ch
+  for ((i = 0; i < ${#s}; i++)); do
+    printf -v ch '%d' "'${s:i:1}"
+    c=$(((c >> 1) + ((c & 1) << 15)))
+    c=$(((c + ch) & 0xffff))
+  done
+  printf '%04x' "$c"
+}
+
+# _reclaim_layout: given the live window layout ($1) and the sidebar's numeric pane id ($2), compute the
+# layout that should apply AFTER the sidebar column is removed — the remaining top-level columns rescaled
+# proportionally to fill the width the sidebar vacated. So closing is width-neutral: even columns stay even,
+# unequal columns keep their ratio, no ratchet onto the neighbor. Prints "csum,body" on success. Returns 1
+# (prints nothing) on shapes we won't touch — top level not a left/right split, a column with a nested
+# left/right split (inner widths would need their own scaling), sidebar column not found, or <2 real columns
+# (tmux already fills those correctly) — and the caller then just kills the pane and lets tmux redistribute.
+# Pure (no tmux calls), so it's unit-tested via the `__reclaim` mode. Mirrors tmux-even-columns.sh's parser.
+_reclaim_layout() {
+  local layout=$1 sidebar_id=$2 body root W inner
+  body=${layout#*,}                                # strip "csum,"
+  case $body in *,0,0\{*\}) ;; *) return 1 ;; esac  # top level must be a left/right split "WxH,0,0{...}"
+  root=${body%%\{*}; W=${root%%x*}
+  inner=${body#*\{}; inner=${inner%\}}
+  # depth-0 comma split into pieces, then regroup into whole column cells (leaf = 4 pieces "WxH,X,Y,id";
+  # group/stack = 3 pieces, the Y piece carrying an attached [..]/{..}). Identical to even-columns.
+  local -a pieces=() cells=(); local d=0 tok="" i ch
+  for ((i = 0; i < ${#inner}; i++)); do
+    ch=${inner:i:1}
+    case $ch in
+      '{' | '[') d=$((d + 1)); tok+=$ch ;;
+      '}' | ']') d=$((d - 1)); tok+=$ch ;;
+      ,) if ((d == 0)); then pieces+=("$tok"); tok=""; else tok+=$ch; fi ;;
+      *) tok+=$ch ;;
+    esac
+  done
+  pieces+=("$tok")
+  local n=${#pieces[@]}; i=0
+  while ((i < n)); do
+    [[ ${pieces[i]:-} == *x* ]] || return 1        # every cell begins with WxH
+    local yp=${pieces[i + 2]:-}
+    if [[ $yp == *'['* || $yp == *'{'* ]]; then
+      cells+=("${pieces[i]},${pieces[i + 1]:-},${pieces[i + 2]:-}"); i=$((i + 3))
+    else
+      cells+=("${pieces[i]},${pieces[i + 1]:-},${pieces[i + 2]:-},${pieces[i + 3]:-}"); i=$((i + 4))
+    fi
+  done
+  local ncols=${#cells[@]}; ((ncols >= 2)) || return 1
+  # classify columns: width, sidebar?, reject a nested left/right split (would need inner scaling)
+  local -a cw=() issb=(); local idx c rest id sumr=0 nreal=0 sbfound=0
+  for idx in "${!cells[@]}"; do
+    c=${cells[idx]}
+    [[ $c == *'{'* ]] && return 1
+    cw[idx]=${c%%x*}
+    if [[ -n $sidebar_id && $c != *'['* ]]; then
+      id=${c##*,}
+      if [[ $id == "$sidebar_id" ]]; then issb[idx]=1; sbfound=1; continue; fi
+    fi
+    issb[idx]=0; sumr=$((sumr + ${cw[idx]})); nreal=$((nreal + 1))
+  done
+  ((sbfound == 1 && nreal >= 2 && sumr > 0)) || return 1
+  local avail=$((W - (nreal - 1)))                 # width for nreal columns after nreal-1 separators
+  ((avail >= nreal)) || return 1                   # too narrow for a clean tile → punt
+  # proportional floor targets, then hand the rounding leftover out one col at a time, left-to-right
+  local -a tgt=(); local acc=0
+  for idx in "${!cells[@]}"; do
+    ((${issb[idx]} == 1)) && continue
+    tgt[idx]=$(( ${cw[idx]} * avail / sumr )); ((${tgt[idx]} < 1)) && tgt[idx]=1
+    acc=$((acc + ${tgt[idx]}))
+  done
+  local leftover=$((avail - acc))
+  for idx in "${!cells[@]}"; do
+    ((leftover > 0)) || break
+    ((${issb[idx]} == 1)) && continue
+    tgt[idx]=$((${tgt[idx]} + 1)); leftover=$((leftover - 1))
+  done
+  # rebuild reals-only, re-chaining X from 0; shift every cell in a column (stacks share width+X) via sed
+  local -a newcols=(); local cursor=0 w0 x0 xn nc
+  for idx in "${!cells[@]}"; do
+    ((${issb[idx]} == 1)) && continue
+    c=${cells[idx]}; w0=${cw[idx]}; rest=${c#*,}; x0=${rest%%,*}; xn=$cursor
+    nc=$(sed -E "s/([,{[]|^)${w0}x([0-9]+),${x0},/\1${tgt[idx]}x\2,${xn},/g" <<<"$c")
+    newcols+=("$nc"); cursor=$((xn + ${tgt[idx]} + 1))
+  done
+  local joined new_body; joined=$(IFS=,; echo "${newcols[*]}"); new_body="${root}{${joined}}"
+  printf '%s,%s\n' "$(_csum "$new_body")" "$new_body"
+}
+
+# sidebar: TOGGLE the panel — open it (left, via _sidebar_open) or, if this window already has one, close it.
+# On close, reclaim the sidebar's width proportionally across the remaining columns (see _reclaim_layout) so
+# toggling is width-neutral — no ratchet onto the neighbor, and a mid-session `prefix 0` even-up survives the
+# close. Shapes _reclaim_layout won't rewrite fall back to a plain kill (tmux redistributes). Self-heals if you
+# closed it manually (`x`/esc). Per-window: a split can only live in one window, so each window tracks its own.
 _sidebar() {
-  local existing
+  local existing sbid layout newl
   existing=$(tmux list-panes -F '#{pane_id} #{@agent_sidebar}' | awk '$2 == "1" { print $1; exit }')
-  if [ -n "$existing" ]; then tmux kill-pane -t "$existing"; else _sidebar_open; fi
+  if [ -z "$existing" ]; then _sidebar_open; return 0; fi
+  sbid=$(printf '%s' "$existing" | tr -d '%')      # layout strings use the bare numeric id, not "%N"
+  layout=$(tmux display-message -p '#{window_layout}')
+  newl=$(_reclaim_layout "$layout" "$sbid") || newl=""
+  tmux kill-pane -t "$existing"
+  [ -n "$newl" ] && tmux select-layout "$newl" 2>/dev/null || true
 }
 
 # _fix_width: snap every open sidebar back to $SIDEBAR_COLS. Wired to the client-resized hook so plugging
@@ -456,6 +553,7 @@ case "${1:-pick}" in
   __fzf)   __fzf ;;      # internal: invoked inside the popup
   count)   _count ;;
   sidebar)      _sidebar ;;
+  __reclaim)    _reclaim_layout "${2:-}" "${3:-}" ;;  # internal/testable: pure layout transform (see _reclaim_layout)
   sidebar-open) _sidebar_open ;;  # internal: invoked by `prefix c` to seed the left panel
   panel)        _panel ;;         # internal: invoked inside the sidebar pane
   __lines)      __lines ;;            # internal: invoked by the panel's reload binds
