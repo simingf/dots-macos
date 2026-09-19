@@ -57,7 +57,7 @@ zsh -ic 'zinit update --all'
 ~/dots-macos/scripts/sync-dotfiles.py --apply linux   # in case init.lua/.tmux.conf drifted
 ```
 
-User commits/pushes from each sibling repo themselves.
+`refresh-linux-vendored.sh` auto-commits the `vendor/` tree itself with `SKIP=gitleaks` — the tree is all third-party bytes that trip Roblox's gitleaks pre-commit hook with false positives (40-hex git SHAs read as tokens, example IPs, doc emails); the commit is pathspec-scoped to `vendor/` so your own config commits are still scanned. Commit the remaining config changes and push from each sibling repo yourself.
 
 ## Sync contract
 
