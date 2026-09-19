@@ -48,16 +48,15 @@ When the user says **"I installed `<app>`"** / **"set up `<app>` in my dots"** /
 ~/dots-macos/scripts/sync-dotfiles.py --apply    # copy drifted files
 ```
 
-When the user says **"refresh Linux vendored plugins"**:
+When the user says **"refresh Linux vendored plugins"**, run the one-shot orchestrator:
 
 ```bash
-nvim --headless +"Lazy! sync" +qa
-zsh -ic 'zinit update --all'
-~/dots-macos/scripts/refresh-linux-vendored.sh
-~/dots-macos/scripts/sync-dotfiles.py --apply linux   # in case init.lua/.tmux.conf drifted
+~/dots-macos/scripts/refresh-linux.sh
 ```
 
-`refresh-linux-vendored.sh` auto-commits the `vendor/` tree itself with `SKIP=gitleaks` — the tree is all third-party bytes that trip Roblox's gitleaks pre-commit hook with false positives (40-hex git SHAs read as tokens, example IPs, doc emails); the commit is pathspec-scoped to `vendor/` so your own config commits are still scanned. Commit the remaining config changes and push from each sibling repo yourself.
+It does the whole flow hands-off: (1) `nvim Lazy! sync` + `zinit update` to refresh the Mac's own plugin trees, (2) `refresh-linux-vendored.sh` to re-vendor them + binaries into dots-linux, (3) `sync-dotfiles.py --apply linux` to propagate config, (4) commit + push both repos.
+
+Commit story: `refresh-linux-vendored.sh` commits `vendor/` with `SKIP=gitleaks` (the tree is all third-party bytes that trip Roblox's gitleaks pre-commit hook with false positives — 40-hex git SHAs read as tokens, example IPs, doc emails). Config commits (lazy-lock.json etc.) are **scanned normally** — lazy-lock's SHAs don't trip the rules (the token rule keys on the `revision = '…'` lua context, not JSON), and a real secret still hard-blocks. `git push` is never scanned — the infosec `git` wrapper (`/opt/rbx/infosec/safe-git-push`) only gates `git commit`, fast-pathing everything else — so pushing the vendor commit is fine. Commits are pathspec-scoped to the refresh footprint (nvim lazy-lock) so unrelated pending work isn't swept in.
 
 ## Sync contract
 
@@ -94,7 +93,7 @@ zsh -ic 'zinit update --all'
 ## Scripts policy
 
 - **Bootstrap** lives in its own repo (`dots-macos/scripts/setup.sh`, `dots-linux/setup.sh`, `dots-windows/scripts/apply.ps1`) — each runs on the platform it applies.
-- **Cross-repo orchestration** lives in `dots-macos/scripts/` (`sync-dotfiles.py`, `refresh-linux-vendored.sh`) since Mac is the control plane.
+- **Cross-repo orchestration** lives in `dots-macos/scripts/` (`sync-dotfiles.py`, `refresh-linux-vendored.sh`, and `refresh-linux.sh` — the one-shot orchestrator that chains plugin-update → vendor → sync → commit+push both repos) since Mac is the control plane.
 - **Config helpers** (`scripts/tmux-fzf-*.sh`) live in every repo where the calling config runs, synced byte-identical.
 
 ## Editing conventions

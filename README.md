@@ -48,6 +48,7 @@ dots-macos/
 │   └── hooks/agent-status.sh           # Stop/Notification → /tmp/agent-status-* state file → agent sidebar dot color
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
+│   ├── refresh-linux.sh                # one-shot: update Mac plugins → vendor → sync → commit+push both repos
 │   ├── refresh-linux-vendored.sh       # cross-repo orchestration: rsync vendored plugins into dots-linux
 │   ├── setup.sh                        # full bootstrap (brew, rustup, cargo install, ani-cli, plists)
 │   ├── check-brew-sync.sh, sync-brew.sh  # Brewfile drift helpers
@@ -68,7 +69,7 @@ dots-macos/
 ## Things you can ask Claude
 
 - **"sync my dotfiles"** — runs `scripts/sync-dotfiles.py --apply` (byte-identical files only).
-- **"refresh the Linux vendored plugins"** — runs `nvim --headless +Lazy sync`, `zsh -ic 'zinit update --all'`, then `scripts/refresh-linux-vendored.sh`.
+- **"refresh the Linux vendored plugins"** — runs `scripts/refresh-linux.sh`: updates the Mac's plugin trees (`nvim Lazy! sync` + `zinit update`), re-vendors them into dots-linux, syncs config, and commits + pushes both repos.
 - **"mirror this alias to Linux"** / **"mirror this function to Windows"** — hand-port a `.zshrc` change into `dots-linux/.zshrc` (skipping Mac-only tools) or `dots-windows/Documents/PowerShell/Profile.ps1` (translating zsh→PowerShell).
 - **"snapshot `<app>` preferences"** — copies `~/Library/Preferences/<domain>.plist` into `manual/preferences/` and commits.
 - **"I installed `<app>`, set it up in my dots"** / **"add `<app>` to dotfiles"** — walks the checklist in [`CLAUDE.md`](./CLAUDE.md#new-tool--app-setup): install path, config placement + stow, sync wiring, sibling-repo updates, docs.
