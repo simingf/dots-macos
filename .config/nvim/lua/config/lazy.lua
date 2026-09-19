@@ -21,7 +21,6 @@ local env = require("config.env")
 
 require("lazy").setup({
 	spec = { { import = "plugins" } },
-}, {
 	install = { missing = not env.IS_SSH },
 	checker = { enabled = not env.IS_SSH },
 })
