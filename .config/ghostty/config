@@ -22,6 +22,17 @@ window-padding-y = 15
 macos-option-as-alt = left
 macos-titlebar-style = hidden
 
+# Mouse selection — always route drag-selection through tmux so the highlight
+# clears and copies on release (tmux's copy-pipe-and-cancel). mouse-shift-capture
+# = true stops Shift from bypassing tmux's mouse grab, so shift-drag no longer
+# triggers ghostty's own selection (which stays highlighted and, by default, only
+# writes the selection buffer — the "highlighted but not copied" case). URLs still
+# open with ⌘-click on macOS (a separate modifier, unaffected by this).
+# copy-on-select is the fallback for surfaces where tmux isn't grabbing the mouse
+# (a raw ghostty window): those selections at least reach the real clipboard.
+mouse-shift-capture = true
+copy-on-select = clipboard
+
 # Keybinds — clear all defaults, keep only these
 keybind = clear
 keybind = cmd+n=new_window
