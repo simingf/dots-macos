@@ -25,9 +25,15 @@ set -euo pipefail
 DOTS_MACOS="${HOME}/dots-macos"
 DOTS_LINUX="${HOME}/dots-linux"
 
+# Force pagers off: zinit prints each plugin's git-log changelog, and git pipes
+# `git log` through less on a TTY — which hangs the script waiting for `q`. The
+# top-level export covers every step; the inline copy on the zinit line survives
+# a zshrc that resets PAGER inside the interactive `zsh -ic`.
+export GIT_PAGER=cat PAGER=cat
+
 echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit)"
 nvim --headless +"Lazy! sync" +qa
-zsh -ic 'zinit update --all' || true  # zinit exits non-zero on 'nothing to update'
+zsh -ic 'GIT_PAGER=cat PAGER=cat zinit update --all' || true  # exits non-zero on 'nothing to update'
 
 echo "==> [2/4] vendoring into dots-linux (commits vendor/ with SKIP=gitleaks)"
 "$DOTS_MACOS/scripts/refresh-linux-vendored.sh"
@@ -50,8 +56,11 @@ commit_push() {
   git -C "$repo" push
   local leftover
   leftover=$(git -C "$repo" status --short)
-  [ -n "$leftover" ] && printf '  %s: left uncommitted (handle manually):\n%s\n' \
-    "$(basename "$repo")" "$leftover"
+  # `if`, not `&& printf`: a bare `[ -n "$leftover" ] && …` as the last statement
+  # returns 1 when the tree is clean, which under `set -e` aborts the whole script.
+  if [ -n "$leftover" ]; then
+    printf '  %s: left uncommitted (handle manually):\n%s\n' "$(basename "$repo")" "$leftover"
+  fi
 }
 
 commit_push "$DOTS_MACOS" "nvim: bump lazy-lock (plugin refresh)" .config/nvim/lazy-lock.json
