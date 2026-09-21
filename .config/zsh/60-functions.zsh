@@ -33,8 +33,10 @@ dotslg() {
         echo "Not in a tmux session" >&2
         return 1
     fi
-    local pane_count=$(tmux list-panes | wc -l | tr -d ' ')
-    if [[ "$pane_count" -gt 1 ]]; then
+    # Count real panes (exclude the agent sidebar) so a lone working pane + sidebar
+    # reuses the current window instead of spawning a new one and orphaning the sidebar.
+    local real_panes=$(tmux list-panes -F '#{@agent_sidebar}' | grep -vc '^1$')
+    if [[ "$real_panes" -gt 1 ]]; then
         tmux new-window -n "dots" -c "$HOME/dots-macos"
         tmux send-keys "lg" Enter
     else
@@ -44,7 +46,11 @@ dotslg() {
     tmux send-keys "lg" Enter
     tmux split-window -h -c "$HOME/dots-windows"
     tmux send-keys "lg" Enter
-    tmux select-layout even-horizontal
+    # Seed a sidebar if this window lacks one (no-op if it already has one), then equalize
+    # the lazygit columns while preserving the sidebar's fixed width — `select-layout
+    # even-horizontal` would flatten the sidebar into an equal column.
+    "$HOME/dots-macos/scripts/tmux-agents.sh" sidebar-open
+    "$HOME/dots-macos/scripts/tmux-even-columns.sh"
 }
 
 # sl update
