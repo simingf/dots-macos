@@ -523,13 +523,26 @@ _sidebar() {
   [ -n "$newl" ] && tmux select-layout "$newl" 2>/dev/null || true
 }
 
-# _fix_width: snap every open sidebar back to $SIDEBAR_COLS. Wired to the client-resized hook so plugging
-# or unplugging a monitor (which resizes the client's terminal and makes tmux redistribute pane widths)
-# doesn't grow/shrink the sidebar. Idempotent — resizing a pane already at the target is a no-op.
+# _fix_width: snap every open sidebar back to $SIDEBAR_COLS. Wired to window-resized (monitor plug/unplug)
+# and window-layout-changed (a pane closing — e.g. `:qa` from the kk layout — hands its freed width to the
+# bordering pane, often the sidebar). Two loop-breakers, because it runs on window-layout-changed and its own
+# resize-pane re-fires that hook:
+#   1. WIDTH GUARD (termination): only resize a sidebar whose width actually differs from the target. tmux
+#      fires window-layout-changed even on a same-size resize-pane, so an unconditional resize here would
+#      recurse forever; skipping the no-op is the condition that ends the chain (resize 224→24 fires once
+#      more, the next pass sees 24 and issues no resize, so no further event).
+#   2. mkdir LOCK + small debounce (coalesce): fold a burst of layout events into one delayed pass and never
+#      overlap two runs — same pattern as _refresh_agents. Belt-and-suspenders over the width guard.
 _fix_width() {
-  tmux list-panes -a -F '#{@agent_sidebar}	#{pane_id}' 2>/dev/null \
-  | awk -F'\t' '$1==1 {print $2}' \
-  | while IFS= read -r pid; do tmux resize-pane -t "$pid" -x "$SIDEBAR_COLS" 2>/dev/null || true; done
+  local lock="/tmp/agent-sidebar-fixwidth-${UID:-0}.lock"
+  mkdir "$lock" 2>/dev/null || return 0                                  # a fix-width pass is already scheduled → coalesce
+  (
+    trap 'rmdir "$lock" 2>/dev/null' EXIT
+    sleep 0.2
+    tmux list-panes -a -F '#{@agent_sidebar}	#{pane_id}	#{pane_width}' 2>/dev/null \
+    | awk -F'\t' -v w="$SIDEBAR_COLS" '$1==1 && $3+0 != w+0 {print $2}' \
+    | while IFS= read -r pid; do tmux resize-pane -t "$pid" -x "$SIDEBAR_COLS" 2>/dev/null || true; done
+  ) &
 }
 
 # reap: close window $1 when its only remaining pane(s) are the sidebar — so exiting your last real
