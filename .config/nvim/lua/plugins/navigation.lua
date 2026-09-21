@@ -25,6 +25,21 @@ return {
 		opts = function(_, opts)
 			local grp = vim.api.nvim_create_augroup("snacks_explorer", { clear = true })
 
+			-- Force-refresh the explorer's git status. snacks watches `.git/index` via a
+			-- libuv fs_event, but macOS FSEvents drops git's index.lock→index rename, so an
+			-- out-of-band commit/push (another pane, an agent) leaves the tree's git icons
+			-- stale. The built-in `u`/explorer_update only re-stats the tree — git status sits
+			-- behind a 15-min TTL cache (CACHE_TTL in explorer/git.lua), so it won't re-run.
+			-- This invalidates that cache, then re-renders. Bound to `R` and FocusGained below.
+			local function refresh_git()
+				local p = Snacks.picker and Snacks.picker.get({ source = "explorer" })[1]
+				if not p or p.closed then
+					return
+				end
+				require("snacks.explorer.git").refresh(p:cwd())
+				require("snacks.explorer.actions").update(p, { refresh = true })
+			end
+
 			-- `nvim <file>`: show the explorer as an unfocused sidebar (focus stays on
 			-- the file). dir args are handled by replace_netrw; no args stay lazy.
 			-- `focus = false` opens the picker without it grabbing focus (honored in
@@ -76,6 +91,14 @@ return {
 				end,
 			})
 
+			-- auto-refresh git icons when the nvim pane regains focus, e.g. after
+			-- committing in another tmux pane or via an agent (requires terminal
+			-- focus reporting, which tmux forwards).
+			vim.api.nvim_create_autocmd("FocusGained", {
+				group = grp,
+				callback = refresh_git,
+			})
+
 			return vim.tbl_deep_extend("force", opts, {
 				explorer = { replace_netrw = true },
 				picker = {
@@ -102,6 +125,9 @@ return {
 									keys = {
 										["i"] = "confirm", -- Colemak right: open file / expand dir
 										["m"] = "explorer_close", -- Colemak left: collapse dir
+										-- `R`: force-refresh tree + git status (see refresh_git above). The
+										-- built-in `u` only re-stats the tree; this also busts the git cache.
+										["R"] = refresh_git,
 										-- `M`: move marked (<Tab>) files into the dir under the cursor
 										-- (falls back to rename the current item if none marked). Rebound
 										-- off lowercase `m` since that's taken by collapse above.
