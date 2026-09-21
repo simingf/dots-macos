@@ -20,10 +20,10 @@
   "mini.pairs": { "branch": "main", "commit": "b1c5a726921b7a8c9321e9a7a208aa0571de5810" },
   "nvim-lspconfig": { "branch": "master", "commit": "ffd261c09c3dabd0bf1a438f47a8ae3b22f3c3ff" },
   "nvim-recorder": { "branch": "main", "commit": "0ef1a24293323b3db2f56edca196f662b6551b1b" },
-  "nvim-treesitter": { "branch": "main", "commit": "9a168f6357ed21c3a636e1727bc7d382abc451b8" },
+  "nvim-treesitter": { "branch": "main", "commit": "f603a2f4da48728f80257fb5fbb90145fd1dc173" },
   "nvim-treesitter-context": { "branch": "master", "commit": "f3061339b8eaf9fda873600bc425b8d2d8502533" },
   "nvim-treesitter-textobjects": { "branch": "main", "commit": "5c7b0263797dfd1bd6202f2b219f3b53a80b2187" },
-  "nvim-web-devicons": { "branch": "master", "commit": "914decffe650296c87312c53b7933ecb86718499" },
+  "nvim-web-devicons": { "branch": "master", "commit": "58447c1fca354bbf184425e4a8d01deecbd6f3c4" },
   "plenary.nvim": { "branch": "master", "commit": "74b06c6c75e4eeb3108ec01852001636d85a932b" },
   "rose-pine": { "branch": "main", "commit": "ff483051a47e27d84bdef47703538df1ed9f4a47" },
   "snacks.nvim": { "branch": "main", "commit": "882c996cf28183f4d63640de0b4c02ec886d01f2" },
@@ -31,6 +31,6 @@
   "trouble.nvim": { "branch": "main", "commit": "bd67efe408d4816e25e8491cc5ad4088e708a69a" },
   "vim-repeat": { "branch": "master", "commit": "65846025c15494983dafe5e3b46c8f88ab2e9635" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" },
-  "yanky.nvim": { "branch": "main", "commit": "dd6689fdda85f66cab7d9b1a1664625f3be0920d" },
+  "yanky.nvim": { "branch": "main", "commit": "4b4ddd196526fd3d6fd091d931810f9743e936d3" },
   "yazi.nvim": { "branch": "main", "commit": "2508e758d9057da9a3ec3f8c53e9f33a46a66e2d" }
 }
