@@ -46,6 +46,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         (".config/yazi/plugins/glow.yazi/rose-pine.json", ".config/yazi/plugins/glow.yazi/rose-pine.json"),
         (".claude/CLAUDE.md", ".claude/CLAUDE.md"),
         (".claude/settings.json", ".claude/settings.json"),
+        (".claude/themes/rose-pine.json", ".claude/themes/rose-pine.json"),
         (".claude/statusline-command.sh", ".claude/statusline-command.sh"),
         (".claude/hooks/agent-notify.sh", ".claude/hooks/agent-notify.sh"),
         (".claude/hooks/agent-status.sh", ".claude/hooks/agent-status.sh"),

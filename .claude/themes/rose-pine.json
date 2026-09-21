@@ -1,0 +1,7 @@
+{
+  "name": "Rose Pine (ANSI + readable hover)",
+  "base": "dark-ansi",
+  "overrides": {
+    "userMessageBackgroundHover": "#403d52"
+  }
+}

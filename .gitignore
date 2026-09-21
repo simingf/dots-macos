@@ -9,7 +9,7 @@ Library/Application Support/Code/User/*
 !Library/Application Support/Code/User/settings.json
 !Library/Application Support/Code/User/keybindings.json
 
-# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh, and our own hooks.
+# Claude Code — only track CLAUDE.md, settings.json, statusline-command.sh, our own hooks, and custom themes.
 .claude/*
 !.claude/CLAUDE.md
 !.claude/settings.json
@@ -18,6 +18,9 @@ Library/Application Support/Code/User/*
 .claude/hooks/*
 !.claude/hooks/agent-notify.sh
 !.claude/hooks/agent-status.sh
+!.claude/themes/
+.claude/themes/*
+!.claude/themes/rose-pine.json
 
 # Alfred — ignore passwords, machine-local prefs, and Remote app icons
 .config/alfred/Alfred.alfredpreferences/snippets/passwords/

@@ -127,8 +127,8 @@
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-ansi",
-  "verbose": true,
-  "tui": "fullscreen"
+  "theme": "custom:rose-pine",
+  "verbose": true
 }
