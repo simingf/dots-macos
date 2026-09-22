@@ -4,11 +4,10 @@
 # source tail). Byte-identical across mac & linux — no host-specific paths
 # (claude/nvim/lazygit resolve per-platform from .zshrc).
 
-# kk: tmux split — nvim (LEFT, full height, 50%) and claude
-# (RIGHT, 50%). In a git repo (or a folder with a repo nested ≤2 deep), lazygit takes
-# the top 25% of the claude column (claude below it); otherwise plain nvim/claude 50/50.
-# Args starting with - are claude flags; args that are existing paths open in nvim
-# (default: the root as a dir tree); any other arg is sent to claude as a prompt (like
+# kk: tmux split into full-height columns (no vertical stacking). In a git repo (or a folder with a repo
+# nested ≤2 deep): lazygit 20% | nvim 40% | claude 40%. Otherwise: nvim 50% | claude 50%. claude is always
+# the rightmost column (the origin pane). Args starting with - are claude flags; args that are existing paths
+# open in nvim (default: the root as a dir tree); any other arg is sent to claude as a prompt (like
 # `claude PROMPT`). Panes run their tool as the command so they close on exit;
 # -d keeps focus on the origin pane, where claude runs last. Outside tmux → claude.
 kk() {
@@ -32,11 +31,18 @@ kk() {
     fi
     (( ${#files} )) || files=("$paneroot") # no files → open the root as a dir tree
     local nvim_cmd="nvim ${(j: :)${(q@)files}}" # (q@) quotes each file, (j) joins
-    # nvim/claude 50/50 (nvim left of the origin pane, via -b), leaving claude on the right.
-    tmux split-window -h -b -d -l 50% -c "$paneroot" "$nvim_cmd" || return
-    # lazygit as the top 25% of the claude column (above the origin pane, via -b).
-    [[ -n "$lgroot" ]] && { tmux split-window -v -b -d -l 25% -c "$lgroot" "lazygit" || return; }
-    (cd "$paneroot" && claude "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (bottom-right, below lazygit); -d kept focus here
+    # Full-height columns to the left of the origin pane (claude, rightmost). Each -h -b split inserts a new
+    # column just left of the origin; -l is a % of the pane being split, so ordering makes the ratios land:
+    if [[ -n "$lgroot" ]]; then
+        # lazygit 20% | nvim 40% | claude 40%. lazygit first at 20% of the full width; then nvim at 50% of the
+        # remaining 80% = 40%, leaving claude at 40%.
+        tmux split-window -h -b -d -l 20% -c "$lgroot"   "lazygit"   || return
+        tmux split-window -h -b -d -l 50% -c "$paneroot" "$nvim_cmd" || return
+    else
+        # nvim 50% | claude 50%.
+        tmux split-window -h -b -d -l 50% -c "$paneroot" "$nvim_cmd" || return
+    fi
+    (cd "$paneroot" && claude "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (rightmost); -d kept focus here
 }
 
 # tmux
