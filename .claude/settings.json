@@ -1,6 +1,8 @@
 {
   "cleanupPeriodDays": 7,
-  "env": {},
+  "env": {
+    "SQLITE_DB": "/tmp/safe-git-push-metrics.sqlite"
+  },
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
