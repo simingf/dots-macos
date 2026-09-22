@@ -44,7 +44,7 @@ dots-macos/
 │   ├── CLAUDE.md                       # global Claude Code instructions
 │   ├── settings.json                   # Claude Code settings (permissions, model, statusLine, notify hooks)
 │   ├── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
-│   ├── hooks/agent-notify.sh           # Stop/Notification → desktop toast (terminal-notifier/osascript/notify-send)
+│   ├── hooks/agent-notify.sh           # Stop/Notification → transient top-right status-bar notif (via scripts/tmux-notify.sh); tmux-only, no OS toast
 │   └── hooks/agent-status.sh           # Stop/Notification → /tmp/agent-status-* state file → agent sidebar dot color
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
@@ -59,7 +59,8 @@ dots-macos/
 │   ├── tmux-agents.sh                  # agent picker/count/sidebar (prefix a/A, left panel auto-seeded on prefix c); detects panes by OSC title
 │   ├── tmux-even-columns.sh            # prefix 0: equal-width columns but keep the agent sidebar's width + preserve vertical stacks; called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-rename.sh                  # prefix r/R: rename window/session via display-popup (Escape cancels), called from .tmux.conf, byte-identical with dots-linux
-│   └── tmux-copy-dragend.sh           # root MouseDragEnd1Pane handler: copy+clear a drag-selection even when you release over another pane; called from .tmux.conf, byte-identical with dots-linux
+│   ├── tmux-copy-dragend.sh           # root MouseDragEnd1Pane handler: copy+clear a drag-selection even when you release over another pane; called from .tmux.conf, byte-identical with dots-linux
+│   └── tmux-notify.sh                 # transient top-right status-bar notif (@notify segment, auto-clears 1s, no focus steal); backs C-r reload, "Only one pane!", prefix-<digit> "no window", "No agents running", and agent-notify.sh; byte-identical with dots-linux
 ├── manual/
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
 │   └── ...                             # other configs requiring manual import (not stow-managed)

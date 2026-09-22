@@ -144,7 +144,7 @@ __fzf() {
 _pick() {
   local n
   n=$(_list | wc -l | tr -d ' ')
-  [ "$n" -gt 0 ] || { tmux display-message "No agents running"; return 0; }
+  [ "$n" -gt 0 ] || { "$(dirname "$0")/tmux-notify.sh" "No agents running"; return 0; }
   tmux display-popup -E -w 70% -h "$((n + 5))" -T ' agents ' "'$0' __fzf" || true
 }
 

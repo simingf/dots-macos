@@ -1,25 +1,26 @@
 #!/bin/sh
-# agent-notify.sh — native desktop notification when the agent finishes a turn (Stop) or needs
+# agent-notify.sh — transient tmux notification when the agent finishes a turn (Stop) or needs
 # attention (Notification). The event is passed as $1 from .claude/settings.json (Stop|Notification).
 # The agent pipes the hook JSON on stdin.
 #
-# Title + subtitle come from tmux, via the SAME introspection the agent sidebar (scripts/tmux-agents.sh)
-# reads off a pane: the tmux window (tab) name is the title, and #{pane_title} — the one-line summary
-# Claude sets as its OSC title — is the subtitle, with its leading spinner/marker glyph ("⠂ …"/"✳ …")
-# stripped. So a toast reads "<tab>" over "<what that agent is doing>". Outside tmux (no $TMUX_PANE) the
-# title falls back to the project dir. (The finer sidebar status — working/waiting/unread — is NOT reused
-# here: that's a pane-keyed /tmp state file for coloring dots, orthogonal to a one-shot toast.)
+# The tmux window (tab) name — read off $TMUX_PANE the same way the agent sidebar (scripts/tmux-agents.sh)
+# does — becomes the notification title, so it reads "<tab>: <event>" (e.g. "myrepo: Turn complete").
+# (The finer sidebar status — working/waiting/unread — is NOT reused here: that's a pane-keyed /tmp
+# state file for coloring dots, orthogonal to a one-shot notification.)
 #
-# Portable: terminal-notifier (or osascript) on macOS, notify-send on Linux; silent no-op if none
-# exist (e.g. a headless dev box). Never fails the hook — always exits 0.
+# Delivery: a top-right status-bar notification via scripts/tmux-notify.sh (auto-clears ~3s, no focus
+# steal). No OS desktop toast — outside tmux (no $TMUX_PANE) or when the pane's session has no attached
+# client, it's a silent no-op. Never fails the hook — always exits 0.
 #
 # Note: Stop fires on EVERY turn completion, so you'll get a ping per response. Drop the "Stop"
 # block in settings.json if that's too chatty and keep only "Notification".
 set -u
 
 event="${1:-}"
-proj=$(basename "$PWD" 2>/dev/null || echo agent)     # the agent runs hooks with cwd = the project dir
 input=$(cat 2>/dev/null || true)                      # hook JSON on stdin
+
+# tmux-only delivery: no pane → not in tmux → nothing to pop.
+[ -n "${TMUX_PANE:-}" ] || exit 0
 
 # msg: pull the "message" string from the hook JSON (used for Notification). Empty if python3 absent.
 msg() {
@@ -31,20 +32,8 @@ except Exception:
     pass' 2>/dev/null
 }
 
-# title = tmux tab (window) name; subtitle = the pane's OSC title (Claude's autogen one-line summary),
-# both read off $TMUX_PANE exactly as the sidebar does. The pane title is "<glyph> <summary>" when a
-# marker is present (a braille frame while working, ✳/✶/✻/✽ when idle), so if the first char isn't
-# alphanumeric we drop through the first space to leave just the summary.
-title=""; subtitle=""
-if [ -n "${TMUX_PANE:-}" ]; then
-  title=$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}' 2>/dev/null || true)
-  pane_title=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_title}' 2>/dev/null || true)
-  case "$pane_title" in
-    ""|[A-Za-z0-9]*) subtitle="$pane_title" ;;        # already summary text (or empty)
-    *)               subtitle="${pane_title#* }" ;;   # drop leading marker glyph + its space
-  esac
-fi
-[ -n "$title" ] || title="✳ agent — $proj"            # not in tmux → project-dir title, no subtitle
+# title = tmux tab (window) name, read off $TMUX_PANE exactly as the sidebar does.
+title=$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}' 2>/dev/null || true)
 
 case "$event" in
   Stop)         body="Turn complete" ;;
@@ -52,13 +41,9 @@ case "$event" in
   *) exit 0 ;;
 esac
 
-if command -v terminal-notifier >/dev/null 2>&1; then
-  terminal-notifier -title "$title" -subtitle "$subtitle" -message "$body" -group "agent-$proj" >/dev/null 2>&1 || true
-elif [ "$(uname)" = Darwin ]; then
-  osascript -e "display notification \"$body\" with title \"$title\" subtitle \"$subtitle\"" >/dev/null 2>&1 || true
-elif command -v notify-send >/dev/null 2>&1; then
-  b="$body"; [ -n "$subtitle" ] && b="$subtitle
-$b"                                                   # notify-send has no subtitle — fold it into the body
-  notify-send "$title" "$b" >/dev/null 2>&1 || true
-fi
+# Single-line status-bar notification via tmux-notify.sh: "<tab>: <body>". NOTIFY_TARGET keeps it
+# silent when no client is attached to this pane's session.
+[ -n "$title" ] || title="✳ agent"
+notify=$(tmux show-environment -g DOTFILES_DIR 2>/dev/null | cut -d= -f2-)/scripts/tmux-notify.sh
+[ -x "$notify" ] && NOTIFY_TARGET="$TMUX_PANE" "$notify" "$title: $body" || true
 exit 0
