@@ -88,7 +88,7 @@ Commit story: `refresh-linux-vendored.sh` commits `vendor/` with `SKIP=gitleaks`
 | `.bashrc`, `vendor/`, `setup.sh` | Linux-only | — | |
 | `AppData/Local/Packages/Microsoft.WindowsTerminal_…/`, `scripts/apply.ps1` | — | Windows-only | |
 | `.config/finicky/finicky.ts` | — | — | Mac-only. Routes every external link to the `Default` Chrome profile (work). |
-| `Library/` (rest), `Brewfile`, `manual/`, `learnings/`, `alfred/`, `ghostty/`, `kitty/`, `aerospace/`, `karabiner/`, `borders/`, `btop/`, `istherenet/`, `linearmouse/`, `spotify-player/`, `.config/topgrade.toml` | Mac-only | Mac-only | Do NOT mirror. `learnings/`: debugging write-ups, not config. |
+| `Library/` (rest), `Brewfile`, `manual/`, `learnings/`, `archive/`, `alfred/`, `ghostty/`, `kitty/`, `aerospace/`, `karabiner/`, `borders/`, `btop/`, `istherenet/`, `linearmouse/`, `spotify-player/`, `.config/topgrade.toml` | Mac-only | Mac-only | Do NOT mirror. `learnings/`: debugging write-ups, not config. `archive/`: retired features parked for restore (e.g. `archive/agent-sidebar/` — the pre-top-bar clickable agent sidebar). |
 
 ## Scripts policy
 

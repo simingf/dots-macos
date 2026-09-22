@@ -1,0 +1,25 @@
+# Archived .tmux.conf lines for the agent sidebar (removed when it was retired for top-bar-only status).
+# These reference $DOTFILES_DIR and the sidebar modes in the archived tmux-agents-sidebar.sh functions
+# (which must be merged back into scripts/tmux-agents.sh first — see README.md).
+
+# --- binds ---
+bind A    run-shell '$DOTFILES_DIR/scripts/tmux-agents.sh sidebar'             # toggle live agent sidebar (24-col left split; press again to close)
+# prefix c gained a trailing `sidebar-open` to seed a sidebar in each new window:
+bind -r c new-window -c "#{pane_current_path}" \; run-shell '$DOTFILES_DIR/scripts/tmux-agents.sh sidebar-open'
+
+# --- hooks ---
+# close a window when only the agent sidebar pane is left (exiting your last real pane closes the tab)
+set-hook -g window-layout-changed 'run-shell -b "$DOTFILES_DIR/scripts/tmux-agents.sh reap #{window_id}"'
+# re-pin the sidebar to its fixed width when a pane closes (tmux hands the freed width to the bordering pane)
+set-hook -ga window-layout-changed 'run-shell -b "$DOTFILES_DIR/scripts/tmux-agents.sh fix-width"'
+# seed the sidebar into every new session's first window (tmux startup + prefix C)
+set-hook -g session-created 'run-shell -b "$DOTFILES_DIR/scripts/tmux-agents.sh sidebar-open"'
+# keep the sidebar a fixed width on window resize (monitor plug/unplug, reattach) — window-resized, NOT client-resized
+set-hook -g window-resized 'run-shell -b "$DOTFILES_DIR/scripts/tmux-agents.sh fix-width"'
+
+# --- shared hooks (KEPT in .tmux.conf — they now drive the top-bar dots) ---
+# The mark-read / refresh / refresh-agents hooks were NOT removed. When restoring the sidebar, re-add the
+# `_deflect` call at the top of _mark_read and the fzf-socket reload in _refresh (both in tmux-agents-sidebar.sh).
+
+# --- .config/zsh/60-functions.zsh: dotslg had this before the even-columns call ---
+"$HOME/dots-macos/scripts/tmux-agents.sh" sidebar-open

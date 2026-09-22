@@ -46,10 +46,8 @@ dotslg() {
     tmux send-keys "lg" Enter
     tmux split-window -h -c "$HOME/dots-windows"
     tmux send-keys "lg" Enter
-    # Seed a sidebar if this window lacks one (no-op if it already has one), then equalize
-    # the lazygit columns while preserving the sidebar's fixed width — `select-layout
-    # even-horizontal` would flatten the sidebar into an equal column.
-    "$HOME/dots-macos/scripts/tmux-agents.sh" sidebar-open
+    # Equalize the three lazygit columns. (Dropped a `tmux-agents.sh sidebar-open` seed here when the
+    # agent sidebar was retired — see archive/agent-sidebar/ to restore it.)
     "$HOME/dots-macos/scripts/tmux-even-columns.sh"
 }
 
