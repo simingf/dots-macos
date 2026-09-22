@@ -39,13 +39,13 @@ FZF="$HOME/.local/bin/fzf"; [ -x "$FZF" ] || FZF=fzf
 # multibyte range and _list skips every pane — agents never show. If the ambient
 # locale can't handle the range (e.g. a dev box defaulting to C.UTF-8), switch to
 # a full UTF-8 locale. No-op where it already works (macOS, en_US.UTF-8 boxes).
-if ! printf '⠿' | grep -qE '[⠀-⣿]' 2>/dev/null; then
+if ! printf '⠿◐' | grep -qE '[⠀-⣿◐-◓]' 2>/dev/null; then
     export LC_ALL=en_US.UTF-8
 fi
 
-# What marks a pane as an agent — matched against the OSC title only. Braille = a working spinner
-# frame (generic across agents); "Claude Code"/✳✶✻✽ = an idle agent. Add markers here for other agents.
-AGENT_RE='[⠀-⣿]|Claude Code|[✳✶✻✽]'
+# What marks a pane as an agent — matched against the OSC title only. Braille (⠀-⣿) = a working spinner
+# on macOS; quarter-circles (◐-◓) = a working spinner on Linux; "Claude Code"/✳✶✻✽ = an idle agent.
+AGENT_RE='[⠀-⣿◐-◓]|Claude Code|[✳✶✻✽]'
 
 # _list: one row per agent pane — state <TAB> target <TAB> activity <TAB> window <TAB> title
 # state: 0 = working (title starts with a braille spinner frame), 1 = idle/waiting.
@@ -68,8 +68,8 @@ _list() {
   fi
   agents=$(printf '%s\n' "$agents" | grep -E "^[^	]*(${AGENT_RE})") || true
   [ -n "$agents" ] || return 0
-  printf '%s\n' "$agents" | grep -E  '^[⠀-⣿]' | awk -F'\t' '{print "0\t"$2"\t"$3"\t"$4"\t"$1"\t"$5}'   # braille prefix → working
-  printf '%s\n' "$agents" | grep -vE '^[⠀-⣿]' | awk -F'\t' '{print "1\t"$2"\t"$3"\t"$4"\t"$1"\t"$5}'   # else idle/waiting
+  printf '%s\n' "$agents" | grep -E  '^[⠀-⣿◐-◓]' | awk -F'\t' '{print "0\t"$2"\t"$3"\t"$4"\t"$1"\t"$5}'   # spinner prefix → working
+  printf '%s\n' "$agents" | grep -vE '^[⠀-⣿◐-◓]' | awk -F'\t' '{print "1\t"$2"\t"$3"\t"$4"\t"$1"\t"$5}'   # else idle/waiting
 }
 
 # _sorted: working agents first, then idle; within a group, most-recently-active first.
