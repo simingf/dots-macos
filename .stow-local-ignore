@@ -6,6 +6,7 @@ manual
 scripts
 ssh-dots
 \.docker
+\.claude
 \.DS_Store
 \.git
 \.gitignore

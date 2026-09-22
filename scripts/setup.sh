@@ -98,6 +98,17 @@ fi
 
 stow --dir="$DOTS" --target="$HOME" .
 
+# ~/.claude holds Claude Code runtime state (history, sessions, projects), so it
+# must be a real dir with file-level symlinks — never a whole-dir symlink (stow
+# would tree-fold it and write that state into the repo). Excluded from stow via
+# .stow-local-ignore; link the tracked config files explicitly, mirroring
+# dots-linux/setup.sh.
+mkdir -p "$HOME/.claude/hooks" "$HOME/.claude/themes"
+for f in CLAUDE.md settings.json statusline-command.sh \
+         hooks/agent-notify.sh hooks/agent-status.sh themes/rose-pine.json; do
+  ln -sfn "$DOTS/.claude/$f" "$HOME/.claude/$f"
+done
+
 step "Homebrew bundle"
 # Trust third-party taps before installing, otherwise brew refuses to load
 # formulae from untrusted taps. Skip taps already present (avoids slow git fetch).
