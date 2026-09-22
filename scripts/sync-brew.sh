@@ -7,6 +7,13 @@ trap 'rm -f "$TMPFILE"' EXIT
 
 brew bundle dump --force --tap --formula --cask --no-restart --file="$TMPFILE"
 
+# Preserve the hand-maintained "Intentionally NOT casks" block (apps we
+# deliberately don't let brew own — dump can't know about them).
+NOTCASKS=""
+if [[ -f "$BREWFILE" ]]; then
+  NOTCASKS=$(awk '/^# ---- Intentionally NOT casks/{p=1} p' "$BREWFILE")
+fi
+
 {
   cat <<'EOF'
 # file location: ${HOME}/dots-macos/Brewfile
@@ -30,6 +37,10 @@ EOF
   echo
   echo "# ---- Casks ----"
   grep '^cask ' "$TMPFILE" | sed 's/, args: .*//' | sort
+  if [[ -n "$NOTCASKS" ]]; then
+    echo
+    printf '%s\n' "$NOTCASKS"
+  fi
 } > "$BREWFILE"
 
 n_taps=$(grep -c '^tap ' "$BREWFILE" || true)

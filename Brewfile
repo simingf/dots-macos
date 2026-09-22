@@ -113,6 +113,17 @@ cask "obsidian"
 cask "postman-agent"
 cask "shottr"
 cask "slack"
+cask "spacewalker"
 cask "spotify"
 cask "steam"
 cask "wechat"
+cask "wootility"
+
+# ---- Intentionally NOT casks (installed manually) ----
+# Flaky as brew casks — prefer direct install:
+#   docker (Docker Desktop), lghub (Logitech G Hub), tencent-meeting
+# Company-managed via Jamf (don't let brew own these):
+#   1password, claude, google-chrome, visual-studio-code, zoom, rider
+# App Store purchases — the cask is a direct-download build that would
+# require repurchase:
+#   yoink (Yoink 2)
