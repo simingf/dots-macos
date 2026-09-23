@@ -26,7 +26,7 @@ alias ro='builtin cd ~/git/roblox/'
 
 # config aliases
 # updates everything
-alias up='topgrade --yes --no-retry && pullall'
+alias up='topgrade --yes --no-retry && pullrepos'
 # homebrew update
 alias bup='brew update && brew upgrade && brew cleanup && brew autoremove'
 # zinit update

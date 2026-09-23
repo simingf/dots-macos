@@ -202,17 +202,17 @@ kk() {
     claude "${cflags[@]}" "${cprompt[@]}"
 }
 
-# Implementation lives in the babysit-prs skill (portable, worktree-aware) so it
-# stays in sync with what /babysit-prs runs. Pass --dry-run to preview.
-pullall() {
-    local script=~/.claude/skills/babysit-prs/pullall.sh
+# Implementation lives in the babysit-prs skill (portable, worktree-aware).
+pullrepos() {
+    local script=~/.claude/skills/babysit-prs/pullrepos.sh
     if [[ -x "$script" ]]; then
         "$script" "$@"
     else
-        echo "pullall: $script not found (is the skills repo symlinked into ~/.claude/skills?)" >&2
+        echo "pullrepos: $script not found (is the skills repo symlinked into ~/.claude/skills?)" >&2
         return 1
     fi
 }
+lsrepos() { pullrepos --local "$@"; }
 
 # goto PR (https://github.rbx.com/Roblox/creator-cu/pull/267/files)
 gotopr() {
