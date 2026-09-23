@@ -22,6 +22,7 @@ alias des='builtin cd ~/Desktop/'
 alias dots='builtin cd ~/dots-macos'
 alias dotsl='builtin cd ~/dots-linux'
 alias dotsw='builtin cd ~/dots-windows'
+alias ro='builtin cd ~/git/roblox/'
 
 # config aliases
 # updates everything
