@@ -99,6 +99,51 @@ return {
 				callback = refresh_git,
 			})
 
+			-- `:q` on the last file window would otherwise leave only the docked
+			-- explorer (a real root split + its floats), so nvim stays open with focus
+			-- parked on the sidebar instead of quitting. On QuitPre, if closing the
+			-- current window leaves the explorer as the only thing standing, close the
+			-- explorer too so nvim exits — the canonical nvim-tree pattern. Windows are
+			-- closed synchronously here (picker:close() defers teardown via
+			-- vim.schedule, which races the quit and leaves the split behind).
+			vim.api.nvim_create_autocmd("QuitPre", {
+				group = grp,
+				callback = function()
+					local p = Snacks.picker and Snacks.picker.get({ source = "explorer" })[1]
+					if not p or p.closed then
+						return
+					end
+					-- window ids owned by the explorer: the docked root split + its floats.
+					local ex = {}
+					local root = p.layout and p.layout.root and p.layout.root.win
+					if root and vim.api.nvim_win_is_valid(root) then
+						ex[root] = true
+					end
+					for _, w in ipairs({ p.input, p.list, p.preview }) do
+						if w and w.win and w.win:valid() then
+							ex[w.win.win] = true
+						end
+					end
+					-- quitting from inside the sidebar isn't the case we fix; let snacks handle it.
+					if ex[vim.api.nvim_get_current_win()] then
+						return
+					end
+					-- count non-floating windows in this tab that aren't the explorer. the
+					-- window being quit is still open and counted, so <= 1 means it's the last.
+					local real = 0
+					for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+						if vim.api.nvim_win_get_config(win).relative == "" and not ex[win] then
+							real = real + 1
+						end
+					end
+					if real <= 1 then
+						for win in pairs(ex) do
+							pcall(vim.api.nvim_win_close, win, true)
+						end
+					end
+				end,
+			})
+
 			return vim.tbl_deep_extend("force", opts, {
 				explorer = { replace_netrw = true },
 				picker = {
