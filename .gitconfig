@@ -14,23 +14,6 @@
 	autoSetupRemote = true
 [maintenance]
 	repo = /Users/sfeng/git/roblox/deployment
-[credential "https://github.com"]
-	helper = 
-	username = simingf
-	helper = !/opt/homebrew/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	username = simingf
-	helper = !/opt/homebrew/bin/gh auth git-credential
-[credential "https://github.rbx.com"]
-	helper =
-	helper = !/opt/homebrew/bin/gh auth git-credential
-	username = sfeng
-[credential]
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
-[credential "https://dev.azure.com"]
-	useHttpPath = true
 [color]
 	ui = auto
 [color "diff"]
@@ -55,3 +38,28 @@
 	remoteBranch = "#9ccfd8"
 	tag = "#f6c177"
 	HEAD = "#ceacf6"
+# ── Credentials (keep last) ─────────────────────────────────────────────────
+# Catch-all: GCM (macOS keychain) for every host except the per-host overrides.
+# gh's user-to-server token 403s on git-write, so the GitHub hosts use the
+# osxkeychain helper with a long-lived PAT seeded by scripts/setup.sh.
+# ORDERING: the generic [credential] block MUST come before the per-host blocks —
+# its empty-reset would otherwise wipe the per-host helper and GCM would serve all
+# hosts. Verify: printf 'protocol=https\nhost=github.rbx.com\n\n' | GIT_TRACE=1 git credential fill
+[credential]
+	helper =
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://github.com"]
+	helper =
+	helper = osxkeychain
+	username = simingf
+[credential "https://github.rbx.com"]
+	helper =
+	helper = osxkeychain
+	username = sfeng
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+# github.com/Roblox/* repos use the Roblox cloud account (sfeng-roblox) instead of
+# the personal simingf default. Matched by remote URL, so it applies wherever the
+# repo is cloned; must come after the credential blocks so its username wins.
+[includeIf "hasconfig:remote.*.url:https://github.com/Roblox/**"]
+	path = ~/.config/git/github-roblox.inc

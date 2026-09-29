@@ -126,6 +126,36 @@ eval "$(brew shellenv)"
 step "git-lfs install"
 git lfs install
 
+step "Git push PAT (login keychain)"
+# gh's user-to-server token authenticates the API (so `gh auth status` is ✓) but
+# git-write rejects it with 403, so pushes only worked right after a manual
+# `gh auth login`. .gitconfig points the GitHub hosts at the osxkeychain helper;
+# seed a long-lived PAT (classic 'repo' scope) per account into the login keychain
+# once — encrypted, no plaintext file, survives reboots. Later runs find the
+# stored PAT and skip. Three accounts: github.com personal (simingf) + Roblox cloud
+# (sfeng-roblox, used for github.com/Roblox/* via the includeIf in .gitconfig) +
+# enterprise (github.rbx.com / sfeng). Keyed per (host, username) so both
+# github.com accounts coexist in the keychain.
+have_pat() {   # host user — this account's PAT already in keychain?
+  printf 'protocol=https\nhost=%s\nusername=%s\n' "$1" "$2" | git credential-osxkeychain get 2>/dev/null | grep -q '^password='
+}
+store_pat() {  # host user token
+  printf 'protocol=https\nhost=%s\nusername=%s\npassword=%s\n' "$1" "$2" "$3" | git credential-osxkeychain store
+}
+seed_pat() {   # host user
+  if have_pat "$1" "$2"; then echo "  $1 ($2) already in keychain ✓"; return; fi
+  if [ ! -t 0 ]; then echo "  ⚠ no PAT for $1 ($2) — run setup.sh interactively to be prompted"; return; fi
+  printf '  PAT for %s (account %s, classic repo scope, blank to skip): ' "$1" "$2"
+  local tok; read -rs tok; echo
+  [ -n "$tok" ] || { echo "    skipped $1 ($2)"; return; }
+  store_pat "$1" "$2" "$tok"
+  unset tok
+  echo "  $1 ($2) stored ✓"
+}
+seed_pat github.com     simingf
+seed_pat github.com     sfeng-roblox
+seed_pat github.rbx.com sfeng
+
 step "Rust toolchain (rustup)"
 rustup default stable
 # Homebrew's rustup doesn't create ~/.cargo/bin proxies; add the toolchain bin directly.

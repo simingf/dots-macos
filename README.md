@@ -114,6 +114,16 @@ defaults write com.apple.dock autohide-delay -float 1000; killall Dock
 git lfs install --system
 ```
 
+### Git push PAT (login keychain)
+
+`gh`'s user-to-server token authenticates the API but git-write rejects it (403), so `.gitconfig` points `github.com` / `github.rbx.com` at the `osxkeychain` helper (all other hosts still use GCM). Three accounts are seeded — create a classic **`repo`-scope** PAT for each first:
+
+- **`simingf`** (personal, github.com default) — [github.com/settings/tokens](https://github.com/settings/tokens)
+- **`sfeng-roblox`** (Roblox cloud; used for `github.com/Roblox/*` repos via the `includeIf` → `.config/git/github-roblox.inc`) — same page, signed in as sfeng-roblox
+- **`sfeng`** (enterprise) — [github.rbx.com/settings/tokens](https://github.rbx.com/settings/tokens)
+
+`scripts/setup.sh` prompts once per account (input hidden) and stores them in the login keychain, keyed per (host, account) so both github.com accounts coexist. Later runs find the stored PATs and skip.
+
 ### Set Finicky as default browser
 
 Open `/Applications/Finicky.app` once to accept default-browser (or System Settings → Desktop & Dock → Default web browser). `~/.config/finicky/finicky.ts` is already symlinked and routes every link to the `Default` Chrome profile (work). Edit `profile` if Chrome renumbers folders.
