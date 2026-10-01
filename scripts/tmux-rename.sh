@@ -50,7 +50,14 @@ restore
 [ -z "$name" ] && exit 0
 
 case "$mode" in
-    window)  tmux rename-window  -- "$name" ;;
+    window)
+        tmux rename-window -- "$name"
+        # Keep the Claude session's name aligned with the window: push /rename into any agent pane in
+        # this window. Fire-and-forget; no-op when the window has no agent pane.
+        win=$(tmux display-message -p '#{session_name}:#{window_index}')
+        "$(dirname "$0")/tmux-agents.sh" agent-panes "$win" \
+            | while IFS= read -r p; do tmux send-keys -t "$p" "/rename $name" Enter; done
+        ;;
     session) tmux rename-session -- "$name" ;;
     # 'new' must create+switch AFTER the popup closes: running new-session/switch-client from INSIDE the
     # display-popup manipulates the client's session while the overlay is still up — that breaks -E's

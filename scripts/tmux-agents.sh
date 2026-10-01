@@ -159,6 +159,17 @@ _count() {
   printf '✳ %s/%s' "$working" "$total"
 }
 
+# agent-panes <window-target>: print the pane id of each agent pane in the given window (e.g. "sess:3"),
+# matched by the SAME OSC-title marker the rest of this script uses. Used by scripts/tmux-rename.sh to push
+# Claude's /rename into the session when its window is renamed, so the two names stay aligned.
+_agent_panes() {
+  local win="${1:-}"
+  [ -n "$win" ] || return 0
+  tmux list-panes -t "$win" -F '#{pane_title}	#{pane_id}' 2>/dev/null \
+    | grep -E "^[^	]*(${AGENT_RE})" \
+    | cut -f2
+}
+
 # _dot: rose-pine colored glyph for a per-window agent status, matching the sidebar's dot palette
 # (working=gold ● / waiting=foam ● / errored=love ● / compacting=iris ● / unread=gray ● / read=gray ○).
 # Emitted as tmux #[..] style directives (NOT raw ANSI) so window-status-format draws it via #{E:@agent_dot}.
@@ -257,6 +268,7 @@ case "${1:-pick}" in
   pick)    _pick ;;
   __fzf)   __fzf ;;      # internal: invoked inside the popup
   count)   _count ;;
+  agent-panes) _agent_panes "${2:-}" ;;  # pane ids of agent panes in a window — used by tmux-rename.sh to sync Claude's /rename
   paint)   _paint ;;     # native top-bar tab dots — writes each window's @agent_dot; also auto-run from _refresh
   refresh)      _refresh ;;           # internal: invoked by the structural tmux hooks (repaint top-bar dots)
   refresh-agents) _refresh_agents ;;  # internal: invoked by the pane-title-changed hook (debounced repaint)

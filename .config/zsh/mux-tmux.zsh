@@ -55,7 +55,14 @@ kk() {
         # nvim 50% | claude 50%.
         tmux split-window -h -b -d -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")"  || return
     fi
-    (cd "$paneroot" && claude "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (rightmost); -d kept focus here
+    # Name the Claude session after the tmux window so cross-session messaging (ListAgents) shows a
+    # meaningful handle; skip if the caller already passed their own --name/-n.
+    local -a nameflag=(--name "$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}')")
+    local f
+    for f in "${cflags[@]}"; do
+        [[ "$f" == --name || "$f" == --name=* || "$f" == -n ]] && { nameflag=(); break; }
+    done
+    (cd "$paneroot" && claude "${nameflag[@]}" "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (rightmost); -d kept focus here
 }
 
 # tmux
