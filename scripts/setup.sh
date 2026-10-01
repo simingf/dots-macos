@@ -156,6 +156,30 @@ seed_pat github.com     simingf
 seed_pat github.com     sfeng-roblox
 seed_pat github.rbx.com sfeng
 
+step "gh API token (heal from keychain PAT)"
+# When gh's stored token for a host is rejected, reuse the keychain PAT seeded
+# above as gh's token, so gh (and the agents/skills that call it) works outside
+# declawd too. Guarded on `gh auth status` failing, so a working token is left
+# untouched. GH_TOKEN/GH_ENTERPRISE_TOKEN are unset because they mask the stored
+# token in status and make `gh auth login` refuse. github.com uses the Roblox
+# account (gh holds one active account per host). Needs a *classic* PAT with
+# 'repo' + 'read:org' — gh's login rejects tokens missing read:org.
+heal_gh() {    # host user
+  local ghenv=(env -u GH_TOKEN -u GH_ENTERPRISE_TOKEN)
+  if "${ghenv[@]}" gh auth status -h "$1" >/dev/null 2>&1; then echo "  gh $1 ✓"; return; fi
+  local pat
+  pat=$(printf 'protocol=https\nhost=%s\nusername=%s\n' "$1" "$2" | git credential-osxkeychain get 2>/dev/null | sed -n 's/^password=//p' || true)
+  [ -n "$pat" ] || { echo "  ⚠ gh $1: no keychain PAT for $2 — run: gh auth login -h $1"; return; }
+  if printf '%s\n' "$pat" | "${ghenv[@]}" gh auth login -h "$1" --with-token 2>/dev/null; then
+    echo "  gh $1 ($2): healed from keychain PAT ✓"
+  else
+    echo "  ⚠ gh $1: keychain PAT for $2 rejected (needs classic repo + read:org) — run: gh auth login -h $1"
+  fi
+  unset pat
+}
+heal_gh github.com     sfeng-roblox
+heal_gh github.rbx.com sfeng
+
 step "Rust toolchain (rustup)"
 rustup default stable
 # Homebrew's rustup doesn't create ~/.cargo/bin proxies; add the toolchain bin directly.
