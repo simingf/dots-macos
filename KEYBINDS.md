@@ -74,7 +74,6 @@ All under `.config/nvim/lua/plugins/`.
 | `<leader>bi` / `<leader>bm` | next / prev buffer | bufferline | `ui.lua` |
 | `<leader>bp` | pick buffer (jump by letter) | bufferline | `ui.lua` |
 | `<leader>bc` | close buffer | snacks.bufdelete | `ui.lua` |
-| `<leader>br` | re-render inline image | snacks.image | `ui.lua` |
 | `<leader>tt` | fuzzy find in buffer | snacks.picker | `ui.lua` |
 | `<leader>tg` | live grep | snacks.picker | `ui.lua` |
 | `<leader>tb` | buffers | snacks.picker | `ui.lua` |

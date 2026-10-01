@@ -65,6 +65,24 @@ local checks = {
 		end,
 	},
 	{
+		name = "snacks image placement internals (ui.lua)",
+		fn = function()
+			local ok, P = pcall(require, "snacks.image.placement")
+			if not ok then
+				return "snacks.image.placement not require-able"
+			end
+			local gone = {}
+			for _, f in ipairs({ "update", "error", "wins", "hide", "show" }) do
+				if type(P[f]) ~= "function" then
+					gone[#gone + 1] = f
+				end
+			end
+			if #gone > 0 then
+				return "Placement methods changed: " .. table.concat(gone, ", ")
+			end
+		end,
+	},
+	{
 		name = "claudecode lockfile module (ai.lua)",
 		fn = function()
 			if env.IS_SSH then

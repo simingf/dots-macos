@@ -262,32 +262,8 @@ return {
 				end
 				return false
 			end
-			local ghostty = is_ghostty()
-			if ghostty then
+			if is_ghostty() then
 				vim.env.SNACKS_GHOSTTY = "1"
-			end
-			-- Switching buffers (bufferline) away from and back to an image drops the
-			-- kitty image — snacks deletes it on hide, then only re-places (by id) on
-			-- return, but the data is gone, so nothing shows. Reloading the buffer on
-			-- entry (the `:edit` below) forces a fresh transmit. The `reloading` flag
-			-- stops the :edit from re-triggering this handler. ghostty only.
-			if ghostty then
-				local reloading = false
-				vim.api.nvim_create_autocmd("BufEnter", {
-					group = vim.api.nvim_create_augroup("snacks_image_rerender", { clear = true }),
-					callback = function(ev)
-						if reloading or vim.bo[ev.buf].filetype ~= "image" then
-							return
-						end
-						reloading = true
-						vim.schedule(function()
-							if vim.bo.filetype == "image" then
-								pcall(vim.cmd, "edit")
-							end
-							reloading = false
-						end)
-					end,
-				})
 			end
 		end,
 		opts = {
@@ -299,21 +275,41 @@ return {
 			-- indent guides + current-scope highlight (replaced indent-blankline)
 			indent = { indent = { char = "▏" }, scope = { char = "▏" } },
 		},
-		keys = {
-			{
-				"<leader>br",
-				function()
-					-- Re-render a standalone image that nvim dropped on a tabpage redraw.
-					-- Reloading the buffer re-runs snacks' image attach → fresh transmit.
-					-- (grouped with buffer ops under <leader>b; acts on the current image buffer.)
-					if vim.bo.filetype == "image" then
-						vim.cmd("edit")
-					else
-						vim.notify("Not an image buffer", vim.log.levels.WARN)
+		config = function(_, opts)
+			require("snacks").setup(opts)
+			-- Standalone image buffers (patches snacks internals — see config.healthcheck):
+			-- • leaving the window calls placement:hide(), but only inline/doc images ever
+			--   call show(), so the image stays blank on return. Un-hide when it's back
+			--   in a window. (Patched before any placement exists; new() captures update.)
+			-- • without magick (dev box) the `identify` metadata step fails and error()
+			--   writes "Image Conversion Failed" into the buffer — even though the PNG
+			--   itself was already sent and displays. Skip it when the image is ready.
+			local P = require("snacks.image.placement")
+			local update, err = P.update, P.error
+			function P:update()
+				if self.hidden and not self.opts.inline and #self:wins() > 0 then
+					self.hidden = false
+				end
+				return update(self)
+			end
+			function P:error()
+				if not self.img:ready() then
+					return err(self)
+				end
+			end
+			-- snacks' progress()/error() set_lines after attach resets 'modified', so an
+			-- image buffer comes up modified: closing prompts to save, and `:edit`
+			-- fails with E37. Image buffers are read-only.
+			vim.api.nvim_create_autocmd("BufModifiedSet", {
+				group = vim.api.nvim_create_augroup("snacks_image_unmodified", { clear = true }),
+				callback = function(ev)
+					if vim.bo[ev.buf].filetype == "image" and vim.bo[ev.buf].modified then
+						vim.bo[ev.buf].modified = false
 					end
 				end,
-				desc = "re-render image",
-			},
+			})
+		end,
+		keys = {
 			{
 				"<leader>tt",
 				function()
