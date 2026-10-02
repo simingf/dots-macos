@@ -308,6 +308,58 @@ return {
 					end
 				end,
 			})
+			-- Overwriting an image in place (e.g. /render-diagram) showed the old pixels until
+			-- nvim restarted: snacks caches images per path both in-session (already-sent
+			-- Image objects) and on disk (identify info, svg→png), never checking mtime.
+			local uv = vim.uv
+			local function mtime(f)
+				local st = uv.fs_stat(f)
+				return st and st.mtime.sec + st.mtime.nsec / 1e9
+			end
+			-- • disk: drop cached step outputs older than the source, then re-resolve
+			local C = require("snacks.image.convert")
+			local convert = C.convert
+			function C.convert(opts)
+				local c = convert(vim.tbl_extend("force", {}, opts)) -- new() mutates opts.src
+				local src, stale = mtime(c.src), false
+				for _, step in ipairs(c.steps) do
+					local m = step.done and mtime(step.file)
+					if src and m and m < src then
+						os.remove(step.file)
+						stale = true
+					end
+				end
+				return stale and convert(opts) or c
+			end
+			-- • session: rebuild the Image when its source changed since it was created
+			local I = require("snacks.image.image")
+			local new = I.new
+			function I.new(src)
+				local img = new(src)
+				local m = mtime(img.src)
+				if img._mtime and img._mtime ~= m then
+					I.clear() -- the cache table is local; this only forces re-sends
+					img = new(src)
+				end
+				img._mtime = img._mtime or m
+				return img
+			end
+			-- • an already-open image buffer isn't re-read on switch (no checktime for
+			--   BufReadCmd buffers), so re-attach it when its file changed
+			vim.api.nvim_create_autocmd({ "BufEnter", "FocusGained" }, {
+				group = vim.api.nvim_create_augroup("snacks_image_reload", { clear = true }),
+				callback = function()
+					local buf = vim.api.nvim_get_current_buf()
+					if vim.bo[buf].filetype ~= "image" then
+						return
+					end
+					local m = mtime(vim.api.nvim_buf_get_name(buf))
+					if vim.b[buf].image_mtime and vim.b[buf].image_mtime ~= m then
+						Snacks.image.buf.attach(buf)
+					end
+					vim.b[buf].image_mtime = m
+				end,
+			})
 		end,
 		keys = {
 			{

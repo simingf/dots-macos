@@ -80,6 +80,13 @@ local checks = {
 			if #gone > 0 then
 				return "Placement methods changed: " .. table.concat(gone, ", ")
 			end
+			local I, C = require("snacks.image.image"), require("snacks.image.convert")
+			if type(I.new) ~= "function" or type(I.clear) ~= "function" then
+				return "snacks.image.image new/clear changed (stale-image reload)"
+			end
+			if type(C.convert) ~= "function" then
+				return "snacks.image.convert.convert changed (stale-image reload)"
+			end
 		end,
 	},
 	{
