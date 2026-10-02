@@ -13,7 +13,8 @@
       "mcp__mcp-gateway-gmail",
       "mcp__mcp-gateway-gcalendar",
       "mcp__mcp-gateway-gdrive",
-      "mcp__mcp-gateway-mosaic_mds"
+      "mcp__mcp-gateway-mosaic_mds",
+      "mcp__mcp-gateway-atlassian"
     ],
     "deny": []
   },
@@ -132,5 +133,6 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:rose-pine",
-  "verbose": true
+  "verbose": true,
+  "model": "claude-opus-5-5[1M]"
 }
