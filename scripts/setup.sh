@@ -20,6 +20,10 @@ fi
 step "Sudo keepalive (for cask installs)"
 sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+# Each brew process runs `sudo --reset-timestamp` before its first sudo (utils/sudo.sh),
+# wiping the cached creds above, so brew bundle re-prompts per cask. Mark the check
+# done (we just proved sudo works) so brew reuses the timestamp. Internal brew var.
+export HOMEBREW_SUDO_CHECKED=1
 
 # stow is needed before brew bundle runs; install it early.
 brew install stow 2>/dev/null || true
