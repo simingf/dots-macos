@@ -15,10 +15,21 @@
 # that isn't a left/right split (single pane, or an all-vertical stack → nothing to
 # equalize, left as-is), or a column containing a nested left/right split (its inner
 # widths would need proportional scaling — punt to tmux rather than risk a bad tile).
+#
+# Keep mode — run right after a manual resize so the other columns share the change
+# evenly instead of the one neighbour absorbing all of it:
+#   pane <pane_id>  the column holding this pane also keeps its width (prefix M / I)
+#   border <x>      the column just left of the vertical border at x keeps its width
+#                   (mouse border-drag release; a horizontal border → no-op)
+# In keep mode an unsupported shape is left untouched instead of even-horizontal'd —
+# that would throw away the resize that was just made.
 set -euo pipefail
 
+mode=${1:-} arg=${2:-}
 win=$(tmux display-message -p '#{window_id}')
-fallback() { tmux select-layout -t "$win" even-horizontal; exit 0; }
+fallback() { [[ -n $mode ]] && exit 0; tmux select-layout -t "$win" even-horizontal; exit 0; }
+keep_x=-1 # pane mode: x offset of the column to keep
+[[ $mode == pane ]] && keep_x=$(tmux display-message -p -t "$arg" '#{pane_left}')
 
 # tmux layout_checksum (layout-custom.c) over the body — excludes the leading "csum,".
 csum() {
@@ -89,13 +100,20 @@ ncols=${#cells[@]}
 
 # Per-column: width w0, x-offset x0, sidebar?, and reject nested left/right splits.
 declare -a w0 x0 issb
-sb_w=0 nonsb=0
+sb_w=0 nonsb=0 keep_idx=-1
 for idx in "${!cells[@]}"; do
 	c=${cells[idx]}
 	[[ $c == *'{'* ]] && fallback  # nested horizontal split in a column → punt
 	w0[idx]=${c%%x*}
 	rest=${c#*,}
 	x0[idx]=${rest%%,*}
+	# keep-mode target: the column at keep_x, or the one whose right separator (x0+w0) is
+	# within 1 cell of the released border
+	if [[ $mode == pane ]] && ((x0[idx] == keep_x)); then keep_idx=$idx; fi
+	if [[ $mode == border ]]; then
+		dist=$((arg - x0[idx] - w0[idx]))
+		((dist >= -1 && dist <= 1)) && keep_idx=$idx
+	fi
 	# sidebar iff this leaf's pane id equals sidebar_id (sidebar is always a leaf column)
 	if [[ -n $sidebar_id && $c != *'['* ]]; then
 		id=${c##*,}
@@ -105,6 +123,12 @@ for idx in "${!cells[@]}"; do
 	fi
 	issb[idx]=0; nonsb=$((nonsb + 1))
 done
+
+[[ -n $mode ]] && ((keep_idx < 0)) && exit 0 # no matching column (e.g. a horizontal border) → leave as-is
+# the kept column holds its width just like the sidebar (unless it *is* the sidebar)
+if ((keep_idx >= 0)) && ((issb[keep_idx] == 0)); then
+	issb[keep_idx]=1; sb_w=$((sb_w + w0[keep_idx])); nonsb=$((nonsb - 1))
+fi
 
 ((nonsb >= 1)) || exit 0 # only the sidebar → nothing to do
 
@@ -120,7 +144,7 @@ cursor=0
 for idx in "${!cells[@]}"; do
 	c=${cells[idx]}
 	if ((${issb[idx]} == 1)); then
-		wn=$sb_w
+		wn=${w0[idx]}
 	else
 		wn=$base
 		((rem > 0)) && { wn=$((base + 1)); rem=$((rem - 1)); }
