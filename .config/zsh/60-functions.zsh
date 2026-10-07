@@ -51,6 +51,24 @@ dotslg() {
     "$HOME/dots-macos/scripts/tmux-even-columns.sh"
 }
 
+# Like dotslg, for the meta repos: roblox-notes left, skills right.
+metalg() {
+    if [[ -z "$_REAL_TMUX" ]]; then
+        echo "Not in a tmux session" >&2
+        return 1
+    fi
+    local real_panes=$(tmux list-panes -F '#{@agent_sidebar}' | grep -vc '^1$')
+    if [[ "$real_panes" -gt 1 ]]; then
+        tmux new-window -n "meta" -c "$HOME/git/roblox/meta/roblox-notes"
+        tmux send-keys "lg" Enter
+    else
+        tmux send-keys "cd ~/git/roblox/meta/roblox-notes && lg" Enter
+    fi
+    tmux split-window -h -c "$HOME/git/roblox/meta/skills"
+    tmux send-keys "lg" Enter
+    "$HOME/dots-macos/scripts/tmux-even-columns.sh"
+}
+
 # sl update
 sup() {
     echo "➡️ pulling..." && sl pull || return 1
