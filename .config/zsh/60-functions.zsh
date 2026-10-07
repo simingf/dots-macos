@@ -204,11 +204,11 @@ kk() {
 
 # Implementation lives in the skills repo (scripts/pull_repos.sh; portable, worktree-aware).
 pullrepos() {
-    local script=~/git/roblox/active/skills/scripts/pull_repos.sh
+    local script=~/git/roblox/meta/skills/scripts/pull_repos.sh
     if [[ -x "$script" ]]; then
         "$script" "$@"
     else
-        echo "pullrepos: $script not found (is the skills repo cloned at ~/git/roblox/active/skills?)" >&2
+        echo "pullrepos: $script not found (is the skills repo cloned at ~/git/roblox/meta/skills?)" >&2
         return 1
     fi
 }
