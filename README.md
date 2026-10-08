@@ -40,7 +40,7 @@ dots-macos/
 │   └── topgrade.toml, karabiner/, kitty/
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
-│   └── Preferences/                    # sapling/ (dir-level symlink)
+│   └── Preferences/                    # sapling/ (dir-level symlink), display-switch.ini (file-level symlink)
 ├── .zshrc, .tmux.conf                  # home dotfiles, byte-identical with dots-linux
 ├── .gitconfig, .zprofile               # home dotfiles: .gitconfig partial (credentials per-platform), .zprofile Mac-only login env
 ├── .claude/                            # file-level symlinks → ~/.claude/ (runtime state in that dir)
@@ -129,6 +129,10 @@ git lfs install --system
 - **`sfeng`** (enterprise) — [github.rbx.com/settings/tokens](https://github.rbx.com/settings/tokens)
 
 `scripts/setup.sh` prompts once per account (input hidden) and stores them in the login keychain, keyed per (host, account) so both github.com accounts coexist. Later runs find the stored PATs and skip.
+
+### display-switch (monitor input follows the KVM)
+
+The LG has no DDC/CI toggle (always on) and ignores standard input switching, so the config calls `m1ddc set input-alt` (USB-C 209, DP 208). Leave the monitor's auto input switch on, since it doesn't conflict and moves the monitor to DP when the Mac sleeps. Run `brew services start display_switch`. It reads `~/Library/Preferences/display-switch.ini` (stowed). After editing the config, run `brew services restart display_switch`. Logs are in `~/Library/Logs/display-switch/`.
 
 ### Set Finicky as default browser
 

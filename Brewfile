@@ -7,6 +7,7 @@ cask_args appdir: "/Applications", fontdir: "/Library/Fonts", adopt: true
 # ---- Taps ----
 tap "coder/coder", trusted: true
 tap "felixkratz/formulae", trusted: true
+tap "haimgel/tools", trusted: true
 tap "hashicorp/tap", trusted: true
 tap "jandedobbeleer/oh-my-posh", trusted: true
 tap "jesseduffield/lazygit", trusted: true
@@ -23,6 +24,7 @@ brew "btop"
 brew "cbonsai"
 brew "chafa"
 brew "curl"
+brew "haimgel/tools/display_switch", trusted: true
 brew "duti"
 brew "eza"
 brew "fd"
@@ -47,6 +49,7 @@ brew "jq"
 brew "lazygit"
 brew "libtiff"
 brew "luarocks"
+brew "m1ddc"
 brew "mosh"
 brew "neovim"
 brew "openjdk"
