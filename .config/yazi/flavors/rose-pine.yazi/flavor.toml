@@ -222,7 +222,7 @@ footer  = { fg = "#191724", bg = "#e0def4" }
 
 [filetype]
 rules = [
-  # Mirrors $LS_COLORS from .zprofile (zsh `ls` is the source of truth for
+  # Mirrors $LS_COLORS from .config/zsh/00-env.zsh (zsh `ls` is the source of truth for
   # filetype/dir colors). Keep in sync with it.
 
   # Images + media (ls groups mp3/mp4/mov with images → rose)

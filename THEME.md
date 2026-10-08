@@ -40,15 +40,16 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | VS Code | `Library/Application Support/Code/User/settings.json` | `workbench.colorTheme = "Rosé Pine"` | canonical |
 | zsh prompt | `.config/ohmyposh/zen.toml` | oh-my-posh palette; path + caret = iris (mac + linux; linux runs the vendored `oh-my-posh` binary) | `#ceacf6` |
 | zsh fzf | `.config/zsh/80-tools.zsh` | `FZF_DEFAULT_OPTS` (pointer/prompt/marker/border) | `#ceacf6` |
-| zsh syntax | `.config/zsh/10-plugins.zsh` (linux: `80-tools.zsh`) | `ZSH_HIGHLIGHT_STYLES` + autosuggest | `#ceacf6` |
-| zsh files | `.zprofile` | `LS_COLORS` — **canonical filetype/dir palette, source of truth** (dirs=iris, symlink=foam, exec=pine, archives=gold, images+media=rose, lock/log/bak=muted, orphan=love) → ls/eza/completion; mirrored by yazi + nvim snacks explorer | `#ceacf6` |
+| zsh syntax | `.config/zsh/80-tools.zsh` (shared mac + linux) | `ZSH_HIGHLIGHT_STYLES` + autosuggest | `#ceacf6` |
+| zsh files | `.config/zsh/00-env.zsh` | `LS_COLORS` — **canonical filetype/dir palette, source of truth** (dirs=iris, symlink=foam, exec=pine, archives=gold, images+media=rose, lock/log/bak=muted, orphan=love) → ls/eza/completion; mirrored by yazi + nvim snacks explorer | `#ceacf6` |
 | lazygit | `Library/Application Support/lazygit/config.yml` | hand-rolled rose-pine | `#ceacf6` |
-| Claude Code | `.claude/settings.json` (`theme = dark-ansi`) + `.claude/statusline-command.sh` | ANSI-inherited UI + iris statusline | UI canonical / statusline `#ceacf6` |
+| Claude Code | `.claude/settings.json` (`theme = custom:rose-pine`) + `.claude/themes/rose-pine.json` + `.claude/statusline-command.sh` | custom theme = `dark-ansi` base (ANSI-inherited UI) + readable hover override; iris statusline (all 3 repos; windows wires them via its own minimal `settings.json`) | UI canonical / statusline `#ceacf6` |
 | borders | `.config/borders/bordersrc` | JankyBorders `active_color` | `#ceacf6` |
 | yazi | `.config/yazi/theme.toml` + `flavors/rose-pine.yazi/` | Rose Pine flavor; `[filetype]` rules mirror `LS_COLORS` (dir=iris, images+media=rose, archives=gold, exec=pine, orphan=love, lock/log/bak=muted) + `[mgr].cwd` path = iris | folders/path `#ceacf6`, rest canonical |
 | spotify-player | `.config/spotify-player/{app,theme}.toml` | `theme = rose_pine` | canonical |
 | btop | `.config/btop/themes/rose-pine.theme` + `btop.conf` | hand-rolled rose-pine flavor (`color_theme = "rose-pine"`) | `#ceacf6` |
-| git | `.gitconfig` | hand-rolled `[color]` (diff/status/branch/decorate); mirrored to linux | `#ceacf6` |
+| git | `.config/git/common.inc` | hand-rolled `[color]` (diff/status/branch/decorate); byte-identical to linux + windows | `#ceacf6` |
+| PowerShell (windows) | `dots-windows/Documents/PowerShell/Profile.ps1` | hand copies of `LS_COLORS`, `FZF_DEFAULT_OPTS`, and `ZSH_HIGHLIGHT_STYLES` → PSReadLine `-Colors` | `#ceacf6` |
 | ripgrep | `.config/ripgrep/rg.conf` | `--colors` RGB triples (path/line/match) | `#ceacf6` |
 | markdown-preview (browser md) | `.config/nvim/lua/plugins/treesitter.lua` | `g:mkdp_markdown_css` rose-pine prose override (appended to bundled github-markdown.css) + `g:mkdp_theme = "dark"`. Mirrors the glow row's prose palette 1:1 (h1 dark-on-iris label, iris/foam/rose/gold/pine headings, gold bold / rose italic / muted strikethrough, iris links, love inline-code, muted hr+blockquote); fenced-code syntax tokens keep mkdp's highlight.js default (same "not matched" split as the glow row). | `#ceacf6` prose |
 | glow (yazi md preview) | `.config/yazi/plugins/glow.yazi/rose-pine.json` | hand-rolled glamour style; `glow --style <json>` from `main.lua`. Themes all prose chrome (headings/emph/links/inline-code/quotes/lists/hr). Fenced-code syntax tokens use glow 3.0.0's built-in 256-color chroma (style JSON's `chroma` block is inert in this binary; kept for newer glow on the linux box). | `#ceacf6` prose |
@@ -57,7 +58,7 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 
 Two things are **canonical sources** the others mirror. When you edit a source, propagate to its mirrors in the same change.
 
-### 1. Filetype / directory colors → `LS_COLORS` (`.zprofile`)
+### 1. Filetype / directory colors → `LS_COLORS` (`.config/zsh/00-env.zsh`)
 
 `LS_COLORS` is the source of truth for how files and directories are colored. `ls` / `eza` / zsh completion read it directly; two tools hand-mirror it (they can't read it):
 
@@ -85,7 +86,7 @@ Pick its accent per the convention, add a row to **Where theming lives**, and �
 
 > THEME.md is a mac-only doc, but the configs it governs (yazi flavor, nvim lua, lazygit `config.yml`) sync to the linux/windows repos per the repo `CLAUDE.md` sync contract. A palette edit here still has to be applied + synced there.
 >
-> Linux caveat: the box's shells are non-login and `.zprofile` isn't linked, so `LS_COLORS` (this doc's filetype/dir source of truth) is re-homed to `dots-linux/.config/zsh/00-env.zsh` — keep it byte-identical to the mac `.zprofile` value. The zsh prompt is the same oh-my-posh `zen.toml` as mac, run from the vendored `oh-my-posh` binary (`dots-linux/vendor/bin/`); it falls back to a hardcoded-iris `vcs_info` prompt only if that binary is missing.
+> `LS_COLORS`, `FZF_DEFAULT_OPTS`, and `ZSH_HIGHLIGHT_STYLES` live in shared zsh modules (`00-env.zsh` / `80-tools.zsh`) that sync byte-identical to linux; windows `Profile.ps1` carries hand copies — update those too. The zsh prompt is the same oh-my-posh `zen.toml` as mac, run from the vendored `oh-my-posh` binary (`dots-linux/vendor/bin/`); it falls back to a hardcoded-iris `vcs_info` prompt only if that binary is missing.
 
 ## Not yet themed / off-theme
 

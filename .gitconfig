@@ -1,43 +1,15 @@
 [user]
 	name = Siming Feng
 	email = sfeng@roblox.com
-[core]
-	excludesfile = ~/.gitignore_global
-[pull]
-	rebase = false
 [filter "lfs"]
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
-[push]
-	autoSetupRemote = true
 [maintenance]
 	repo = /Users/sfeng/git/roblox/deployment
-[color]
-	ui = auto
-[color "diff"]
-	meta = "#908caa"
-	frag = "#ceacf6"
-	old = "#eb6f92"
-	new = "#9ccfd8"
-	commit = "#f6c177"
-	whitespace = "#eb6f92 reverse"
-[color "status"]
-	header = "#908caa"
-	added = "#9ccfd8"
-	changed = "#f6c177"
-	untracked = "#6e6a86"
-	branch = "#ceacf6"
-[color "branch"]
-	current = "#ceacf6"
-	local = "#e0def4"
-	remote = "#9ccfd8"
-[color "decorate"]
-	branch = "#ceacf6"
-	remoteBranch = "#9ccfd8"
-	tag = "#f6c177"
-	HEAD = "#ceacf6"
+[include]
+	path = ~/.config/git/common.inc
 # ── Credentials (keep last) ─────────────────────────────────────────────────
 # Catch-all: GCM (macOS keychain) for every host except the per-host overrides.
 # gh's user-to-server token 403s on git-write, so the GitHub hosts use the

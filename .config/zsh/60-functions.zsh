@@ -1,3 +1,6 @@
+# Shared functions (mac + linux). Platform-only functions (incl. `claude`, which
+# kk and mux-tmux.zsh call) live in 70-platform.zsh.
+
 # yazi wrapper — quitting with `q` lands the shell in yazi's last cwd
 y() {
     local cwd tmp="$(mktemp -t yazi-cwd.XXXXXX)"
@@ -28,30 +31,7 @@ lg() {
     fi
 }
 
-dotslg() {
-    if [[ -z "$_REAL_TMUX" ]]; then
-        echo "Not in a tmux session" >&2
-        return 1
-    fi
-    # Count real panes (exclude the agent sidebar) so a lone working pane + sidebar
-    # reuses the current window instead of spawning a new one and orphaning the sidebar.
-    local real_panes=$(tmux list-panes -F '#{@agent_sidebar}' | grep -vc '^1$')
-    if [[ "$real_panes" -gt 1 ]]; then
-        tmux new-window -n "dots" -c "$HOME/dots-macos"
-        tmux send-keys "lg" Enter
-    else
-        tmux send-keys "cd ~/dots-macos && lg" Enter
-    fi
-    tmux split-window -h -c "$HOME/dots-linux"
-    tmux send-keys "lg" Enter
-    tmux split-window -h -c "$HOME/dots-windows"
-    tmux send-keys "lg" Enter
-    # Equalize the three lazygit columns. (Dropped a `tmux-agents.sh sidebar-open` seed here when the
-    # agent sidebar was retired — see archive/agent-sidebar/ to restore it.)
-    "$HOME/dots-macos/scripts/tmux-even-columns.sh"
-}
-
-# Like dotslg, for the meta repos: roblox-notes left, skills right.
+# Lazygit on the meta repos: roblox-notes left, skills right.
 metalg() {
     if [[ -z "$_REAL_TMUX" ]]; then
         echo "Not in a tmux session" >&2
@@ -66,10 +46,10 @@ metalg() {
     fi
     tmux split-window -h -c "$HOME/git/roblox/meta/skills"
     tmux send-keys "lg" Enter
-    "$HOME/dots-macos/scripts/tmux-even-columns.sh"
+    "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
 }
 
-# Like dotslg, one lazygit column per repo in ~/git/roblox/active. Main clones only:
+# Lazygit, one column per repo in ~/git/roblox/active. Main clones only:
 # a worktree's .git is a file, so the `.git(/)` dir glob skips it.
 activelg() {
     if [[ -z "$_REAL_TMUX" ]]; then
@@ -93,7 +73,7 @@ activelg() {
         tmux split-window -h -c "$r"
         tmux send-keys "lg" Enter
     done
-    "$HOME/dots-macos/scripts/tmux-even-columns.sh"
+    "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
 }
 
 # sl update
@@ -196,11 +176,6 @@ _sup_resolve() {
     return 0
 }
 
-# Launch Claude via the declawd sandbox in --yolo mode.
-claude() {
-    SHELL=/bin/bash command declawd --yolo "$@"
-}
-
 # _kk_recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
 # was most recently visited (zoxide frecency order → recency-weighted); if none
 # are in the zoxide db, fall back to the newest such repo by .git mtime. Prints
@@ -295,17 +270,6 @@ gotopr() {
     } always { _suppress_chpwd=0 }
 }
 
-# vscode/cursor
-k() {
-    local editor
-    editor=$(printf 'code\ncursor' | fzf --height=4 --prompt='editor: ') || return
-    if [[ $# -eq 0 ]]; then
-        $editor .
-    else
-        $editor "$@"
-    fi
-}
-
 # python
 p() {
     if (( $# == 0 )); then
@@ -313,15 +277,4 @@ p() {
         return 1
     fi
     python3 "$@"
-}
-
-# spotify_player — viuer's kitty-graphics probe deadlocks under tmux (passthrough is
-# one-way; the terminal's reply gets intercepted by tmux and never reaches viuer).
-# Override TERM inside tmux so viuer skips the kitty/ghostty path; lose album art there.
-s() {
-    if [[ -n "$TMUX" ]]; then
-        TERM=xterm-256color command spotify_player "$@"
-    else
-        command spotify_player "$@"
-    fi
 }

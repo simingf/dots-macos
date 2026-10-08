@@ -6,6 +6,3 @@ for _f in ~/.config/zsh/[0-9]*.zsh(N); do
     source "$_f"
 done
 unset _f
-
-# Added by declawd
-export PATH="$HOME/.local/bin:$PATH"

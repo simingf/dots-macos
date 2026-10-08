@@ -29,21 +29,25 @@ dots-macos/
 │   ├── btop/                           # system monitor
 │   ├── finicky/                        # routes all external links to work Chrome profile
 │   ├── ghostty/                        # terminal emulator
+│   ├── git/                            # common.inc (pull/push defaults + rose-pine colors) + ignore (global gitignore), byte-identical with dots-linux + dots-windows; github-roblox.inc (Mac-only)
 │   ├── istherenet/                     # network status menubar
 │   ├── linearmouse/                    # mouse acceleration/scrolling
-│   ├── ohmyposh/, ripgrep/, gh/        # byte-identical with dots-windows
+│   ├── ohmyposh/                       # prompt theme, byte-identical with dots-linux + dots-windows
+│   ├── ripgrep/, gh/                   # byte-identical with dots-windows
 │   ├── spotify-player/                 # app.toml, keymap.toml, theme.toml
-│   ├── yazi/                           # file manager (byte-identical with dots-linux)
-│   ├── zsh/                            # ordered config modules (NN-*.zsh) sourced by the .zshrc loader; mux-tmux.zsh sourced per session by 95-session.zsh
+│   ├── yazi/                           # file manager (byte-identical with dots-linux + dots-windows)
+│   ├── zsh/                            # ordered modules (NN-*.zsh) sourced by the .zshrc loader — all byte-identical with dots-linux except 10-plugins (zinit) + 70-platform (Mac-only aliases/functions); mux-tmux.zsh sourced per session by 95-session.zsh
 │   └── topgrade.toml, karabiner/, kitty/
 ├── Library/
 │   ├── Application Support/            # lazygit, VS Code (file-level symlinks)
 │   └── Preferences/                    # sapling/ (dir-level symlink)
-├── .zshrc, .gitconfig, .tmux.conf      # home dotfiles
+├── .zshrc, .tmux.conf                  # home dotfiles, byte-identical with dots-linux
+├── .gitconfig, .zprofile               # home dotfiles: .gitconfig partial (credentials per-platform), .zprofile Mac-only login env
 ├── .claude/                            # file-level symlinks → ~/.claude/ (runtime state in that dir)
 │   ├── CLAUDE.md                       # global Claude Code instructions
 │   ├── settings.json                   # Claude Code settings (permissions, model, statusLine, notify hooks)
 │   ├── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
+│   ├── themes/rose-pine.json           # Claude Code custom theme
 │   ├── hooks/agent-notify.sh           # Stop/Notification → transient top-right status-bar notif (via scripts/tmux-notify.sh); tmux-only, no OS toast
 │   └── hooks/agent-status.sh           # Stop/Notification → /tmp/agent-status-* state file → agent sidebar dot color
 ├── scripts/
@@ -72,7 +76,8 @@ dots-macos/
 
 - **"sync my dotfiles"** — runs `scripts/sync-dotfiles.py --apply` (byte-identical files only).
 - **"refresh the Linux vendored plugins"** — runs `scripts/refresh-linux.sh`: updates the Mac's plugin trees (`nvim Lazy! sync` + `zinit update`), re-vendors them into dots-linux, syncs config, and commits + pushes both repos.
-- **"mirror this alias to Linux"** / **"mirror this function to Windows"** — hand-port a `.zshrc` change into `dots-linux/.zshrc` (skipping Mac-only tools) or `dots-windows/Documents/PowerShell/Profile.ps1` (translating zsh→PowerShell).
+- **"add this alias/function"** — goes in the shared zsh modules (`50-aliases` / `60-functions`, auto-synced to Linux) unless it needs a Mac-only tool, then `70-platform.zsh`.
+- **"mirror this function to Windows"** — hand-port a zsh module change into `dots-windows/Documents/PowerShell/Profile.ps1` (translating zsh→PowerShell, skipping work-only bits).
 - **"snapshot `<app>` preferences"** — copies `~/Library/Preferences/<domain>.plist` into `manual/preferences/` and commits.
 - **"I installed `<app>`, set it up in my dots"** / **"add `<app>` to dotfiles"** — walks the checklist in [`CLAUDE.md`](./CLAUDE.md#new-tool--app-setup): install path, config placement + stow, sync wiring, sibling-repo updates, docs.
 
