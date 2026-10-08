@@ -176,11 +176,11 @@ _sup_resolve() {
     return 0
 }
 
-# _kk_recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
+# _recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
 # was most recently visited (zoxide frecency order → recency-weighted); if none
 # are in the zoxide db, fall back to the newest such repo by .git mtime. Prints
 # nothing when the folder has no nested repos.
-_kk_recent_nested_repo() {
+_recent_nested_repo() {
     emulate -L zsh
     local base="${PWD%/}/" d rel g
     # Primary: zoxide db, highest frecency first → most-recently-visited wins.

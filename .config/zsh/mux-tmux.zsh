@@ -1,7 +1,6 @@
 # tmux session module — sourced by .zshrc when inside a real tmux ($TMUX set).
 # Defines the tmux `kk` layout plus the tmux session helpers. Relies on
-# _kk_recent_nested_repo() / claude() / _REAL_TMUX from .zshrc (defined before the
-# source tail). Byte-identical across mac & linux — no host-specific paths
+# claude() / _REAL_TMUX from the numbered modules (sourced before this one). Byte-identical across mac & linux — no host-specific paths
 # (claude/nvim/lazygit resolve per-platform from .zshrc).
 
 # _kk_stay <cmd>: wrap <cmd> so its pane falls back to a login-interactive shell when <cmd> exits,
@@ -14,14 +13,14 @@ _kk_stay() {
     print -r -- "exec zsh -il -c ${(q)inner}"
 }
 
-# kk: tmux split into full-height columns (no vertical stacking). In a git repo (or a folder with a repo
-# nested ≤2 deep): lazygit 20% | nvim 40% | claude 40%. Otherwise: nvim 50% | claude 50%. claude is always
-# the rightmost column (the origin pane). Args starting with - are claude flags; args that are existing paths
-# open in nvim (default: the root as a dir tree); any other arg is sent to claude as a prompt (like
-# `claude PROMPT`). Every pane falls back to a shell when its tool exits: the lazygit/nvim splits via
-# _kk_stay (above), and claude runs in the interactive origin pane so its prompt simply returns — so
-# quitting any tool leaves its pane as a shell instead of collapsing the layout (stays 20/40/40).
-# -d keeps focus on the origin pane, where claude runs last. Outside tmux → claude.
+# kk: tmux split into two full-height columns: nvim 50% | claude 50% (claude = the origin pane, rightmost).
+# Lazygit is no longer part of the layout — toggle it as a left sidebar with prefix g (tmux-lazygit.sh).
+# Args starting with - are claude flags; args that are existing paths open in nvim (default: the git root,
+# or $PWD outside a repo, as a dir tree); any other arg is sent to claude as a prompt (like `claude PROMPT`).
+# Both panes fall back to a shell when their tool exits: nvim via _kk_stay (above), and claude runs in the
+# interactive origin pane so its prompt simply returns — so quitting either tool leaves its pane as a shell
+# instead of collapsing the layout. -d keeps focus on the origin pane, where claude runs last.
+# Outside tmux → claude.
 kk() {
     emulate -L zsh
     local a
@@ -35,26 +34,14 @@ kk() {
         claude "${cflags[@]}" "${cprompt[@]}"
         return
     fi
-    local root paneroot=$PWD lgroot
+    local root paneroot=$PWD
     if root=$(git rev-parse --show-toplevel 2>/dev/null) && [[ -n "$root" ]]; then
-        paneroot=$root lgroot=$root
-    else
-        lgroot=$(_kk_recent_nested_repo)
+        paneroot=$root
     fi
     (( ${#files} )) || files=("$paneroot") # no files → open the root as a dir tree
     local nvim_cmd="nvim ${(j: :)${(q@)files}}" # (q@) quotes each file, (j) joins
-    # Full-height columns to the left of the origin pane (claude, rightmost). Each -h -b split inserts a new
-    # column just left of the origin; -l is a % of the pane being split, so ordering makes the ratios land.
-    # _kk_stay wraps each tool so quitting it drops the pane to a shell instead of closing it (see above):
-    if [[ -n "$lgroot" ]]; then
-        # lazygit 20% | nvim 40% | claude 40%. lazygit first at 20% of the full width; then nvim at 50% of the
-        # remaining 80% = 40%, leaving claude at 40%.
-        tmux split-window -h -b -d -l 20% -c "$lgroot"   "$(_kk_stay lazygit)"      || return
-        tmux split-window -h -b -d -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")"  || return
-    else
-        # nvim 50% | claude 50%.
-        tmux split-window -h -b -d -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")"  || return
-    fi
+    # nvim 50% just left of the origin pane (claude); _kk_stay drops it to a shell when nvim quits (see above).
+    tmux split-window -h -b -d -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")" || return
     # Name the Claude session after the tmux window so cross-session messaging (ListAgents) shows a
     # meaningful handle; skip if the caller already passed their own --name/-n.
     local -a nameflag=(--name "$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}')")

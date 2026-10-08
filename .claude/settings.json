@@ -133,6 +133,5 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:rose-pine",
-  "verbose": true,
-  "model": "claude-opus-5-5[1M]"
+  "verbose": true
 }

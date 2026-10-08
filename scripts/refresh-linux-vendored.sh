@@ -90,7 +90,7 @@ cp "$TMPDIR/posh-linux-amd64" "$DOTS_LINUX/vendor/bin/oh-my-posh"
 echo "  oh-my-posh ✓"
 
 # tmux: the box's Debian tmux is 3.4, which lacks the pane-title-changed and
-# window-layout-changed hooks the agent sidebar relies on (tmux silently ignores
+# window-layout-changed hooks the agent status dots + lazygit sidebar rely on (tmux silently ignores
 # unknown set-hook names, so the sidebar just goes stale). mjakob-gh publishes a
 # fully-static musl build (own libevent + ncurses), so it runs standalone and
 # shadows /usr/bin/tmux via ~/.local/bin. Single gzipped binary — no archive.
