@@ -189,8 +189,11 @@ _open() {
 }
 
 _toggle() {
-  local existing
-  existing=$(tmux list-panes -t "${2:-}" -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
+  local existing pane=${2:-}
+  # no pane arg (a server still running a pre-reload `bind g`): fall back to the current client's pane
+  [ -n "$pane" ] || pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null)
+  set -- "${1:-}" "$pane"
+  existing=$(tmux list-panes -t "$pane" -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
   if [ -n "$existing" ]; then _close "$existing"; else _open "$@"; fi
 }
 
