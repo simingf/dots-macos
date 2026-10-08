@@ -176,37 +176,6 @@ _sup_resolve() {
     return 0
 }
 
-# _recent_nested_repo: print the git repo nested 1–2 levels under $PWD that
-# was most recently visited (zoxide frecency order → recency-weighted); if none
-# are in the zoxide db, fall back to the newest such repo by .git mtime. Prints
-# nothing when the folder has no nested repos.
-_recent_nested_repo() {
-    emulate -L zsh
-    local base="${PWD%/}/" d rel g
-    # Primary: zoxide db, highest frecency first → most-recently-visited wins.
-    while IFS= read -r d; do
-        [[ -n "$d" && "$d" == "$base"* ]] || continue
-        rel="${d#"$base"}"
-        ((${#${(s:/:)rel}} <= 2)) || continue # only 1–2 levels below the folder
-        [[ -e "$d/.git" ]] && {
-            print -r -- "$d"
-            return 0
-        }
-    done < <(zoxide query --list 2>/dev/null)
-    # Fallback: newest .git by mtime across depth 1–2 (repo never cd'd into).
-    zmodload -F zsh/stat b:zstat 2>/dev/null
-    local best="" m
-    integer bestm=0
-    for g in "$base"*/.git(Nom) "$base"*/*/.git(Nom); do
-        m=$(zstat +mtime -- "$g" 2>/dev/null) || continue
-        [[ -n "$m" ]] && ((m > bestm)) && {
-            bestm=$m
-            best="${g:h}"
-        }
-    done
-    [[ -n "$best" ]] && print -r -- "$best"
-}
-
 # kk: base fallback — launch claude with flags + prompt (opening files needs a split
 # layout, so existing-path args are dropped here). Overridden by
 # ~/.config/zsh/mux-tmux.zsh with the full pane layout when sourced inside a

@@ -6,9 +6,16 @@
 # its width back proportionally. Unlike the agent sidebar it is a normal, focusable pane — opening it
 # focuses it and nothing deflects focus away (no mark-read deflect), since you work in it.
 #
+# Which repo (_resolve, first hit wins): the repo an nvim pane in this window is looking at (@nvim_repo,
+# published by nvim's lua/config/tmux_lazygit.lua — the active pane's first); else the repo containing the
+# active pane's dir; else, among repos ≤3 levels below it, the highest zoxide score (newest .git mtime if
+# none of them are in zoxide); else nothing opens and a "no git repo here" notification shows instead.
+# While open, the sidebar follows nvim: when nvim's repo changes, `follow` restarts lazygit there in place.
+#
 # Modes:
-#   toggle <path>   open (focused, lazygit in <path>'s repo) or close this window's sidebar
-#   close <pane>    reclaim + kill <pane>; run by the pane itself when lazygit quits
+#   toggle <path> <pane>  open (focused) on the resolved repo, or close this window's sidebar
+#   follow <nvim-pane>    restart the sidebar in <nvim-pane>'s window on its @nvim_repo (no-op if none open)
+#   close <pane> <gen>    reclaim + kill <pane>; run by the pane itself when lazygit quits
 #   layout <win>    window-layout-changed hook: reap a window left with only the sidebar, then fix-width
 #   fix-width       window-resized hook: snap every sidebar back to SIDEBAR_COLS
 set -uo pipefail
@@ -107,6 +114,10 @@ _reclaim_layout() {
 # so it still completes when the caller is the sidebar pane itself (killing it kills this script).
 _close() {
   local pane=$1 win layout newl
+  # from a quitting lazygit: skip if the pane was respawned since (a newer gen owns it)
+  if [ -n "${2:-}" ] && [ "$(tmux display-message -p -t "$pane" '#{@sidebar_gen}' 2>/dev/null)" != "$2" ]; then
+    return 0
+  fi
   read -r win layout < <(tmux display-message -p -t "$pane" '#{window_id} #{window_layout}' 2>/dev/null) || return 0
   newl=$(_reclaim_layout "$layout" "${pane#%}") || newl=""
   if [ -n "$newl" ]; then
@@ -117,24 +128,86 @@ _close() {
   return 0
 }
 
-# _open: full-height left split running lazygit in <path>'s repo. `lg` (60-functions.zsh) picks the right
-# GH token per remote host; a non-repo <path> falls back to its most recently visited nested repo (like kk
-# used to). When lazygit quits, the pane closes itself through `close` so the width is reclaimed.
-# `exec zsh -il -c`, not plain `sh -c '...; ...'`: tmux's sh won't hand lazygit the foreground tty when a
-# command follows it (it dies instantly) — same reason as _kk_stay in mux-tmux.zsh.
+# _nested_repo <dir>: among git repos ≤3 levels below <dir>, the one with the highest zoxide score — zoxide
+# lists highest-first, and a visit anywhere inside a repo counts for that repo (climb to its .git, but not
+# above <dir>). If none are in zoxide yet, the one whose .git changed most recently. Prints nothing if none.
+_nested_repo() {
+  local base=${1%/} d r rel
+  if command -v zoxide >/dev/null; then
+    while IFS= read -r d; do
+      [[ $d == "$base"/* ]] || continue
+      r=$d
+      while [[ $r != "$base" && ! -e $r/.git ]]; do r=${r%/*}; done
+      [[ $r == "$base" ]] && continue
+      rel=${r#"$base"/}; rel=${rel//[^\/]/}          # one / per extra level
+      ((${#rel} <= 2)) && { printf '%s\n' "$r"; return; }
+    done < <(zoxide query --list 2>/dev/null)
+  fi
+  local -a gits=()
+  shopt -s nullglob; gits=("$base"/*/.git "$base"/*/*/.git "$base"/*/*/*/.git); shopt -u nullglob
+  ((${#gits[@]})) && { r=$(ls -1td -- "${gits[@]}" | head -1); printf '%s\n' "${r%/.git}"; }
+}
+
+# _resolve <path> <pane>: the repo to show (see header), or nothing.
+_resolve() {
+  local dir=${1:-$HOME} pane=${2:-} r
+  r=$( { tmux display-message -p -t "$pane" '#{@nvim_repo}'; tmux list-panes -t "$pane" -F '#{@nvim_repo}'; } 2>/dev/null \
+       | awk 'NF { print; exit }')
+  [[ -n $r && -d $r ]] && { printf '%s\n' "$r"; return; }
+  r=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) && [[ -n $r ]] && { printf '%s\n' "$r"; return; }
+  _nested_repo "$dir"
+}
+
+# _cmd <gen>: the sidebar pane command. `lg` (60-functions.zsh) picks the right GH token per remote host.
+# When lazygit quits, the pane closes itself through `close` so the width is reclaimed — tagged with <gen>
+# so a lazygit killed by `follow`'s respawn doesn't close the pane it was replaced in. `exec zsh -il -c`,
+# not plain `sh -c '...; ...'`: tmux's sh won't hand lazygit the foreground tty when a command follows it
+# (it dies instantly) — same reason as _kk_stay in mux-tmux.zsh.
+_cmd() {
+  local inner
+  inner='lg; exec '"$(printf '%q' "$0")"' close "$TMUX_PANE" '"$1"
+  printf 'exec zsh -il -c %q' "$inner"
+}
+
+# _tag <pane> <repo> <gen>
+_tag() {
+  tmux set-option -p -t "$1" @sidebar 1 \; set-option -p -t "$1" @sidebar_repo "$2" \; \
+    set-option -p -t "$1" @sidebar_gen "$3" 2>/dev/null
+}
+
+# _open <path> <pane>: full-height left split running lazygit on the resolved repo, focused.
 _open() {
-  local dir=${1:-$HOME} pane inner
-  inner='git rev-parse --git-dir >/dev/null 2>&1 || { r=$(_recent_nested_repo); [[ -n $r ]] && { _suppress_chpwd=1; builtin cd -- $r; _suppress_chpwd=0; }; }; lg; exec '"$(printf '%q' "$0")"' close "$TMUX_PANE"'
-  pane=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -c "$dir" -P -F '#{pane_id}' \
-    "exec zsh -il -c $(printf '%q' "$inner")") || return 0
-  [ -n "$pane" ] && tmux set-option -p -t "$pane" @sidebar 1 2>/dev/null
+  local repo sb
+  repo=$(_resolve "$@")
+  if [[ -z $repo ]]; then
+    "$(dirname "$0")/tmux-notify.sh" "no git repo here"
+    return 0
+  fi
+  sb=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -c "$repo" -P -F '#{pane_id}' "$(_cmd 1)") || return 0
+  [ -n "$sb" ] && _tag "$sb" "$repo" 1
   return 0
 }
 
 _toggle() {
   local existing
-  existing=$(tmux list-panes -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
-  if [ -n "$existing" ]; then _close "$existing"; else _open "${1:-}"; fi
+  existing=$(tmux list-panes -t "${2:-}" -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
+  if [ -n "$existing" ]; then _close "$existing"; else _open "$@"; fi
+}
+
+# _follow <nvim-pane>: if that window has a sidebar on a different repo than the pane's @nvim_repo, restart
+# lazygit there in place (respawn-pane keeps the pane, its width, and focus where it is).
+_follow() {
+  local np=$1 repo row sb cur gen
+  repo=$(tmux display-message -p -t "$np" '#{@nvim_repo}' 2>/dev/null)
+  [[ -n $repo && -d $repo ]] || return 0
+  row=$(tmux list-panes -t "$np" -F '#{@sidebar}	#{pane_id}	#{@sidebar_repo}	#{@sidebar_gen}' 2>/dev/null | awk -F'\t' '$1 == "1" { print $2, ($3 == "" ? "-" : $3), ($4 == "" ? 0 : $4); exit }')
+  [ -n "$row" ] || return 0
+  read -r sb cur gen <<<"$row"                      # placeholders keep empty fields from collapsing
+  [[ $cur == "$repo" ]] && return 0
+  gen=$((${gen:-0} + 1))
+  _tag "$sb" "$repo" "$gen"                         # tag first: the killed lazygit's `close` sees a newer gen
+  tmux respawn-pane -k -t "$sb" -c "$repo" "$(_cmd "$gen")" 2>/dev/null
+  return 0
 }
 
 # _fix_width: snap every sidebar back to SIDEBAR_COLS. Runs on window-layout-changed, which its own
@@ -165,10 +238,11 @@ _reap() {
 }
 
 case "${1:-}" in
-  toggle)    _toggle "${2:-}" ;;
-  close)     [ -n "${2:-}" ] && _close "$2" ;;
+  toggle)    _toggle "${2:-}" "${3:-}" ;;
+  follow)    [ -n "${2:-}" ] && _follow "$2" ;;
+  close)     [ -n "${2:-}" ] && _close "$2" "${3:-}" ;;
   layout)    _reap "${2:-}"; _fix_width ;;
   fix-width) _fix_width ;;
   __reclaim) _reclaim_layout "${2:-}" "${3:-}" ;;   # test hook: pure layout rewrite, no tmux
-  *) echo "usage: $0 toggle <path> | close <pane> | layout <win> | fix-width" >&2; exit 2 ;;
+  *) echo "usage: $0 toggle <path> <pane> | follow <nvim-pane> | close <pane> [gen] | layout <win> | fix-width" >&2; exit 2 ;;
 esac

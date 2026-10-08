@@ -32,6 +32,15 @@ float from a hidden root split* — pure implementation detail.
   (`p.list.win.win`, `p.layout.root.win`) — those need a live open picker, so they remain
   silent-fail. If the explorer misbehaves after an update, suspect these first.
 
+### snacks explorer cursor for the lazygit sidebar — `lua/config/tmux_lazygit.lua`
+Reads the tree row under the cursor via `Snacks.picker.get({source="explorer"})[1]:current()`
++ `Snacks.picker.util.path(item)` / `item.dir`, and detects "the tree is focused" by the list
+buffer's filetype **`snacks_picker_list`** (set in snacks' `picker/core/list.lua`).
+- **Failure mode:** silent — if the filetype or `current()` changes, moving through the tree stops
+  switching the `prefix g` lazygit sidebar (file buffers still drive it via `BufEnter`).
+- **Health check covers:** `picker.get` / `picker.util.path` (shared with the explorer entry above);
+  not the filetype string.
+
 ### nvim-treesitter `main` branch — `lua/plugins/treesitter.lua`
 Both `nvim-treesitter` and `-textobjects` track the in-development `main` rewrite:
 `require("nvim-treesitter").install(...)`, the manual `select_textobject` wiring, and
