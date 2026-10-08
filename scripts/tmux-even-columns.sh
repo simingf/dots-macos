@@ -59,7 +59,7 @@ inner=${inner%\}}          # drop closing brace
 
 # sidebar pane's numeric id for THIS window (layout uses the number, not "%N"). Empty
 # when the window has no sidebar — then every column is equalized (plain even widths).
-sidebar_id=$(tmux list-panes -t "$win" -F '#{@agent_sidebar} #{pane_id}' 2>/dev/null |
+sidebar_id=$(tmux list-panes -t "$win" -F '#{@sidebar} #{pane_id}' 2>/dev/null |
 	awk '$1==1 {print $2}' | head -1 | tr -d '%')
 
 # Split the top-level group into column cells. First a depth-0 comma split into pieces,

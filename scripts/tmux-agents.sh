@@ -99,7 +99,7 @@ _statef() { printf '/tmp/agent-status-%s-%s' "${UID:-0}" "${1//[^0-9]/}"; }
 # _focused_pane: "<pane_id>\t<sess:win.pane>" of the attached client's currently-visible pane (skipping the
 # sidebar itself). Empty if none. Drives the "active agent" gray highlight and mark-read.
 _focused_pane() {
-  tmux list-panes -a -F '#{session_attached}	#{window_active}	#{pane_active}	#{@agent_sidebar}	#{pane_id}	#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null \
+  tmux list-panes -a -F '#{session_attached}	#{window_active}	#{pane_active}	#{@sidebar}	#{pane_id}	#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null \
   | awk -F'\t' '$1>=1 && $2==1 && $3==1 && $4!=1 {print $5"\t"$6; exit}' || true
 }
 

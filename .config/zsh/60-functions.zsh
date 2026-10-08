@@ -37,7 +37,7 @@ metalg() {
         echo "Not in a tmux session" >&2
         return 1
     fi
-    local real_panes=$(tmux list-panes -F '#{@agent_sidebar}' | grep -vc '^1$')
+    local real_panes=$(tmux list-panes -F '#{@sidebar}' | grep -vc '^1$')
     if [[ "$real_panes" -gt 1 ]]; then
         tmux new-window -n "meta" -c "$HOME/git/roblox/meta/roblox-notes"
         tmux send-keys "lg" Enter
@@ -61,7 +61,7 @@ activelg() {
         echo "No repos in ~/git/roblox/active" >&2
         return 1
     fi
-    local real_panes=$(tmux list-panes -F '#{@agent_sidebar}' | grep -vc '^1$')
+    local real_panes=$(tmux list-panes -F '#{@sidebar}' | grep -vc '^1$')
     if [[ "$real_panes" -gt 1 ]]; then
         tmux new-window -n "active" -c "$repos[1]"
         tmux send-keys "lg" Enter

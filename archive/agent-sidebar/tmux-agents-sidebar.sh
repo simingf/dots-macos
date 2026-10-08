@@ -49,7 +49,7 @@ __lines() {
   # refresh latency. Every window/session has ≥1 pane, so list-panes -a covers the full tree. 12 fields,
   # TAB-separated, pane_title last (it may contain spaces): attached, session, win_idx, win_active, win_name,
   # pane_idx, pane_active, @sidebar, pane_height, win_activity, pane_id, pane_title.
-  P=${__PANES_FROZEN:-$(tmux list-panes -a -F '#{session_attached}	#{session_name}	#{window_index}	#{window_active}	#{window_name}	#{pane_index}	#{pane_active}	#{@agent_sidebar}	#{pane_height}	#{window_activity}	#{pane_id}	#{pane_title}' 2>/dev/null)}   # $__PANES_FROZEN lets a test inject a fixed snapshot for a deterministic byte-diff
+  P=${__PANES_FROZEN:-$(tmux list-panes -a -F '#{session_attached}	#{session_name}	#{window_index}	#{window_active}	#{window_name}	#{pane_index}	#{pane_active}	#{@sidebar}	#{pane_height}	#{window_activity}	#{pane_id}	#{pane_title}' 2>/dev/null)}   # $__PANES_FROZEN lets a test inject a fixed snapshot for a deterministic byte-diff
   # Order the flat agent list in the SAME space/tab order as the tree (session name alpha, then window
   # index, then pane index) so each agent lines up with its tab. Decorate-sort-undecorate on the target
   # (field 2 = session:window.pane); zero-pad the indices so the lexical sort is numeric. Detection +
@@ -171,7 +171,7 @@ _panel() {
 # _live_socks: the fzf listen-socket path of every open sidebar that has one (one per line).
 _live_socks() {
   local pid s
-  tmux list-panes -a -F '#{@agent_sidebar}	#{pane_id}' 2>/dev/null \
+  tmux list-panes -a -F '#{@sidebar}	#{pane_id}' 2>/dev/null \
   | awk -F'\t' '$1==1 {print $2}' \
   | while IFS= read -r pid; do s=$(_sock "$pid"); [ -S "$s" ] && printf '%s\n' "$s"; done
 }
@@ -185,31 +185,31 @@ _live_socks() {
 # jumped elsewhere via `activate` leaves a non-sidebar pane active and this no-ops — never fighting the jump.
 _deflect() {
   local row win target
-  row=$(tmux list-panes -a -F '#{session_attached}	#{window_active}	#{pane_active}	#{@agent_sidebar}	#{window_id}' 2>/dev/null \
+  row=$(tmux list-panes -a -F '#{session_attached}	#{window_active}	#{pane_active}	#{@sidebar}	#{window_id}' 2>/dev/null \
     | awk -F'\t' '$1>=1 && $2==1 && $3==1 {print $4"|"$5; exit}')
   [ "${row%%|*}" = 1 ] || return 0                                     # active pane isn't the sidebar → nothing to do
   win=${row#*|}
   tmux select-pane -t "$win" -l 2>/dev/null                           # most-recently-active pane in the tab
   # last-pane can be unset (sidebar was the first pane ever selected) or itself the sidebar — fall back to the
   # first real pane so we always leave the sidebar.
-  if [ "$(tmux display-message -p -t "$win" '#{@agent_sidebar}' 2>/dev/null)" = 1 ]; then
-    target=$(tmux list-panes -t "$win" -F '#{@agent_sidebar}	#{pane_id}' 2>/dev/null | awk -F'\t' '$1!="1"{print $2; exit}')
+  if [ "$(tmux display-message -p -t "$win" '#{@sidebar}' 2>/dev/null)" = 1 ]; then
+    target=$(tmux list-panes -t "$win" -F '#{@sidebar}	#{pane_id}' 2>/dev/null | awk -F'\t' '$1!="1"{print $2; exit}')
     [ -n "$target" ] && tmux select-pane -t "$target" 2>/dev/null || true
   fi
 }
 
 # _sidebar_open: create the panel as a fixed-width ($SIDEBAR_COLS), full-height split pinned to the window's
-# far-left edge (tagged @agent_sidebar, focus stays put via -d). `-f` spans the whole window height and places
+# far-left edge (tagged @sidebar, focus stays put via -d). `-f` spans the whole window height and places
 # it at the left edge regardless of which pane is focused — without it the split takes only the focused pane's
 # area, landing mid-window when you're in a right column. No-op if this window already has one — so `prefix c`
 # can call it blindly.
 _sidebar_open() {
-  tmux list-panes -F '#{@agent_sidebar}' | grep -q '^1$' && return 0
+  tmux list-panes -F '#{@sidebar}' | grep -q '^1$' && return 0
   local pane
   pane=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -c "$HOME" -d -P -F '#{pane_id}' "'$0' panel") || return 0
   # If the panel command dies immediately (e.g. fzf too old), the pane is already
   # gone — tag it defensively so a stale pane never surfaces "no such pane".
-  [ -n "$pane" ] && tmux set-option -p -t "$pane" @agent_sidebar 1 2>/dev/null
+  [ -n "$pane" ] && tmux set-option -p -t "$pane" @sidebar 1 2>/dev/null
   return 0
 }
 
@@ -310,7 +310,7 @@ _reclaim_layout() {
 # closed it manually (`x`/esc). Per-window: a split can only live in one window, so each window tracks its own.
 _sidebar() {
   local existing sbid layout newl
-  existing=$(tmux list-panes -F '#{pane_id} #{@agent_sidebar}' | awk '$2 == "1" { print $1; exit }')
+  existing=$(tmux list-panes -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
   if [ -z "$existing" ]; then _sidebar_open; return 0; fi
   sbid=$(printf '%s' "$existing" | tr -d '%')      # layout strings use the bare numeric id, not "%N"
   layout=$(tmux display-message -p '#{window_layout}')
@@ -335,7 +335,7 @@ _fix_width() {
   (
     trap 'rmdir "$lock" 2>/dev/null' EXIT
     sleep 0.2
-    tmux list-panes -a -F '#{@agent_sidebar}	#{pane_id}	#{pane_width}' 2>/dev/null \
+    tmux list-panes -a -F '#{@sidebar}	#{pane_id}	#{pane_width}' 2>/dev/null \
     | awk -F'\t' -v w="$SIDEBAR_COLS" '$1==1 && $3+0 != w+0 {print $2}' \
     | while IFS= read -r pid; do tmux resize-pane -t "$pid" -x "$SIDEBAR_COLS" 2>/dev/null || true; done
   ) &
@@ -351,7 +351,7 @@ _reap() {
   # kill iff there is ≥1 pane, ≥1 sidebar pane, and 0 real panes. This can NEVER kill a window that still
   # holds a real pane — it avoids the previous two-call race (a second list-panes returning empty during
   # layout churn read as "0 real panes" → wrongly nuked a live tab).
-  tmux list-panes -t "$win" -F '#{@agent_sidebar}' 2>/dev/null | awk '
+  tmux list-panes -t "$win" -F '#{@sidebar}' 2>/dev/null | awk '
     { n++; if ($0 == "1") sb++; else real++ }
     END { exit (n > 0 && sb > 0 && real == 0) ? 0 : 1 }' \
     && tmux kill-window -t "$win" 2>/dev/null || true

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lazygit sidebar: a fixed-width, full-height lazygit pane on the far left of the window (prefix g toggles).
 # Same pop-open mechanics as the retired agent sidebar (archive/agent-sidebar/): -f -h -b split, tagged
-# @agent_sidebar=1 so tmux-even-columns.sh keeps its width, automatic-rename keeps the window name, and the
+# @sidebar=1 (generic fixed-width-left-sidebar pane tag) so tmux-even-columns.sh keeps its width, automatic-rename keeps the window name, and the
 # real-pane counts (dotslg/metalg/activelg) skip it; width re-pinned on resize/layout change; closing hands
 # its width back proportionally. Unlike the agent sidebar it is a normal, focusable pane — opening it
 # focuses it and nothing deflects focus away (no mark-read deflect), since you work in it.
@@ -127,13 +127,13 @@ _open() {
   inner='git rev-parse --git-dir >/dev/null 2>&1 || { r=$(_recent_nested_repo); [[ -n $r ]] && { _suppress_chpwd=1; builtin cd -- $r; _suppress_chpwd=0; }; }; lg; exec '"$(printf '%q' "$0")"' close "$TMUX_PANE"'
   pane=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -c "$dir" -P -F '#{pane_id}' \
     "exec zsh -il -c $(printf '%q' "$inner")") || return 0
-  [ -n "$pane" ] && tmux set-option -p -t "$pane" @agent_sidebar 1 2>/dev/null
+  [ -n "$pane" ] && tmux set-option -p -t "$pane" @sidebar 1 2>/dev/null
   return 0
 }
 
 _toggle() {
   local existing
-  existing=$(tmux list-panes -F '#{pane_id} #{@agent_sidebar}' | awk '$2 == "1" { print $1; exit }')
+  existing=$(tmux list-panes -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
   if [ -n "$existing" ]; then _close "$existing"; else _open "${1:-}"; fi
 }
 
@@ -146,7 +146,7 @@ _fix_width() {
   (
     trap 'rmdir "$lock" 2>/dev/null' EXIT
     sleep 0.2
-    tmux list-panes -a -F '#{@agent_sidebar}	#{pane_id}	#{pane_width}' 2>/dev/null \
+    tmux list-panes -a -F '#{@sidebar}	#{pane_id}	#{pane_width}' 2>/dev/null \
     | awk -F'\t' -v w="$SIDEBAR_COLS" '$1==1 && $3+0 != w+0 {print $2}' \
     | while IFS= read -r pid; do tmux resize-pane -t "$pid" -x "$SIDEBAR_COLS" 2>/dev/null || true; done
   ) &
@@ -158,7 +158,7 @@ _fix_width() {
 _reap() {
   local win="${1:-}"
   [ -n "$win" ] || return 0
-  tmux list-panes -t "$win" -F '#{@agent_sidebar}' 2>/dev/null | awk '
+  tmux list-panes -t "$win" -F '#{@sidebar}' 2>/dev/null | awk '
     { n++; if ($0 == "1") sb++; else real++ }
     END { exit (n > 0 && sb > 0 && real == 0) ? 0 : 1 }' \
     && tmux kill-window -t "$win" 2>/dev/null || true

@@ -51,7 +51,7 @@ dotslg() {
     fi
     # Count real panes (exclude the agent sidebar) so a lone working pane + sidebar
     # reuses the current window instead of spawning a new one and orphaning the sidebar.
-    local real_panes=$(tmux list-panes -F '#{@agent_sidebar}' | grep -vc '^1$')
+    local real_panes=$(tmux list-panes -F '#{@sidebar}' | grep -vc '^1$')
     if [[ "$real_panes" -gt 1 ]]; then
         tmux new-window -n "dots" -c "$HOME/dots-macos"
         tmux send-keys "lg" Enter
