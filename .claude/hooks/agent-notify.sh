@@ -8,7 +8,7 @@
 # (The finer sidebar status — working/waiting/unread — is NOT reused here: that's a pane-keyed /tmp
 # state file for coloring dots, orthogonal to a one-shot notification.)
 #
-# Delivery: a top-right status-bar notification via scripts/tmux-notify.sh (auto-clears ~3s, no focus
+# Delivery: a top-right status-bar notification via scripts/tmux-notify.sh (auto-clears after NOTIFY_SECS, default 1s; no focus
 # steal). No OS desktop toast — outside tmux (no $TMUX_PANE) or when the pane's session has no attached
 # client, it's a silent no-op. Never fails the hook — always exits 0.
 #

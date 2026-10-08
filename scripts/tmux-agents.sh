@@ -13,7 +13,7 @@
 #
 # Finer status (needs-answer / done-unread / read / compacting) can't be read from the title — it comes
 # from Claude Code lifecycle hooks writing /tmp/agent-status-<uid>-<pane> (see .claude/hooks/agent-status.sh):
-# Stop → unread (or read if you're already looking), AskUserQuestion/Notification → waiting, PreCompact →
+# Stop → unread (or read if you're already looking), AskUserQuestion/Notification → waiting (PostToolUse → back to active), PreCompact →
 # compacting (PostCompact/UserPromptSubmit clear it), SessionEnd → removed. pane-focus-in flips unread →
 # read (`mark-read`). Dots: gold ●=working, foam ●=needs answer, love ●=errored (StopFailure), gray ●=done-unread,
 # gray ○ (hollow)=read, iris ●=compacting; a window with no agent gets no dot.
@@ -191,28 +191,29 @@ _dot() {
 # compacting > working > unread > read) and stash a colored glyph in its @agent_dot option; window-status-format interpolates it
 # via #{E:@agent_dot}. Windows with no agent get @agent_dot unset (→ empty → no glyph). Because it's a per-window
 # option inside tmux, the "live refresh" is just: set the options, then `refresh-client -S` to redraw the status
-# line — none of the sidebar's listen-socket / curl / reload-sync plumbing. Content-deduped on a cksum of the
-# window→status map so a steady working spinner (pane-title-changed re-fires several times/sec) repaints zero
-# times; only a real status transition redraws. Called at the top of _refresh so it rides every existing
-# trigger (structural hooks, the debounced title path, focus mark-read, and the Claude status-file hooks).
+# line — none of the sidebar's listen-socket / curl / reload-sync plumbing. Diffed against each window's CURRENT
+# @agent_dot (one list-windows), so a steady working spinner (pane-title-changed re-fires several times/sec)
+# repaints zero times and only a real status transition redraws. Diffing live tmux state (not a cached
+# signature in /tmp) means overlapping `run-shell -b` refreshes or a tmux server restart can't leave the bar
+# stuck on stale dots — the next refresh always converges. Called at the top of _refresh so it rides every
+# existing trigger (structural hooks, the debounced title path, focus mark-read, and the Claude status-file hooks).
 _paint() {
-  local map sig sigf
+  local map changed w cur want
   map=$(_agents_status 2>/dev/null | awk -F'\t' '
     BEGIN { rank["read"]=0; rank["unread"]=1; rank["working"]=2; rank["compacting"]=3; rank["waiting"]=4; rank["errored"]=5 }
     { tab=$2; sub(/\.[0-9]+$/, "", tab)                             # target sess:win.pane → window key sess:win
       if (!(tab in best) || rank[$1] >= r[tab]) { best[tab]=$1; r[tab]=rank[$1] } }
     END { for (t in best) print t"\t"best[t] }') || true
-  sigf="/tmp/agent-tabs-sig-${UID:-0}"
-  sig=$(printf '%s' "$map" | sort | cksum)
-  [ "$sig" = "$(cat "$sigf" 2>/dev/null || true)" ] && return 0     # nothing visible changed → no redraw
-  printf '%s' "$sig" > "$sigf"
-  tmux list-windows -a -F '#{session_name}:#{window_index}' 2>/dev/null \
-    | while IFS= read -r w; do tmux set-option -wu -t "$w" @agent_dot 2>/dev/null || true; done  # clear stale dots
-  printf '%s\n' "$map" | while IFS=$'\t' read -r tab st; do
-    [ -n "$tab" ] || continue
-    tmux set-option -w -t "$tab" @agent_dot "$(_dot "$st")" 2>/dev/null || true
-  done
-  tmux refresh-client -S 2>/dev/null || true
+  changed=0
+  while IFS=$'\t' read -r w cur; do
+    [ -n "$w" ] || continue
+    want=$(_dot "$(printf '%s\n' "$map" | awk -F'\t' -v w="$w" '$1==w {print $2; exit}')")
+    [ "$want" = "$cur" ] && continue
+    if [ -n "$want" ]; then tmux set-option -w -t "$w" @agent_dot "$want" 2>/dev/null || true
+    else tmux set-option -wu -t "$w" @agent_dot 2>/dev/null || true; fi
+    changed=1
+  done < <(tmux list-windows -a -F '#{session_name}:#{window_index}	#{@agent_dot}' 2>/dev/null)
+  [ "$changed" = 1 ] && tmux refresh-client -S 2>/dev/null || true
 }
 
 # _prune: delete status files whose pane no longer exists — orphans left when a session ends by kill/crash

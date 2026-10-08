@@ -43,6 +43,30 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-status.sh ToolDone",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-status.sh ToolDone",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "*",
@@ -91,11 +115,21 @@
     ],
     "PostCompact": [
       {
-        "matcher": "*",
+        "matcher": "auto",
         "hooks": [
           {
             "type": "command",
             "command": "sh ~/.claude/hooks/agent-status.sh PostCompact",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-status.sh PostCompactManual",
             "timeout": 5
           }
         ]
