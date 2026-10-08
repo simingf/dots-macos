@@ -132,7 +132,7 @@ git lfs install --system
 
 ### display-switch (monitor input follows the KVM)
 
-The LG has no DDC/CI toggle (always on) and ignores standard input switching, so the config calls `m1ddc set input-alt` (USB-C 209, DP 208). Leave the monitor's auto input switch on, since it doesn't conflict and moves the monitor to DP when the Mac sleeps. Run `brew services start display_switch`. It reads `~/Library/Preferences/display-switch.ini` (stowed). After editing the config, run `brew services restart display_switch`. Logs are in `~/Library/Logs/display-switch/`.
+The LG has no DDC/CI toggle (always on) and ignores standard input switching, so the config calls `m1ddc set input-alt` (USB-C 209, DP 208). Leave the monitor's auto input switch on, since it doesn't conflict and moves the monitor to DP when the Mac sleeps. `brew bundle` starts the service (`start_service: true` in the Brewfile); if it didn't, for example because setup ran inside tmux, where `brew services` refuses to run, run `brew services start display_switch`. It reads `~/Library/Preferences/display-switch.ini` (stowed). After editing the config, run `brew services restart display_switch`. Logs are in `~/Library/Logs/display-switch/`.
 
 ### Set Finicky as default browser
 

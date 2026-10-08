@@ -24,7 +24,7 @@ brew "btop"
 brew "cbonsai"
 brew "chafa"
 brew "curl"
-brew "haimgel/tools/display_switch", trusted: true
+brew "haimgel/tools/display_switch", trusted: true, start_service: true
 brew "duti"
 brew "eza"
 brew "fd"
