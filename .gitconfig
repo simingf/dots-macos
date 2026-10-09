@@ -18,7 +18,7 @@
 # its empty-reset would otherwise wipe the per-host helper and GCM would serve all
 # hosts. Verify: printf 'protocol=https\nhost=github.rbx.com\n\n' | GIT_TRACE=1 git credential fill
 [credential]
-	helper =
+	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager
 [credential "https://github.com"]
 	helper =
