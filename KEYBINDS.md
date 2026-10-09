@@ -175,8 +175,7 @@ nvim 0.11 built-in defaults; `gd`/`gD` added in `.config/nvim/lua/plugins/lsp.lu
 
 ## AeroSpace
 
-`.config/aerospace/aerospace.toml`. Modifier = `alt`. Focus binds shell out to
-`.config/aerospace/aerospace-focus.sh` for spatial cross-monitor focus with wrap-around.
+`.config/aerospace/aerospace.toml`. Modifier = `alt`. Focus wraps around within the workspace.
 
 | Key | Action |
 |---|---|
