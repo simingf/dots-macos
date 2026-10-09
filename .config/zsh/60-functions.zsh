@@ -42,6 +42,7 @@ metalg() {
         tmux new-window -n "meta" -c "$HOME/git/roblox/meta/roblox-notes"
         tmux send-keys "lg" Enter
     else
+        tmux rename-window "meta"
         tmux send-keys "cd ~/git/roblox/meta/roblox-notes && lg" Enter
     fi
     tmux split-window -h -c "$HOME/git/roblox/meta/skills"
@@ -66,6 +67,7 @@ activelg() {
         tmux new-window -n "active" -c "$repos[1]"
         tmux send-keys "lg" Enter
     else
+        tmux rename-window "active"
         tmux send-keys "cd ${(q)repos[1]} && lg" Enter
     fi
     local r

@@ -56,6 +56,7 @@ dotslg() {
         tmux new-window -n "dots" -c "$HOME/dots-macos"
         tmux send-keys "lg" Enter
     else
+        tmux rename-window "dots"
         tmux send-keys "cd ~/dots-macos && lg" Enter
     fi
     tmux split-window -h -c "$HOME/dots-linux"
