@@ -42,7 +42,8 @@ csum() {
 	printf '%04x' "$c"
 }
 
-layout=$(tmux display-message -p '#{window_layout}')
+# tmux ≥3.8 reports JSON — convert to classic (floating panes → can't express → leave as-is)
+layout=$("$(dirname "$0")/tmux-layout-classic.sh" "$(tmux display-message -p '#{window_layout}')") || exit 0
 body=${layout#*,} # strip "csum,"
 
 # top level must be "WxH,0,0{...}" (left/right split). A single pane or a top-level

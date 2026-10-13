@@ -55,7 +55,7 @@ kk() {
 # tmux
 alias trc='nvim ~/.tmux.conf'
 alias trs="tmux source ~/.tmux.conf"
-alias tl="tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}'"
+alias tl="tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}' | grep -v '^_'"
 alias tka='tmux kill-server'
 # tn <name...>: create new tmux session, or attach if it already exists
 tn() {
@@ -76,7 +76,7 @@ tn() {
 # ta [query...]: fuzzy-pick a session to attach to (auto-selects if query matches exactly one)
 ta() {
     local session
-    session=$(tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}' | fzf -q "$*" --select-1 --exit-0 --reverse | sed 's/ (attached)$//')
+    session=$(tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}' | grep -v '^_' | fzf -q "$*" --select-1 --exit-0 --reverse | sed 's/ (attached)$//')
     [[ -z "$session" ]] && return
     if [[ -n "$_REAL_TMUX" ]]; then
         tmux switch-client -t "$session"
@@ -87,7 +87,7 @@ ta() {
 # tk [query...]: fuzzy-pick a session to kill (always shows picker, even with exact match)
 tk() {
     local session
-    session=$(tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}' | fzf -q "$*" --exit-0 --reverse | sed 's/ (attached)$//')
+    session=$(tmux list-sessions -F '#{session_name}#{?session_attached, (attached),}' | grep -v '^_' | fzf -q "$*" --exit-0 --reverse | sed 's/ (attached)$//')
     [[ -z "$session" ]] && return
     tmux kill-session -t "$session"
 }

@@ -55,6 +55,7 @@ self="${BASH_SOURCE[0]}"; export self
 #   <pane_id><US><lineno><US><loc + text>   — only the 3rd field is shown and searched.
 sel=$(
   tmux list-panes -a -F '#{pane_id} #{session_name}:#{window_index}.#{pane_index}' \
+  | grep -v '^[^ ]* _' \
   | while read -r pid loc; do
       snap="$snapdir/${pid#%}"
       tmux capture-pane -p -J -S -5000 -t "$pid" 2>/dev/null > "$snap" || continue
