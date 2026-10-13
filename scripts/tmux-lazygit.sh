@@ -11,6 +11,7 @@
 # active pane's dir; else, among repos ≤3 levels below it, the highest zoxide score (newest .git mtime if
 # none of them are in zoxide); else nothing opens and a "no git repo here" notification shows instead.
 # While open, the sidebar follows nvim: when nvim's repo changes, `follow` swaps in that repo's lazygit.
+# While closed, `follow` pre-warms instead: it parks a lazygit for nvim's repo, so the first open is instant.
 #
 # Instant toggle: closing never kills lazygit, it parks the pane (break-pane) in the hidden STASH session,
 # one per repo, and opening/following joins/swaps a parked one back in (~tens of ms, state kept) — only a
@@ -21,7 +22,7 @@
 #
 # Modes:
 #   toggle <path> <pane>  open (focused) on the resolved repo, or park this window's sidebar
-#   follow <nvim-pane>    swap the sidebar in <nvim-pane>'s window to its @nvim_repo (no-op if none open)
+#   follow <nvim-pane>    swap the sidebar in <nvim-pane>'s window to its @nvim_repo, or pre-warm it if none open
 #   close <pane>          reclaim + kill <pane>; run by the pane itself when lazygit quits
 #   layout <win>    window-layout-changed hook: park a window's sidebar if it's the sole pane, then fix-width
 #   fix-width       window-resized hook: snap every sidebar back to SIDEBAR_COLS
@@ -204,13 +205,24 @@ _resolve() {
 }
 
 # _cmd: the sidebar pane command. `lg` (60-functions.zsh) picks the right GH token per remote host.
-# When lazygit quits, the pane closes itself through `close` so the width is reclaimed. `exec zsh -il -c`,
-# not plain `sh -c '...; ...'`: tmux's sh won't hand lazygit the foreground tty when a command follows it
-# (it dies instantly) — same reason as _kk_stay in mux-tmux.zsh.
+# When lazygit quits, the pane closes itself through `close` so the width is reclaimed. `zsh -fic` sources
+# only 60-functions.zsh for `lg` (-f: no rc files — the full `-il` startup cost ~150ms), while -i keeps
+# job control, so lazygit runs as the pane's foreground process (#{pane_current_command} = lazygit, which
+# keeps `runall`, matching zsh panes, from typing into it).
 _cmd() {
-  local inner
-  inner='lg; exec '"$(printf '%q' "$0")"' close "$TMUX_PANE"'
-  printf 'exec zsh -il -c %q' "$inner"
+  local inner fns
+  fns="$(cd "$(dirname "$0")/.." && pwd)/.config/zsh/60-functions.zsh"
+  inner='source '"$(printf '%q' "$fns")"'; lg; exec '"$(printf '%q' "$0")"' close "$TMUX_PANE"'
+  printf 'exec zsh -fic %q' "$inner"
+}
+
+# _spawn <repo>: cold-start a lazygit for <repo> in a new stash window; prints its pane id.
+_spawn() {
+  local p
+  _stash_ensure
+  p=$(tmux new-window -d -t "=$STASH:" -c "$1" -P -F '#{pane_id}' "$(_cmd)") || return 1
+  _tag "$p" "$1"
+  printf '%s\n' "$p"
 }
 
 # _tag <pane> <repo>
@@ -229,7 +241,7 @@ _open() {
   fi
   sb=$(_stashed "$repo")
   [ -n "$sb" ] && tmux join-pane -f -h -b -l "$SIDEBAR_COLS" -s "$sb" -t "$2" 2>/dev/null && return 0
-  sb=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -c "$repo" -P -F '#{pane_id}' "$(_cmd)") || return 0
+  sb=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -t "$2" -c "$repo" -P -F '#{pane_id}' "$(_cmd)") || return 0
   [ -n "$sb" ] && _tag "$sb" "$repo"
   return 0
 }
@@ -245,21 +257,23 @@ _toggle() {
 
 # _follow <nvim-pane>: if that window has a sidebar on a different repo than the pane's @nvim_repo, swap in
 # that repo's lazygit (parked, else cold-started in the stash) and park the old one. swap-pane keeps the
-# cell, its width, and (-d) focus where it is.
+# cell, its width, and (-d) focus where it is. With no sidebar open, pre-warm: park a lazygit for the repo
+# (or re-stamp the parked one, so the repos nvim is on are the last evicted).
 _follow() {
   local np=$1 repo row sb cur new
   repo=$(tmux display-message -p -t "$np" '#{@nvim_repo}' 2>/dev/null)
   [[ -n $repo && -d $repo ]] || return 0
   row=$(tmux list-panes -t "$np" -F '#{@sidebar}	#{pane_id}	#{@sidebar_repo}' 2>/dev/null | awk -F'\t' '$1 == "1" { print $2, ($3 == "" ? "-" : $3); exit }')
-  [ -n "$row" ] || return 0
+  new=$(_stashed "$repo")
+  if [ -z "$row" ]; then
+    [ -n "$new" ] || new=$(_spawn "$repo") || return 0
+    _parked "$new"
+    return 0
+  fi
   read -r sb cur <<<"$row"                          # placeholder keeps an empty repo from collapsing
   [[ $cur == "$repo" ]] && return 0
   _park_prep "$sb"
-  new=$(_stashed "$repo")
-  if [ -z "$new" ]; then
-    new=$(tmux new-window -d -t "=$STASH:" -c "$repo" -P -F '#{pane_id}' "$(_cmd)") || return 0
-    _tag "$new" "$repo"
-  fi
+  [ -n "$new" ] || new=$(_spawn "$repo") || return 0
   tmux swap-pane -d -s "$new" -t "$sb" 2>/dev/null && _parked "$sb"
   return 0
 }

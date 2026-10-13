@@ -61,7 +61,7 @@ dots-macos/
 │   ├── tag-casks-orange.sh             # Finder tag paid casks for visibility
 │   ├── tmux-fzf-*.sh                   # prefix s/w = session/window pickers; prefix f = pane-content grep; centered rounded popups, called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-agents.sh                  # agent picker/count/sidebar (prefix a/A, left panel auto-seeded on prefix c); detects panes by OSC title
-│   ├── tmux-lazygit.sh                 # prefix g: toggle a focused 50-col lazygit sidebar on the far left — opens on nvim's current repo (else cwd's repo, else top-zoxide nested repo, else a notif) and follows nvim as you switch files/tree rows; closing parks lazygit in a hidden `_lazygit` session so reopening is instant; byte-identical with dots-linux
+│   ├── tmux-lazygit.sh                 # prefix g: toggle a focused 50-col lazygit sidebar on the far left — opens on nvim's current repo (else cwd's repo, else top-zoxide nested repo, else a notif) and follows nvim as you switch files/tree rows; closing parks lazygit in a hidden `_lazygit` session so reopening is instant, and nvim pre-warms one for its repo so the first open is too; byte-identical with dots-linux
 │   ├── tmux-layout-classic.sh          # helper: converts tmux ≥3.8's JSON #{window_layout} to the classic string the two layout rewriters parse; byte-identical with dots-linux
 │   ├── tmux-even-columns.sh            # prefix 0: equal-width columns but keep the agent sidebar's width + preserve vertical stacks; called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-rename.sh                  # prefix r/R: rename window/session via display-popup (Escape cancels), called from .tmux.conf, byte-identical with dots-linux
