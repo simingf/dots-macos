@@ -35,6 +35,23 @@ vim.keymap.set({ "n", "x" }, "X", '"_d')
 -- yank and paste from clipboard
 vim.keymap.set({ "n", "x" }, "gy", '"+y', { desc = "yank to clipboard" })
 vim.keymap.set("n", "gp", '"+p', { desc = "paste from clipboard" })
+-- ⌘ keys, matching zsh / Claude Code: tmux (scripts/tmux-cmdkey.sh) delivers ⌘A/C/X/Z/⇧Z
+-- / ⌘←/→ as <D-…> keys (⌘V is the terminal's own paste).
+vim.keymap.set({ "n", "x" }, "<D-a>", "ggVG", { desc = "select all" })
+vim.keymap.set("i", "<D-a>", "<Esc>ggVG", { desc = "select all" })
+vim.keymap.set("x", "<D-c>", '"+y', { desc = "copy" })
+vim.keymap.set("x", "<D-x>", '"+d', { desc = "cut" })
+vim.keymap.set("n", "<D-z>", "u", { desc = "undo" })
+vim.keymap.set("i", "<D-z>", "<C-o>u", { desc = "undo" })
+vim.keymap.set("n", "<D-S-z>", "<C-r>", { desc = "redo" })
+vim.keymap.set("i", "<D-S-z>", "<C-o><C-r>", { desc = "redo" })
+vim.keymap.set({ "n", "x" }, "<D-Left>", "^", { desc = "line start" })
+vim.keymap.set({ "n", "x" }, "<D-Right>", "$", { desc = "line end" })
+vim.keymap.set("i", "<D-Left>", "<C-o>^", { desc = "line start" })
+vim.keymap.set("i", "<D-Right>", "<End>", { desc = "line end" })
+-- a mouse drag copies on release, like a tmux selection in zsh / Claude Code, but stays
+-- selected (gv) so ⌘X or an operator can still act on it
+vim.keymap.set("x", "<LeftRelease>", '"+ygv', { desc = "copy mouse selection" })
 
 -- bind 0 to ^ and L to $ (H is taken by arrow.nvim)
 vim.keymap.set({ "n", "x", "o" }, "0", "^", { noremap = true, silent = true })

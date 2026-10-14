@@ -35,6 +35,59 @@ bindkey '^[OA' up-line-or-beginning-search    # ↑  application cursor mode
 bindkey '^[[B' down-line-or-beginning-search  # ↓  normal
 bindkey '^[OB' down-line-or-beginning-search  # ↓  application
 
+# mouse click-to-move — tmux's MouseUp1Pane bind (.tmux.conf) leaves the click's
+# offset from the cursor in the pane option @click ("dy dx width"), then sends
+# \e[9000~. Clicks past either end of the cursor's row clamp to the buffer; clicks
+# on other rows outside the buffer (old output, the prompt) are ignored. Column
+# math assumes single-width chars and no embedded newlines.
+_click_move() {
+    [[ -n $TMUX_PANE ]] || return
+    local dy dx w target
+    read -r dy dx w <<< "$(tmux show -pqv -t "$TMUX_PANE" @click)"
+    (( target = CURSOR + dy * w + dx ))
+    (( dy && (target < 0 || target > $#BUFFER) )) && return
+    (( CURSOR = target < 0 ? 0 : target > $#BUFFER ? $#BUFFER : target ))
+}
+zle -N _click_move
+bindkey '^[[9000~' _click_move
+
+# GUI-style selection + ⌘ keys. ghostty sends ⌘A/C/X/Z, ⇧⌘Z, ⌘←/→ as
+# \e[9001~ … \e[9007~ (tmux forwards them to zsh panes via scripts/tmux-cmdkey.sh);
+# ⇧←/→ extend a selection. While a selection is up, typing / pasting replaces it
+# and ⌫ deletes it; any other key just drops it. Copies go to the clipboard via
+# OSC 52 (tmux set-clipboard forwards it, over ssh too). One function per widget:
+# plugins that wrap widgets (autosuggestions, syntax-highlighting) rename them,
+# so $WIDGET can't be used to dispatch.
+_sel_osc52()     { printf '\e]52;c;%s\a' "$(print -rn -- "${BUFFER[MARK+1,CURSOR]}${BUFFER[CURSOR+1,MARK]}" | base64 | tr -d '\n')" > /dev/tty }
+_select_all()    { MARK=0; CURSOR=$#BUFFER; REGION_ACTIVE=1 }
+_select_left()   { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .backward-char }
+_select_right()  { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .forward-char }
+_sel_copy()      { (( REGION_ACTIVE )) && _sel_osc52 }
+_sel_cut()       { (( REGION_ACTIVE )) && { _sel_osc52; zle kill-region } }
+_sel_insert()    { (( REGION_ACTIVE )) && zle kill-region; zle .self-insert }
+_sel_paste()     { (( REGION_ACTIVE )) && zle kill-region; zle .bracketed-paste }
+_sel_backspace() { if (( REGION_ACTIVE )); then zle kill-region; else zle .backward-delete-char; fi }
+_sel_drop()      { [[ $LASTWIDGET == (select-all|select-left|select-right|sel-copy) ]] || REGION_ACTIVE=0 }
+zle -N select-all _select_all
+zle -N select-left _select_left
+zle -N select-right _select_right
+zle -N sel-copy _sel_copy
+zle -N sel-cut _sel_cut
+zle -N self-insert _sel_insert
+zle -N bracketed-paste _sel_paste
+zle -N backward-delete-char _sel_backspace
+autoload -Uz add-zle-hook-widget
+add-zle-hook-widget line-pre-redraw _sel_drop
+bindkey '^[[9001~' select-all
+bindkey '^[[9002~' sel-copy
+bindkey '^[[9003~' sel-cut
+bindkey '^[[9004~' undo
+bindkey '^[[9005~' redo
+bindkey '^[[9006~' beginning-of-line
+bindkey '^[[9007~' end-of-line
+bindkey '^[[1;2D' select-left     # ⇧←
+bindkey '^[[1;2C' select-right    # ⇧→
+
 # plugin-owned keys (bound by plugins/tools at 10-plugins & 80-tools, not here):
 #   Tab            fzf-completion       (fzf-tab)              completion dropdown
 #   → / End / C-E  autosuggest-accept   (zsh-autosuggestions)  accept whole suggestion

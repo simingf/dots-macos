@@ -43,6 +43,8 @@ vim.opt.wrap = true
 vim.opt.breakindent = true
 -- enable mouse for all modes
 vim.opt.mouse = "a"
+-- ⇧+arrows start a visual selection and plain arrows end it (GUI-style, same as zsh)
+vim.opt.keymodel = "startsel,stopsel"
 -- include both lower and upper case for search
 vim.opt.ignorecase = true
 -- ignore upper case letters unless the search includes upper case letters

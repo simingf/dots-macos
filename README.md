@@ -66,6 +66,7 @@ dots-macos/
 │   ├── tmux-even-columns.sh            # prefix 0: equal-width columns but keep the agent sidebar's width + preserve vertical stacks; called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-rename.sh                  # prefix r/R: rename window/session via display-popup (Escape cancels), called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-copy-dragend.sh           # root MouseDragEnd1Pane handler: copy+clear a drag-selection even when you release over another pane; called from .tmux.conf, byte-identical with dots-linux
+│   ├── tmux-cmdkey.sh                 # ⌘-key dispatcher: ghostty sends ⌘A/C/X/Z/⇧Z/←/→ as private sequences, tmux User keys call this to give each pane its own action (copy-mode / zsh widget / nvim <D-…> / Claude Ctrl-key); called from .tmux.conf, byte-identical with dots-linux
 │   └── tmux-notify.sh                 # transient top-right status-bar notif (@notify segment, auto-clears 1s, no focus steal); backs C-r reload, "Only one pane!", prefix-<digit> "no window", "No agents running", and agent-notify.sh; byte-identical with dots-linux
 ├── manual/
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)

@@ -37,6 +37,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         ("scripts/tmux-rename.sh", "scripts/tmux-rename.sh"),
         ("scripts/tmux-even-columns.sh", "scripts/tmux-even-columns.sh"),
         ("scripts/tmux-copy-dragend.sh", "scripts/tmux-copy-dragend.sh"),
+        ("scripts/tmux-cmdkey.sh", "scripts/tmux-cmdkey.sh"),
         ("scripts/tmux-notify.sh", "scripts/tmux-notify.sh"),
         ("scripts/tmux-lazygit.sh", "scripts/tmux-lazygit.sh"),
         ("scripts/tmux-layout-classic.sh", "scripts/tmux-layout-classic.sh"),
