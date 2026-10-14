@@ -1,4 +1,7 @@
 gui:
+  portraitMode: never   # auto stacks panels at <=84 cols (prefix g sidebar, dotslg thirds)
+  sidePanelWidth: 0.4
+  commitHashLength: 0   # hash still shows in the selected commit's main-panel header
   theme:
     activeBorderColor:
       - '#ceacf6'

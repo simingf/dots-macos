@@ -25,13 +25,20 @@
 #   follow <nvim-pane>    swap the sidebar in <nvim-pane>'s window to its @nvim_repo, or pre-warm it if none open
 #   close <pane>          reclaim + kill <pane>; run by the pane itself when lazygit quits
 #   layout <win>    window-layout-changed hook: park a window's sidebar if it's the sole pane, then fix-width
-#   fix-width       window-resized hook: snap every sidebar back to SIDEBAR_COLS
+#   fix-width       window-resized hook: snap every sidebar back to its window's _width
 #   gc              session-closed hook: kill the stash when it's the only session left
 set -uo pipefail
 
-SIDEBAR_COLS=50
+SIDEBAR_PCT=30     # sidebar width: this % of the window, but never under SIDEBAR_MIN columns
+SIDEBAR_MIN=60
 STASH=_lazygit
 STASH_MAX=5
+
+# _width <window-width>: sidebar columns for a window that wide.
+_width() {
+  local w=$(($1 * SIDEBAR_PCT / 100))
+  echo $((w < SIDEBAR_MIN ? SIDEBAR_MIN : w))
+}
 
 # _csum: tmux layout_checksum (layout-custom.c) over a layout body — excludes the leading "csum,".
 # Same algorithm as tmux-even-columns.sh; needed to re-sign a rewritten layout for select-layout.
@@ -233,15 +240,16 @@ _tag() {
 # _open <path> <pane>: full-height left column on the resolved repo, focused — the parked lazygit if there
 # is one, else a fresh split.
 _open() {
-  local repo sb
+  local repo sb cols
   repo=$(_resolve "$@")
   if [[ -z $repo ]]; then
     "$(dirname "$0")/tmux-notify.sh" "no git repo here"
     return 0
   fi
+  cols=$(_width "$(tmux display-message -p -t "$2" '#{window_width}')")
   sb=$(_stashed "$repo")
-  [ -n "$sb" ] && tmux join-pane -f -h -b -l "$SIDEBAR_COLS" -s "$sb" -t "$2" 2>/dev/null && return 0
-  sb=$(tmux split-window -f -h -b -l "$SIDEBAR_COLS" -t "$2" -c "$repo" -P -F '#{pane_id}' "$(_cmd)") || return 0
+  [ -n "$sb" ] && tmux join-pane -f -h -b -l "$cols" -s "$sb" -t "$2" 2>/dev/null && return 0
+  sb=$(tmux split-window -f -h -b -l "$cols" -t "$2" -c "$repo" -P -F '#{pane_id}' "$(_cmd)") || return 0
   [ -n "$sb" ] && _tag "$sb" "$repo"
   return 0
 }
@@ -278,7 +286,7 @@ _follow() {
   return 0
 }
 
-# _fix_width: snap every sidebar back to SIDEBAR_COLS. Runs on window-layout-changed, which its own
+# _fix_width: snap every sidebar back to its window's _width. Runs on window-layout-changed, which its own
 # resize-pane re-fires, so: only resize a sidebar whose width differs (ends the chain), and coalesce bursts
 # behind a mkdir lock + short debounce so two passes never overlap. Same scheme as the agent sidebar.
 _fix_width() {
@@ -287,9 +295,12 @@ _fix_width() {
   (
     trap 'rmdir "$lock" 2>/dev/null' EXIT
     sleep 0.2
-    tmux list-panes -a -F '#{@sidebar}	#{pane_id}	#{pane_width}	#{session_name}' 2>/dev/null \
-    | awk -F'\t' -v w="$SIDEBAR_COLS" -v st="$STASH" '$1==1 && $3+0 != w+0 && $4 != st {print $2}' \
-    | while IFS= read -r pid; do tmux resize-pane -t "$pid" -x "$SIDEBAR_COLS" 2>/dev/null || true; done
+    tmux list-panes -a -F '#{@sidebar}	#{pane_id}	#{pane_width}	#{session_name}	#{window_width}' 2>/dev/null \
+    | while IFS=$'\t' read -r tag pid pw sess ww; do
+        [[ $tag == 1 && $sess != "$STASH" ]] || continue
+        w=$(_width "$ww")
+        [[ $pw != "$w" ]] && tmux resize-pane -t "$pid" -x "$w" 2>/dev/null
+      done
   ) &
 }
 
