@@ -43,8 +43,11 @@ return {
 				["ac"] = "@class.outer",
 				["ic"] = "@class.inner",
 			}
+			-- `i` moves right (colemak i ↔ l swap, config/keymaps.lua), so inner objects use
+			-- `l` (dlf / vlc) — and no x/o-mode map may start with `i`, or every `i` there
+			-- would wait out timeoutlen
 			for lhs, obj in pairs(objs) do
-				vim.keymap.set({ "x", "o" }, lhs, function()
+				vim.keymap.set({ "x", "o" }, (lhs:gsub("^i", "l")), function()
 					sel(obj, "textobjects")
 				end, { desc = "textobject " .. obj })
 			end

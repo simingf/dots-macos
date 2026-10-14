@@ -51,10 +51,10 @@ _click_move() {
 zle -N _click_move
 bindkey '^[[9000~' _click_move
 
-# GUI-style selection + ⌘ keys. ghostty sends ⌘A/C/X/Z, ⇧⌘Z, ⌘←/→ as
-# \e[9001~ … \e[9007~ (tmux forwards them to zsh panes via scripts/tmux-cmdkey.sh);
-# ⇧←/→ extend a selection. While a selection is up, typing / pasting replaces it
-# and ⌫ deletes it; any other key just drops it. Copies go to the clipboard via
+# GUI-style selection + ⌘ keys. ghostty sends ⌘A/C/X/Z, ⇧⌘Z, ⌘←/→, ⇧⌘⌫, ⌘⌫ as
+# private \e[90NN~ sequences (tmux forwards them to zsh panes via
+# scripts/tmux-cmdkey.sh; the rest are nvim / tmux-only); ⇧←/→ extend a
+# selection. While a selection is up, typing / pasting replaces it and ⌫ deletes it; any other key just drops it. Copies go to the clipboard via
 # OSC 52 (tmux set-clipboard forwards it, over ssh too). One function per widget:
 # plugins that wrap widgets (autosuggestions, syntax-highlighting) rename them,
 # so $WIDGET can't be used to dispatch.
@@ -85,6 +85,8 @@ bindkey '^[[9004~' undo
 bindkey '^[[9005~' redo
 bindkey '^[[9006~' beginning-of-line
 bindkey '^[[9007~' end-of-line
+bindkey '^[[9009~' kill-buffer           # ⇧⌘⌫: delete the whole (multi-line) command
+bindkey '^[[9015~' kill-whole-line       # ⌘⌫: delete the line (what ^U does)
 bindkey '^[[1;2D' select-left     # ⇧←
 bindkey '^[[1;2C' select-right    # ⇧→
 

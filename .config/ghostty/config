@@ -38,7 +38,6 @@ keybind = clear
 keybind = cmd+n=new_window
 keybind = cmd+w=close_surface
 keybind = cmd+v=paste_from_clipboard
-keybind = cmd+backspace=text:\x15
 keybind = cmd+a=text:\x1b[9001~
 keybind = cmd+c=text:\x1b[9002~
 keybind = cmd+x=text:\x1b[9003~
@@ -46,6 +45,14 @@ keybind = cmd+z=text:\x1b[9004~
 keybind = cmd+shift+z=text:\x1b[9005~
 keybind = cmd+left=text:\x1b[9006~
 keybind = cmd+right=text:\x1b[9007~
+keybind = cmd+s=text:\x1b[9008~
+keybind = cmd+shift+backspace=text:\x1b[9009~
+keybind = cmd+f=text:\x1b[9010~
+keybind = cmd+p=text:\x1b[9011~
+keybind = cmd+slash=text:\x1b[9012~
+keybind = cmd+bracket_right=text:\x1b[9013~
+keybind = cmd+bracket_left=text:\x1b[9014~
+keybind = cmd+backspace=text:\x1b[9015~
 keybind = cmd+equal=increase_font_size:1
 keybind = cmd+plus=increase_font_size:1
 keybind = cmd+minus=decrease_font_size:1
