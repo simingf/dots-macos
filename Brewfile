@@ -24,7 +24,6 @@ brew "btop"
 brew "cbonsai"
 brew "chafa"
 brew "curl"
-brew "haimgel/tools/display_switch", trusted: true, start_service: true
 brew "duti"
 brew "eza"
 brew "fd"
@@ -41,6 +40,7 @@ brew "go-task"
 brew "go"
 brew "grep"
 brew "grpcurl"
+brew "haimgel/tools/display_switch", trusted: true, start_service: true
 brew "hashicorp/tap/nomad", trusted: true
 brew "hashicorp/tap/vault", trusted: true
 brew "imagemagick"
@@ -50,7 +50,6 @@ brew "lazygit"
 brew "libtiff"
 brew "luarocks"
 brew "m1ddc"
-brew "mosh"
 brew "neovim"
 brew "openjdk"
 brew "php"
