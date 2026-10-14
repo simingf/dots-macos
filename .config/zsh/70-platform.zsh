@@ -34,9 +34,9 @@ alias arc="nvim ~/.config/aerospace/aerospace.toml"
 # ripgrep
 alias rg="rg --hyperlink-format=kitty"
 
-# ssh / mosh dev box
+# ssh dev box
 alias sshdev='ssh sfeng-dev.coder'
-alias moshdev='mosh sfeng-dev.coder'
+alias sshpii='ssh sfeng-pii.coder'
 
 # Launch Claude via the declawd sandbox in --yolo mode.
 claude() {
