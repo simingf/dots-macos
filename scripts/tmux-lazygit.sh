@@ -29,8 +29,8 @@
 #   gc              session-closed hook: kill the stash when it's the only session left
 set -uo pipefail
 
-SIDEBAR_PCT=30     # sidebar width: this % of the window, but never under SIDEBAR_MIN columns
-SIDEBAR_MIN=60
+SIDEBAR_PCT=25     # sidebar width: this % of the window, but never under SIDEBAR_MIN columns
+SIDEBAR_MIN=75
 STASH=_lazygit
 STASH_MAX=5
 
