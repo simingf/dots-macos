@@ -29,22 +29,6 @@ return {
 				end,
 				desc = "Flash Treesitter",
 			},
-			{
-				"r",
-				mode = "o",
-				function()
-					require("flash").remote()
-				end,
-				desc = "Remote Flash",
-			},
-			{
-				"R",
-				mode = { "o", "x" },
-				function()
-					require("flash").treesitter_search()
-				end,
-				desc = "Treesitter Search",
-			},
 		},
 	},
 
@@ -109,7 +93,6 @@ return {
 			{ "<C-q>", desc = " Switch Recording Slot" },
 			{ "cq", desc = " Edit Recording" },
 			{ "dq", desc = " Delete All Recordings" },
-			{ "yq", desc = " Yank Recording" },
 		},
 		config = function()
 			require("recorder").setup({
@@ -119,11 +102,16 @@ return {
 					switchSlot = "<C-q>",
 					editMacro = "cq",
 					deleteAllMacros = "dq",
-					yankMacro = "yq",
 				},
-				-- Clears all macros-slots on startup.
+				-- three slots (registers a/b/c), cycled with <C-q>; all cleared on startup
+				slots = { "a", "b", "c" },
 				clear = true,
 			})
+			-- setup() always maps yank-macro (yq) and add-breakpoint (##) too; drop them —
+			-- ## also shadowed `#` (backward word search)
+			for _, lhs in ipairs({ "yq", "##" }) do
+				pcall(vim.keymap.del, "n", lhs)
+			end
 		end,
 	},
 }

@@ -49,8 +49,9 @@ vim.opt.keymodel = "startsel,stopsel"
 vim.opt.ignorecase = true
 -- ignore upper case letters unless the search includes upper case letters
 vim.opt.smartcase = true
--- disable highlighting the result of the most recent search all the time
-vim.opt.hlsearch = false
+-- highlight all search matches — only while searching: config/keymaps.lua turns it
+-- off on the first normal-mode key that isn't a search key
+vim.opt.hlsearch = true
 -- set how many spaces a tab is
 vim.opt.tabstop = 4
 -- set how many spaces << and >> indent by

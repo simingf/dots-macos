@@ -2,7 +2,8 @@
 
 One directional schema everywhere: **Colemak-DH `mnei`** in place of `hjkl`. This registers
 every keybind across the systems that share that schema (nvim, tmux, AeroSpace) so a new
-binding can be matched to the rest. Theming has a sibling registry in [`THEME.md`](./THEME.md).
+binding can be matched to the rest — plus the **⌘ shortcuts** shared by zsh, nvim and Claude Code
+([below](#-shortcuts--mouse-zsh--nvim--claude-code)). Theming has a sibling registry in [`THEME.md`](./THEME.md).
 
 ## The schema
 
@@ -15,10 +16,12 @@ binding can be matched to the rest. Theming has a sibling registry in [`THEME.md
 | `e` | ↑ up | |
 | `i` | → right | |
 
-Two motions displaced by the swap are rehomed consistently in **both nvim and tmux copy-mode**:
+Each pair swaps (`m`↔`h`, `n`↔`j`, `e`↔`k`, `i`↔`l`), so a displaced key's job moves to its partner —
+consistently in **both nvim and tmux copy-mode**:
 
 - **`j` / `J`** → repeat search forward / backward (took over from `n`/`N`).
 - **`k`** → word-end motion (took over from `e`).
+- **`l`** → insert, and the inner-text-object prefix (took over from `i`; nvim only).
 
 Modifier prefix per system: **nvim** `<leader>` = Space · **tmux** prefix = `C-Space` (emitted by
 a right-cmd tap via Karabiner) · **AeroSpace** = `alt`.
@@ -35,9 +38,10 @@ a right-cmd tap via Karabiner) · **AeroSpace** = `alt`.
 | AeroSpace focus | `alt-m` | `alt-n` | `alt-e` | `alt-i` | `.config/aerospace/aerospace.toml` |
 | AeroSpace join-with | `alt-shift-m` | `alt-shift-n` | `alt-shift-e` | `alt-shift-i` | `.config/aerospace/aerospace.toml` |
 
-¹ `i`→right and `l`→insert are swapped **only in normal mode**, so visual/operator-pending keep `i`
-as the text-object prefix (`vi(`, `ci{`, treesitter `if`/`ic`). AeroSpace **move-window** stays on
-`alt-arrows` (layout-neutral, so no letter to remap).
+¹ `i`↔`l` is swapped in **every** mode (normal / visual / operator-pending), so inner text objects
+use `l`: `dlw`, `cl"`, `yl(`, `vlw`, treesitter `dlf`/`vlc`. `a` objects are unchanged (`daw`, `daf`).
+No visual/operator-pending map may start with `i`, or every `i` there would wait out `timeoutlen`.
+AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to remap).
 
 ---
 
@@ -48,9 +52,10 @@ as the text-object prefix (`vi(`, `ci{`, treesitter `if`/`ic`). AeroSpace **move
 | Key | Action | Mode |
 |---|---|---|
 | `m` `n` `e` | left / down / up (→ `h` `j` `k`) | n, x, o |
-| `i` | right (→ `l`) | n |
-| `l` | insert (→ `i`) | n |
+| `i` | right (→ `l`) | n, x, o |
+| `l` | insert (n) · inner-text-object prefix (x, o) (→ `i`) | n, x, o |
 | `j` / `J` | search repeat forward / backward (→ `n` / `N`) | n, x |
+| `*` / `#` | search the word under the cursor forward / backward | n |
 | `k` | word-end (→ `e`) | n, x, o |
 | `<leader>m` `<leader>n` `<leader>e` `<leader>i` | focus window left / down / up / right | n |
 | `<leader>\` | vertical split | n |
@@ -60,8 +65,19 @@ as the text-object prefix (`vi(`, `ci{`, treesitter `if`/`ic`). AeroSpace **move
 | `x` / `X` | delete char / line to black-hole register | n, x |
 | `gy` / `gp` | yank to / paste from system clipboard | n,x / n |
 | `<leader>f` | format buffer (conform → LSP fallback) | n, x |
+| `<C-a>` / `<C-e>` | line start / end, like zsh | i |
 
 Also `:FormatDisable[!]` / `:FormatEnable` toggle format-on-save (buffer / global).
+
+**Search highlights auto-clear:** `hlsearch` is on only while the last normal-mode key was a search
+key (`/` `?` ⌘F `j` `J` `*` `#`); any other key turns it off (`vim.on_key` in `keymaps.lua`).
+
+**Disabled on purpose** (accident-prone or unused — deleted / `<Nop>`'d in `keymaps.lua`):
+`<C-a>`/`<C-x>` (±1 the number; n, x) · `<C-z>` (suspend) · `ZZ` / `ZQ` (quit) · `gQ` (Ex mode) ·
+`&` (repeat `:s`) · `[`/`]` list pairs for arglist / tags / loclist / quickfix / buffers
+(`[a ]a [A ]A [t ]t [T ]T [⌃T ]⌃T [l ]l [L ]L [⌃L ]⌃L [q ]q [Q ]Q [⌃Q ]⌃Q [b ]b [B ]B`) · syntax-node
+selection (`an` `in` · `[n ]n [N ]N`) · matchit extras (`g%` `[%` `]%` `a%`; plain `%` stays) ·
+nvim-recorder's `yq` / `##` (`editor.lua`).
 
 ## nvim — plugins
 
@@ -83,20 +99,13 @@ All under `.config/nvim/lua/plugins/`.
 | `<leader>tn` | notifications | snacks.picker | `ui.lua` |
 | `<leader>ty` | yank-ring history | yanky | `editor.lua` |
 | `s` / `S` | flash jump / treesitter jump | flash | `editor.lua` |
-| `r` (o) / `R` (o,x) | remote flash / treesitter search | flash | `editor.lua` |
 | `H` / `h` | bookmark: global / buffer leader | arrow.nvim | `editor.lua` |
-| `q` `Q` `<C-q>` `cq` `dq` `yq` | macro: rec · play · slot · edit · delete-all · yank | recorder | `editor.lua` |
+| `q` `Q` `<C-q>` `cq` `dq` | macro: rec · play · switch slot (3: a/b/c) · edit · delete-all | recorder | `editor.lua` |
 | `<leader>\`` | reveal / leave file tree | snacks.explorer | `navigation.lua` |
 | `<leader>y` / `<leader>Y` | yazi @ current file / cwd | yazi.nvim | `navigation.lua` |
 | `<leader>p` | markdown preview toggle | markdown-preview | `treesitter.lua` |
-| `af`/`if` · `ac`/`ic` · `as` | text-objects: function · class · scope | ts-textobjects | `treesitter.lua` (x, o) |
-| `<leader>xx` / `<leader>xX` | diagnostics / buffer diagnostics | trouble | `git.lua` |
-| `<leader>xs` / `<leader>xl` | symbols / LSP defs+refs | trouble | `git.lua` |
-| `<leader>xL` / `<leader>xQ` | loclist / quickfix | trouble | `git.lua` |
-| `<leader>ac` | toggle Claude terminal | claudecode | `ai.lua` |
-| `<leader>ab` / `<leader>as` | add buffer / send selection (v) to context | claudecode | `ai.lua` |
-| `<leader>aa` / `<leader>ad` | accept / deny diff | claudecode | `ai.lua` |
-| `<leader>ai` | re-register for `/ide` discovery | claudecode | `ai.lua` |
+| `af`/`lf` · `ac`/`lc` · `as` | text-objects: function · class · scope (inner = `l`, see ¹) | ts-textobjects | `treesitter.lua` (x, o) |
+| `<leader>xx` / `<leader>xs` | diagnostics / symbols | trouble | `git.lua` |
 
 **blink.cmp** (`coding.lua`, `default` preset): `<C-Space>` complete · `<CR>` accept · `<Tab>`/`<S-Tab>`
 nav or snippet jump · `<C-e>` hide · `<C-p>`/`<C-n>` prev/next.
@@ -111,8 +120,44 @@ nvim 0.11 built-in defaults; `gd`/`gD` added in `.config/nvim/lua/plugins/lsp.lu
 | `K` | hover |
 | `grr` · `gri` · `grn` · `gra` | references · implementation · rename · code action |
 | `gO` | document symbols |
-| `[d` / `]d` | prev / next diagnostic |
+| `[d` / `]d` · `[D` / `]D` | prev / next · first / last diagnostic |
 | `<C-s>` | signature help (insert) |
+
+---
+
+## ⌘ shortcuts + mouse (zsh · nvim · Claude Code)
+
+Ghostty (`.config/ghostty/config`, Mac-only) sends each ⌘ shortcut as a private sequence
+`\e[9001~`…`\e[9015~`; `.tmux.conf` maps them to `User0`–`User14`, which call
+`scripts/tmux-cmdkey.sh` to give the active pane its own action. Plain bytes end to end, so they
+work in the Linux box's tmux over ssh too. zsh widgets: `.config/zsh/30-interactive.zsh`; nvim
+`<D-…>` maps: `…/lua/config/keymaps.lua`. ⌘V is ghostty's own paste everywhere.
+
+| Key | zsh | nvim | Claude Code |
+|---|---|---|---|
+| ⌘A | select the line | select all | — |
+| ⌘C / ⌘X | copy / cut selection (OSC 52) | copy / cut selection | — (drag copies) |
+| ⌘Z / ⇧⌘Z | undo / redo | undo / redo | undo / — (no redo) |
+| ⌘← / ⌘→ | line start / end | line start / end | line start / end |
+| ⌘⌫ | delete the line | delete line (`dd`) · insert: to line start · visual: selection | delete to line start |
+| ⇧⌘⌫ | delete the whole command | — | clear input (Esc Esc; only while idle) |
+| ⌘S | — | write buffer | — |
+| ⌘F | search scrollback (tmux copy-mode; `j`/`J` next/prev) | `/` | — |
+| ⌘P | — | file picker | — |
+| ⌘/ | — | toggle comment | — |
+| ⌘] / ⌘[ | — | indent / outdent | — |
+| ⇧← / ⇧→ | select | select (`keymodel`) | — |
+
+In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again.
+
+**Mouse:**
+
+| Action | zsh | nvim | Claude Code |
+|---|---|---|---|
+| Click | move the cursor (tmux `MouseUp1Pane` → `@click`) | move the cursor | move the cursor |
+| Drag | copy + clear on release (tmux) | copy on release, stays selected | copy + clear on release (tmux takes the drag) |
+
+While a zsh selection is up, typing / pasting replaces it and ⌫ deletes it.
 
 ---
 
@@ -141,6 +186,7 @@ nvim 0.11 built-in defaults; `gd`/`gD` added in `.config/nvim/lua/plugins/lsp.lu
 | `m` `n` `e` `i` | cursor left / down / up / right |
 | `j` / `J` | search repeat forward / backward |
 | `k` | next word-end |
+| ⌘C / ⌘X · ⌘F | copy selection · search again (see [⌘ shortcuts](#-shortcuts--mouse-zsh--nvim--claude-code)) |
 
 **Windows** (lowercase = window):
 

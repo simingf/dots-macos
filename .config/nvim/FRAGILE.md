@@ -51,14 +51,6 @@ Both `nvim-treesitter` and `-textobjects` track the in-development `main` rewrit
 - **Health check covers:** `nvim-treesitter.install` and `textobjects.select.select_textobject`
   still being functions.
 
-### claudecode lockfile internals — `lua/plugins/ai.lua`
-The `/ide`-rediscovery fs-watch uses `require("claudecode.lockfile")`, `lockfile.lock_dir`,
-`lockfile.create`, `cc.state.port`, `cc.state.auth_token` — all undocumented internals of a
-young plugin.
-- **Failure mode:** a `cc.state` reshape or lockfile-module rename → the watcher errors or
-  stops and `/ide` discovery silently breaks again (the exact bug it works around).
-- **Health check covers:** `claudecode.lockfile` require-ability + `{lock_dir, create}`.
-
 ---
 
 ## 🟡 Medium — vendored files / third-party sources

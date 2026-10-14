@@ -90,21 +90,6 @@ local checks = {
 		end,
 	},
 	{
-		name = "claudecode lockfile module (ai.lua)",
-		fn = function()
-			if env.IS_SSH then
-				return -- claudecode disabled on the dev box
-			end
-			local ok, lockfile = pcall(require, "claudecode.lockfile")
-			if not ok then
-				return "claudecode.lockfile not require-able"
-			end
-			if lockfile.lock_dir == nil or type(lockfile.create) ~= "function" then
-				return "claudecode.lockfile.{lock_dir,create} changed"
-			end
-		end,
-	},
-	{
 		name = "markdown-preview bundled CSS (treesitter.lua)",
 		fn = function()
 			if env.IS_SSH then
@@ -149,8 +134,7 @@ vim.api.nvim_create_user_command("ConfigHealth", function()
 end, { desc = "report config fragile-dependency health" })
 
 -- run after everything has loaded; grouped clear=true so a re-require doesn't stack it.
--- deferred past VeryLazy because claudecode also loads on VeryLazy — running inline could
--- race ahead of its load and false-warn that claudecode.lockfile isn't require-able.
+-- deferred past VeryLazy so plugins that load on VeryLazy are up before their checks run.
 vim.api.nvim_create_autocmd("User", {
 	pattern = "VeryLazy",
 	group = vim.api.nvim_create_augroup("config-healthcheck", { clear = true }),

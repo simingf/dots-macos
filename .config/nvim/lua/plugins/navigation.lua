@@ -17,7 +17,7 @@ return {
 	{
 		"folke/snacks.nvim",
 		-- opts is a *function*, and our startup autocmds are armed here rather than in
-		-- `init`. snacks is split across fragments (ui.lua, ai.lua, here) and lazy
+		-- `init`. snacks is split across fragments (ui.lua, here) and lazy
 		-- keeps only ONE `init`/`config` per plugin (last fragment wins — ui.lua's),
 		-- so an `init` here silently never runs. opts-functions instead CHAIN across
 		-- fragments and run when the plugin loads; snacks is lazy=false, so that

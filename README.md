@@ -28,7 +28,7 @@ dots-macos/
 │   ├── borders/                        # window border highlights
 │   ├── btop/                           # system monitor
 │   ├── finicky/                        # routes all external links to work Chrome profile
-│   ├── ghostty/                        # terminal emulator
+│   ├── ghostty/                        # terminal emulator; ⌘ shortcuts are sent as private sequences that tmux routes per app (scripts/tmux-cmdkey.sh, KEYBINDS.md)
 │   ├── git/                            # common.inc (pull/push defaults + rose-pine colors) + ignore (global gitignore), byte-identical with dots-linux + dots-windows; github-roblox.inc (Mac-only)
 │   ├── istherenet/                     # network status menubar
 │   ├── linearmouse/                    # mouse acceleration/scrolling
@@ -72,6 +72,8 @@ dots-macos/
 │   ├── preferences/                    # app plists (cp, not symlink — cfprefsd breaks symlinks)
 │   └── ...                             # other configs requiring manual import (not stow-managed)
 ├── learnings/                          # debugging write-ups / lessons learned (Mac-only, not synced)
+├── KEYBINDS.md                         # keybind registry: Colemak-DH mnei schema (nvim / tmux / AeroSpace) + ⌘ shortcuts and mouse across zsh / nvim / Claude Code
+├── THEME.md                            # theming registry (rose-pine iris accent per tool)
 └── Brewfile
 ```
 

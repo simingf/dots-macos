@@ -13,20 +13,63 @@ vim.keymap.set(_nxo, "n", "j")
 vim.keymap.set(_nxo, "e", "k")
 vim.keymap.set(_nxo, "i", "l")
 vim.keymap.set(_nxo, "l", "i")
--- nvim 0.12's built-in `in` (select child node) → `ln`, matching the swap
--- (an x/o-mode map starting with `i` would make every `i` there wait out timeoutlen)
+-- Prune keys that only cause accidents or never get used. nvim's own default maps
+-- (set before this file runs) are deleted; built-in commands are <Nop>'d.
+--   - syntax-node selection (an / in — `in` would also make every x/o `i` wait out
+--     timeoutlen — plus [n ]n [N ]N)
+--   - [ / ] list pairs for the arglist, tags, location list, quickfix and buffers
+--     ([d ]d [D ]D diagnostics stay)
 for _, mode in ipairs({ "x", "o" }) do
-	local child_node = vim.fn.maparg("in", mode, false, true)
-	if child_node.callback then
-		vim.keymap.del(mode, "in")
-		vim.keymap.set(mode, "ln", child_node.callback, { desc = child_node.desc })
-	end
+	pcall(vim.keymap.del, mode, "an")
+	pcall(vim.keymap.del, mode, "in")
 end
+for _, lhs in ipairs({ "[n", "]n", "[N", "]N" }) do
+	pcall(vim.keymap.del, "x", lhs)
+end
+for _, c in ipairs({ "a", "A", "t", "T", "<C-T>", "l", "L", "<C-L>", "q", "Q", "<C-Q>", "b", "B" }) do
+	pcall(vim.keymap.del, "n", "[" .. c)
+	pcall(vim.keymap.del, "n", "]" .. c)
+end
+--   - <C-a>/<C-x> (±1 the number under the cursor; <C-a> is "line start" in zsh),
+--     <C-z> (suspend nvim), ZZ / ZQ (quit), gQ (Ex mode), & (repeat last :s)
+vim.keymap.set({ "n", "x" }, "<C-a>", "<Nop>")
+vim.keymap.set({ "n", "x" }, "<C-x>", "<Nop>")
+vim.keymap.set({ "n", "x" }, "<C-z>", "<Nop>")
+for _, lhs in ipairs({ "ZZ", "ZQ", "gQ", "&" }) do
+	vim.keymap.set("n", lhs, "<Nop>")
+end
+-- insert <C-a> / <C-e>: line start / end like zsh (were: re-insert last text / copy the
+-- char below)
+vim.keymap.set("i", "<C-a>", "<Home>", { desc = "line start" })
+vim.keymap.set("i", "<C-e>", "<End>", { desc = "line end" })
+-- matchit's extras (g% [% ]% a%) are defined by a runtime plugin that loads after
+-- this file, so drop them once startup is done; plain % stays
+vim.api.nvim_create_autocmd("VimEnter", {
+	once = true,
+	callback = function()
+		for _, lhs in ipairs({ "g%", "[%", "]%" }) do
+			for _, mode in ipairs({ "n", "x", "o" }) do
+				pcall(vim.keymap.del, mode, lhs)
+			end
+		end
+		pcall(vim.keymap.del, "x", "a%")
+	end,
+})
 vim.keymap.set({ "n", "x" }, "j", "n")
 -- symmetric search repeat: J = prev (else backward search stays on `N`, a different
 -- physical row). Join-lines loses its `J` home → moved to <leader>j below (gJ still
 -- joins without a space, since the g-prefix builtin ignores the top-level J map).
 vim.keymap.set({ "n", "x" }, "J", "N")
+-- auto-clear search highlights: keep 'hlsearch' on only while the last normal-mode key
+-- was a search key. on_key sees keys *after* mappings, so j/J/⌘F arrive as n/N//.
+vim.on_key(function(key)
+	if vim.fn.mode() == "n" then
+		local searching = vim.tbl_contains({ "n", "N", "*", "#", "/", "?" }, vim.fn.keytrans(key))
+		if vim.o.hlsearch ~= searching then
+			vim.o.hlsearch = searching
+		end
+	end
+end, vim.api.nvim_create_namespace("auto_hlsearch"))
 vim.keymap.set(_nxo, "k", "e")
 -- `h`/`H` are claimed by arrow.nvim (buffer / global UI); use `:mark x` to set marks.
 -- pane switching: <leader>{mnei} matches the colemak-swap movement keys
