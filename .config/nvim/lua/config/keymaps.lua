@@ -123,7 +123,7 @@ vim.keymap.set("i", "<D-Left>", "<C-o>^", { desc = "line start" })
 vim.keymap.set("i", "<D-Right>", "<End>", { desc = "line end" })
 -- ⇧←/→ and ⇧⌘←/→ select, like zsh's prompt: start visual from normal / insert, extend it in visual
 vim.keymap.set("n", "<S-Left>", "vh", { desc = "select left" })
-vim.keymap.set("n", "<S-Right>", "v", { desc = "select right" })
+vim.keymap.set("n", "<S-Right>", "vl", { desc = "select right" })
 vim.keymap.set("x", "<S-Left>", "h", { desc = "select left" })
 vim.keymap.set("x", "<S-Right>", "l", { desc = "select right" })
 vim.keymap.set("i", "<S-Left>", "<Left><C-o>v", { desc = "select left" })
