@@ -63,7 +63,8 @@ _select_all()    { MARK=0; CURSOR=$#BUFFER; REGION_ACTIVE=1 }
 _select_left()   { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .backward-char }
 _select_right()  { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .forward-char }
 _bol()           { zle .beginning-of-line; while [[ ${BUFFER[CURSOR+1]} == [[:blank:]] ]]; do (( CURSOR++ )); done }  # first non-blank, like nvim's ^
-_kill_bol()      { local to=$CURSOR; _bol; if (( CURSOR < to )); then MARK=$to; zle .kill-region; else CURSOR=$to; fi }
+# ⌘⌫: a selection, else back to the first non-blank — or, from there, the indent
+_kill_bol()      { (( REGION_ACTIVE )) && { zle kill-region; return }; local to=$CURSOR; _bol; (( CURSOR >= to )) && zle .beginning-of-line; MARK=$to; zle .kill-region }
 _select_bol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; _bol }
 _select_eol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .end-of-line }
 _sel_copy()      { (( REGION_ACTIVE )) && _sel_osc52 }
@@ -71,6 +72,7 @@ _sel_cut()       { (( REGION_ACTIVE )) && { _sel_osc52; zle kill-region } }
 _sel_insert()    { (( REGION_ACTIVE )) && zle kill-region; zle .self-insert }
 _sel_paste()     { (( REGION_ACTIVE )) && zle kill-region; zle .bracketed-paste }
 _sel_backspace() { if (( REGION_ACTIVE )); then zle kill-region; else zle .backward-delete-char; fi }
+_sel_bkword()    { if (( REGION_ACTIVE )); then zle kill-region; else zle .backward-kill-word; fi }
 _sel_drop()      { [[ $LASTWIDGET == (select-all|select-left|select-right|select-bol|select-eol|sel-copy) ]] || REGION_ACTIVE=0 }
 zle -N select-all _select_all
 zle -N select-left _select_left
@@ -84,6 +86,7 @@ zle -N sel-cut _sel_cut
 zle -N self-insert _sel_insert
 zle -N bracketed-paste _sel_paste
 zle -N backward-delete-char _sel_backspace
+zle -N sel-backward-kill-word _sel_bkword
 autoload -Uz add-zle-hook-widget
 add-zle-hook-widget line-pre-redraw _sel_drop
 bindkey '^[[9001~' select-all
@@ -99,6 +102,7 @@ bindkey '^[[1;2D' select-left     # ⇧←
 bindkey '^[[1;2C' select-right    # ⇧→
 bindkey '^[[9016~' select-bol      # ⇧⌘←
 bindkey '^[[9017~' select-eol      # ⇧⌘→
+bindkey '^[^?' sel-backward-kill-word  # ⌥⌫
 
 # plugin-owned keys (bound by plugins/tools at 10-plugins & 80-tools, not here):
 #   Tab            fzf-completion       (fzf-tab)              completion dropdown

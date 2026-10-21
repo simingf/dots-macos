@@ -99,14 +99,43 @@ vim.keymap.set("i", "<D-z>", "<C-o>u", { desc = "undo" })
 vim.keymap.set("n", "<D-S-z>", "<C-r>", { desc = "redo" })
 vim.keymap.set("i", "<D-S-z>", "<C-o><C-r>", { desc = "redo" })
 vim.keymap.set({ "n", "i", "x" }, "<D-s>", "<Cmd>write<CR>", { desc = "write buffer" })
-vim.keymap.set("n", "<D-BS>", "d^", { desc = "delete to line start" })
-vim.keymap.set("i", "<D-BS>", "<C-u>", { desc = "delete to line start" })
+-- ⌘⌫ deletes back to the first non-blank — in normal mode through the cursor char (what ⇧⌘← selects) —
+-- and from the first non-blank it deletes the indent, like zsh's kill-bol
+local function delete_to_line_start(inclusive)
+	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+	local line = vim.api.nvim_get_current_line()
+	local indent = #line:match("^%s*")
+	local from, to = 0, col
+	if col > indent then
+		from = indent
+		to = inclusive and col + #vim.fn.strcharpart(line:sub(col + 1), 0, 1) or col
+	end
+	vim.api.nvim_buf_set_text(0, row - 1, from, row - 1, to, {})
+	vim.api.nvim_win_set_cursor(0, { row, from })
+end
+vim.keymap.set("n", "<D-BS>", function() delete_to_line_start(true) end, { desc = "delete to line start" })
+vim.keymap.set("i", "<D-BS>", function() delete_to_line_start(false) end, { desc = "delete to line start" })
 vim.keymap.set("x", "<D-BS>", "d", { desc = "delete selection" })
 vim.keymap.set("x", "<BS>", "d", { desc = "delete selection" })
--- ⇧⌘⌫ clears the line, like zsh / Claude Code clearing their input
-vim.keymap.set("n", "<D-S-BS>", "cc", { desc = "clear line" })
-vim.keymap.set("i", "<D-S-BS>", "<Esc>cc", { desc = "clear line" })
-vim.keymap.set("x", "<D-S-BS>", "S", { desc = "clear lines" })
+-- ⇧⌘⌫ clears the line(s) down to their indent and types there, like zsh / Claude Code clearing their input
+-- (not cc: indentexpr would recompute the indent)
+local function clear_lines()
+	local first, last = vim.fn.line("."), vim.fn.line("v")
+	if first > last then
+		first, last = last, first
+	end
+	local insert = vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+	if not insert then
+		vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
+	end
+	local indent = vim.fn.getline(first):match("^%s*")
+	vim.api.nvim_buf_set_lines(0, first - 1, last, false, { indent })
+	vim.api.nvim_win_set_cursor(0, { first, #indent })
+	if not insert then
+		vim.cmd("startinsert!")
+	end
+end
+vim.keymap.set({ "n", "i", "x" }, "<D-S-BS>", clear_lines, { desc = "clear line" })
 vim.keymap.set("n", "<D-f>", "/", { desc = "find" })
 vim.keymap.set({ "i", "x" }, "<D-f>", "<Esc>/", { desc = "find" })
 vim.keymap.set({ "n", "i", "x" }, "<D-p>", function()
@@ -122,22 +151,37 @@ vim.keymap.set("x", "<D-[>", "<gv", { desc = "outdent" })
 vim.keymap.set("i", "<D-]>", "<C-t>", { desc = "indent" })
 vim.keymap.set("i", "<D-[>", "<C-d>", { desc = "outdent" })
 vim.keymap.set({ "n", "x" }, "<D-Left>", "^", { desc = "line start" })
-vim.keymap.set({ "n", "x" }, "<D-Right>", "$", { desc = "line end" })
+vim.keymap.set("n", "<D-Right>", "$", { desc = "line end" })
+vim.keymap.set("x", "<D-Right>", "g_", { desc = "line end" }) -- $ would also select the newline
 vim.keymap.set("i", "<D-Left>", "<C-o>^", { desc = "line start" })
 vim.keymap.set("i", "<D-Right>", "<End>", { desc = "line end" })
--- ⇧←/→ and ⇧⌘←/→ select, like zsh's prompt: start visual from normal / insert, extend it in visual
-vim.keymap.set("n", "<S-Left>", "vh", { desc = "select left" })
-vim.keymap.set("n", "<S-Right>", "vl", { desc = "select right" })
+-- ⇧←/→ and ⇧⌘←/→ select, like zsh's prompt: start visual from normal / insert, extend it in visual.
+-- Never past the last char (visual lets the cursor onto the newline, which ⌫ would then join), and in
+-- insert mode nothing to select at the line's start / end is a no-op.
+local function at_eol()
+	return vim.fn.col(".") >= vim.fn.col("$") - 1
+end
+local function at_bol()
+	return vim.fn.col(".") == 1
+end
+local function past_eol()
+	return vim.fn.col(".") >= vim.fn.col("$")
+end
+local function map_expr(mode, lhs, fn, desc)
+	vim.keymap.set(mode, lhs, fn, { expr = true, desc = desc })
+end
+map_expr("n", "<S-Left>", function() return "vh" end, "select left")
+map_expr("n", "<S-Right>", function() return at_eol() and "v<Ignore>" or "vl" end, "select right")
 vim.keymap.set("x", "<S-Left>", "h", { desc = "select left" })
-vim.keymap.set("x", "<S-Right>", "l", { desc = "select right" })
-vim.keymap.set("i", "<S-Left>", "<Left><C-o>v", { desc = "select left" })
-vim.keymap.set("i", "<S-Right>", "<C-o>v", { desc = "select right" })
+map_expr("x", "<S-Right>", function() return at_eol() and "" or "l" end, "select right")
+map_expr("i", "<S-Left>", function() return at_bol() and "" or "<Left><C-o>v" end, "select left")
+map_expr("i", "<S-Right>", function() return past_eol() and "" or "<C-o>v" end, "select right")
 vim.keymap.set("n", "<D-S-Left>", "v^", { desc = "select to line start" })
 vim.keymap.set("n", "<D-S-Right>", "vg_", { desc = "select to line end" })
 vim.keymap.set("x", "<D-S-Left>", "^", { desc = "select to line start" })
 vim.keymap.set("x", "<D-S-Right>", "g_", { desc = "select to line end" })
-vim.keymap.set("i", "<D-S-Left>", "<Left><C-o>v^", { desc = "select to line start" })
-vim.keymap.set("i", "<D-S-Right>", "<C-o>vg_", { desc = "select to line end" })
+map_expr("i", "<D-S-Left>", function() return at_bol() and "" or "<Left><C-o>v^" end, "select to line start")
+map_expr("i", "<D-S-Right>", function() return past_eol() and "" or "<C-o>vg_" end, "select to line end")
 -- ⌥⌫ deletes a word, like zsh / Claude Code
 vim.keymap.set("i", "<M-BS>", "<C-w>", { desc = "delete word" })
 -- a mouse drag copies on release, like a tmux selection in zsh / Claude Code, but stays

@@ -143,16 +143,16 @@ Rows marked *(raw)* aren't routed through `tmux-cmdkey.sh` — the plain key pas
 | ⌘X | cut selection | — | — | cut (`"+d`) | — ¹ |
 | ⌘Z | undo | undo | undo | — | undo (`C-_`) |
 | ⇧⌘Z | redo | redo | redo | — | — ¹ |
-| ⌘← / ⌘→ | line start / end | `^` / `$` | `^` / end | `^` / `$` | line start / end (`C-a` / `C-e`) |
+| ⌘← / ⌘→ | line start / end | `^` / `$` | `^` / end | `^` / `g_` | line start / end (`C-a` / `C-e`) |
 | ⇧← / ⇧→ *(raw)* | start / extend selection | select `vh` / `vl` | start selection | extend by a char | — ¹ |
 | ⇧⌘← / ⇧⌘→ | select to line start / end | select to `^` / `g_` | same | extend to `^` / `g_` | — ¹ |
 | ⌫ *(raw)* | delete char · selection | — | delete char | delete selection | delete char |
-| ⌥⌫ *(raw)* | delete word | — | delete word (`<C-w>`) | — | delete word |
-| ⌘⌫ | delete to line start | delete to line start (`d^`) | delete to line start (`<C-u>`) | delete selection | delete to line start (`C-u`) |
-| ⇧⌘⌫ | delete the whole command | clear the line (`cc`) | clear the line | clear the lines (`S`) | clear input (Esc Esc; only while idle) |
+| ⌥⌫ *(raw)* | delete word · selection | — | delete word (`<C-w>`) | — | delete word |
+| ⌘⌫ | delete selection, else to line start ² | delete to line start, through the cursor char ² | delete to line start ² | delete selection | delete to line start (`C-u`) |
+| ⇧⌘⌫ | delete the whole command | clear the line to its indent, insert there | same | same, for the selected lines | clear input (Esc Esc; only while idle) |
 | typing / paste | replaces the selection | — | — | — | — |
 | ⌘S | — | write buffer | write buffer | write buffer | — |
-| ⌘F | search scrollback (tmux copy-mode; `j`/`J` next/prev) | `/` | `/` | `/` | — (alternate screen, no scrollback) |
+| ⌘F | search scrollback (tmux copy-mode; `j`/`J` next/prev; Esc cancels) | `/` | `/` | `/` | — (alternate screen, no scrollback) |
 | ⌘P | — | file picker | file picker | file picker | — |
 | ⌘/ | — | toggle comment | toggle comment | toggle comment | — |
 | ⌘] / ⌘[ | — | indent / outdent | indent / outdent | indent / outdent (keeps selection) | — |
@@ -161,6 +161,18 @@ Rows marked *(raw)* aren't routed through `tmux-cmdkey.sh` — the plain key pas
 
 ¹ Claude Code's input has no selection or redo — none of its keybinding actions cover them (the
 `selection:*` actions only extend a mouse selection in the fullscreen transcript).
+² From the first non-blank (or inside the indent), ⌘⌫ deletes the indent instead, so a second
+press clears the line. In nvim normal mode it deletes exactly what ⇧⌘← would select.
+
+Selection keys never select a line's newline (nvim's visual mode would otherwise let ⇧→ / ⌘→
+step onto it, and ⌫ would join the next line), and in nvim insert mode ⇧← / ⇧⌘← at the line
+start and ⇧→ / ⇧⌘→ at its end do nothing.
+
+**Test:** `scripts/test-keybinds.py` (Mac) drives every row above end to end — ghostty's resolved
+keybinds → a real tmux client on a throwaway server running `.tmux.conf` → `tmux-cmdkey.sh` →
+real zsh / nvim panes and a fake Claude Code pane — including edge cases (line start / end,
+indent, empty line, multi-line input, with / without a selection) and the mouse rows. Run it
+after touching any of these keys; `-k <text>` runs only the matching cases.
 
 ⌥⌫ works with either Option key: ghostty binds `alt+backspace` to `\e\x7f`, since
 `macos-option-as-alt = left` leaves the right Option for typing special characters.
