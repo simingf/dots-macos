@@ -62,7 +62,9 @@ _sel_osc52()     { printf '\e]52;c;%s\a' "$(print -rn -- "${BUFFER[MARK+1,CURSOR
 _select_all()    { MARK=0; CURSOR=$#BUFFER; REGION_ACTIVE=1 }
 _select_left()   { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .backward-char }
 _select_right()  { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .forward-char }
-_select_bol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .beginning-of-line }
+_bol()           { zle .beginning-of-line; while [[ ${BUFFER[CURSOR+1]} == [[:blank:]] ]]; do (( CURSOR++ )); done }  # first non-blank, like nvim's ^
+_kill_bol()      { local to=$CURSOR; _bol; if (( CURSOR < to )); then MARK=$to; zle .kill-region; else CURSOR=$to; fi }
+_select_bol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; _bol }
 _select_eol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .end-of-line }
 _sel_copy()      { (( REGION_ACTIVE )) && _sel_osc52 }
 _sel_cut()       { (( REGION_ACTIVE )) && { _sel_osc52; zle kill-region } }
@@ -74,6 +76,8 @@ zle -N select-all _select_all
 zle -N select-left _select_left
 zle -N select-right _select_right
 zle -N select-bol _select_bol
+zle -N smart-bol _bol
+zle -N kill-bol _kill_bol
 zle -N select-eol _select_eol
 zle -N sel-copy _sel_copy
 zle -N sel-cut _sel_cut
@@ -87,10 +91,10 @@ bindkey '^[[9002~' sel-copy
 bindkey '^[[9003~' sel-cut
 bindkey '^[[9004~' undo
 bindkey '^[[9005~' redo
-bindkey '^[[9006~' beginning-of-line
+bindkey '^[[9006~' smart-bol
 bindkey '^[[9007~' end-of-line
 bindkey '^[[9009~' kill-buffer           # ⇧⌘⌫: delete the whole (multi-line) command
-bindkey '^[[9015~' kill-whole-line       # ⌘⌫: delete the line (what ^U does)
+bindkey '^[[9015~' kill-bol              # ⌘⌫: delete back to the first non-blank
 bindkey '^[[1;2D' select-left     # ⇧←
 bindkey '^[[1;2C' select-right    # ⇧→
 bindkey '^[[9016~' select-bol      # ⇧⌘←

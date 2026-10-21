@@ -133,33 +133,39 @@ Ghostty (`.config/ghostty/config`, Mac-only) sends each ⌘ shortcut as a privat
 work in the Linux box's tmux over ssh too. zsh widgets: `.config/zsh/30-interactive.zsh`; nvim
 `<D-…>` maps: `…/lua/config/keymaps.lua`. ⌘V is ghostty's own paste everywhere.
 
-| Key | zsh | nvim | Claude Code |
-|---|---|---|---|
-| ⌘A | select the line | select all | — |
-| ⌘C / ⌘X | copy / cut selection (OSC 52) | copy / cut selection | — (drag copies) |
-| ⌘Z / ⇧⌘Z | undo / redo | undo / redo | undo / — (no redo) |
-| ⌘← / ⌘→ | line start / end | line start / end | line start / end |
-| ⌘⌫ | delete the line | delete line (`dd`) · insert: to line start · visual: selection | delete to line start |
-| ⇧⌘⌫ | delete the whole command | — | clear input (Esc Esc; only while idle) |
-| ⌘S | — | write buffer | — |
-| ⌘F | search scrollback (tmux copy-mode; `j`/`J` next/prev) | `/` | — |
-| ⌘P | — | file picker | — |
-| ⌘/ | — | toggle comment | — |
-| ⌘] / ⌘[ | — | indent / outdent | — |
-| ⇧← / ⇧→ | select | select (from normal / insert too) | — |
-| ⇧⌘← / ⇧⌘→ | select to line start / end | select to first non-blank / line end | — |
+"Line start" means the first non-blank everywhere except Claude Code (its `C-a` goes to column 0).
+Rows marked *(raw)* aren't routed through `tmux-cmdkey.sh` — the plain key passes through tmux.
 
-In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again.
+| Key | zsh (at prompt) | nvim normal | nvim insert | nvim visual | Claude Code |
+|---|---|---|---|---|---|
+| ⌘A | select the line | select all | select all | select all | — ¹ |
+| ⌘C | copy selection (OSC 52) | — | — | copy (`"+y`) | — ¹ (drag copies) |
+| ⌘X | cut selection | — | — | cut (`"+d`) | — ¹ |
+| ⌘Z | undo | undo | undo | — | undo (`C-_`) |
+| ⇧⌘Z | redo | redo | redo | — | — ¹ |
+| ⌘← / ⌘→ | line start / end | `^` / `$` | `^` / end | `^` / `$` | line start / end (`C-a` / `C-e`) |
+| ⇧← / ⇧→ *(raw)* | start / extend selection | select `vh` / `vl` | start selection | extend by a char | — ¹ |
+| ⇧⌘← / ⇧⌘→ | select to line start / end | select to `^` / `g_` | same | extend to `^` / `g_` | — ¹ |
+| ⌫ *(raw)* | delete char · selection | — | delete char | delete selection | delete char |
+| ⌥⌫ *(raw)* | delete word | — | delete word (`<C-w>`) | — | delete word |
+| ⌘⌫ | delete to line start | delete to line start (`d^`) | delete to line start (`<C-u>`) | delete selection | delete to line start (`C-u`) |
+| ⇧⌘⌫ | delete the whole command | clear the line (`cc`) | clear the line | clear the lines (`S`) | clear input (Esc Esc; only while idle) |
+| typing / paste | replaces the selection | — | — | — | — |
+| ⌘S | — | write buffer | write buffer | write buffer | — |
+| ⌘F | search scrollback (tmux copy-mode; `j`/`J` next/prev) | `/` | `/` | `/` | — (alternate screen, no scrollback) |
+| ⌘P | — | file picker | file picker | file picker | — |
+| ⌘/ | — | toggle comment | toggle comment | toggle comment | — |
+| ⌘] / ⌘[ | — | indent / outdent | indent / outdent | indent / outdent (keeps selection) | — |
+| click | move the cursor (tmux `MouseUp1Pane` → `@click`) | move the cursor | move the cursor | — | move the cursor |
+| drag | copy + clear on release (tmux) | copy on release, stays selected | — | — | copy + clear on release (tmux takes the drag) |
 
-**Mouse:**
+¹ Claude Code's input has no selection or redo — none of its keybinding actions cover them (the
+`selection:*` actions only extend a mouse selection in the fullscreen transcript).
 
-| Action | zsh | nvim | Claude Code |
-|---|---|---|---|
-| Click | move the cursor (tmux `MouseUp1Pane` → `@click`) | move the cursor | move the cursor |
-| Drag | copy + clear on release (tmux) | copy on release, stays selected | copy + clear on release (tmux takes the drag) |
-
-While a zsh selection is up, typing / pasting replaces it and ⌫ deletes it. In nvim, ⌫ in visual
-mode deletes the selection (`d`) and ⌥⌫ in insert mode deletes the previous word (`<C-w>`).
+⌥⌫ works with either Option key: ghostty binds `alt+backspace` to `\e\x7f`, since
+`macos-option-as-alt = left` leaves the right Option for typing special characters.
+In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again. In any other app
+(lazygit, less, …) ⌘← / ⌘→ send Home / End, ⌘⌫ sends `C-u` and ⌘F searches the scrollback.
 
 ---
 
