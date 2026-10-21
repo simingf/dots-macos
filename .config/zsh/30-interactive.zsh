@@ -62,15 +62,19 @@ _sel_osc52()     { printf '\e]52;c;%s\a' "$(print -rn -- "${BUFFER[MARK+1,CURSOR
 _select_all()    { MARK=0; CURSOR=$#BUFFER; REGION_ACTIVE=1 }
 _select_left()   { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .backward-char }
 _select_right()  { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .forward-char }
+_select_bol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .beginning-of-line }
+_select_eol()    { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .end-of-line }
 _sel_copy()      { (( REGION_ACTIVE )) && _sel_osc52 }
 _sel_cut()       { (( REGION_ACTIVE )) && { _sel_osc52; zle kill-region } }
 _sel_insert()    { (( REGION_ACTIVE )) && zle kill-region; zle .self-insert }
 _sel_paste()     { (( REGION_ACTIVE )) && zle kill-region; zle .bracketed-paste }
 _sel_backspace() { if (( REGION_ACTIVE )); then zle kill-region; else zle .backward-delete-char; fi }
-_sel_drop()      { [[ $LASTWIDGET == (select-all|select-left|select-right|sel-copy) ]] || REGION_ACTIVE=0 }
+_sel_drop()      { [[ $LASTWIDGET == (select-all|select-left|select-right|select-bol|select-eol|sel-copy) ]] || REGION_ACTIVE=0 }
 zle -N select-all _select_all
 zle -N select-left _select_left
 zle -N select-right _select_right
+zle -N select-bol _select_bol
+zle -N select-eol _select_eol
 zle -N sel-copy _sel_copy
 zle -N sel-cut _sel_cut
 zle -N self-insert _sel_insert
@@ -89,6 +93,8 @@ bindkey '^[[9009~' kill-buffer           # ⇧⌘⌫: delete the whole (multi-li
 bindkey '^[[9015~' kill-whole-line       # ⌘⌫: delete the line (what ^U does)
 bindkey '^[[1;2D' select-left     # ⇧←
 bindkey '^[[1;2C' select-right    # ⇧→
+bindkey '^[[9016~' select-bol      # ⇧⌘←
+bindkey '^[[9017~' select-eol      # ⇧⌘→
 
 # plugin-owned keys (bound by plugins/tools at 10-plugins & 80-tools, not here):
 #   Tab            fzf-completion       (fzf-tab)              completion dropdown

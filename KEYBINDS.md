@@ -128,7 +128,7 @@ nvim 0.11 built-in defaults; `gd`/`gD` added in `.config/nvim/lua/plugins/lsp.lu
 ## ⌘ shortcuts + mouse (zsh · nvim · Claude Code)
 
 Ghostty (`.config/ghostty/config`, Mac-only) sends each ⌘ shortcut as a private sequence
-`\e[9001~`…`\e[9015~`; `.tmux.conf` maps them to `User0`–`User14`, which call
+`\e[9001~`…`\e[9017~`; `.tmux.conf` maps them to `User0`–`User16`, which call
 `scripts/tmux-cmdkey.sh` to give the active pane its own action. Plain bytes end to end, so they
 work in the Linux box's tmux over ssh too. zsh widgets: `.config/zsh/30-interactive.zsh`; nvim
 `<D-…>` maps: `…/lua/config/keymaps.lua`. ⌘V is ghostty's own paste everywhere.
@@ -146,7 +146,8 @@ work in the Linux box's tmux over ssh too. zsh widgets: `.config/zsh/30-interact
 | ⌘P | — | file picker | — |
 | ⌘/ | — | toggle comment | — |
 | ⌘] / ⌘[ | — | indent / outdent | — |
-| ⇧← / ⇧→ | select | select (`keymodel`) | — |
+| ⇧← / ⇧→ | select | select (from normal / insert too) | — |
+| ⇧⌘← / ⇧⌘→ | select to line start / end | select to first non-blank / line end | — |
 
 In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again.
 
@@ -157,7 +158,8 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 | Click | move the cursor (tmux `MouseUp1Pane` → `@click`) | move the cursor | move the cursor |
 | Drag | copy + clear on release (tmux) | copy on release, stays selected | copy + clear on release (tmux takes the drag) |
 
-While a zsh selection is up, typing / pasting replaces it and ⌫ deletes it.
+While a zsh selection is up, typing / pasting replaces it and ⌫ deletes it. In nvim, ⌫ in visual
+mode deletes the selection (`d`) and ⌥⌫ in insert mode deletes the previous word (`<C-w>`).
 
 ---
 

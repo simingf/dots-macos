@@ -53,6 +53,8 @@ keybind = cmd+slash=text:\x1b[9012~
 keybind = cmd+bracket_right=text:\x1b[9013~
 keybind = cmd+bracket_left=text:\x1b[9014~
 keybind = cmd+backspace=text:\x1b[9015~
+keybind = cmd+shift+left=text:\x1b[9016~
+keybind = cmd+shift+right=text:\x1b[9017~
 keybind = cmd+equal=increase_font_size:1
 keybind = cmd+plus=increase_font_size:1
 keybind = cmd+minus=decrease_font_size:1

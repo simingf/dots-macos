@@ -6,7 +6,7 @@
 # usage: tmux-cmdkey.sh <key> <pane_id> <pane_in_mode> <pane_current_command> <alternate_on> <is_agent> <client>
 #   key: a (select all) | c (copy) | x (cut) | z (undo) | Z (redo) | left / right (line start / end) | s (save)
 #        clear (⇧⌘⌫: delete the whole input) | bs (⌘⌫: delete the line) | f (find) | p (file picker)
-#        slash (toggle comment) | indent / outdent (⌘] / ⌘[)
+#        slash (toggle comment) | indent / outdent (⌘] / ⌘[) | sleft / sright (⇧⌘←/→: select to line start / end)
 #
 # Order matters: a zsh pane sitting at its prompt is checked before the agent test, because a pane's
 # title can stay "✳ …" after Claude exits.
@@ -30,6 +30,7 @@ elif { [ "$cmd" = zsh ] || [ "$cmd" = bash ]; } && [ "$alt" = 0 ]; then
         z) send_hex '\033[9004~' ;; Z) send_hex '\033[9005~' ;;
         left) send_hex '\033[9006~' ;; right) send_hex '\033[9007~' ;;
         clear) send_hex '\033[9009~' ;; bs) send_hex '\033[9015~' ;; f) search ;;
+        sleft) send_hex '\033[9016~' ;; sright) send_hex '\033[9017~' ;;
     esac
 elif [ "$cmd" = nvim ] || [ "$cmd" = vim ]; then
     # nvim parses kitty-style keys with the super modifier (9 = 1+super, 10 = 1+super+shift) as
@@ -40,6 +41,7 @@ elif [ "$cmd" = nvim ] || [ "$cmd" = vim ]; then
         left) send_hex '\033[1;9D' ;; right) send_hex '\033[1;9C' ;;
         f) send_hex '\033[102;9u' ;; p) send_hex '\033[112;9u' ;; slash) send_hex '\033[47;9u' ;;
         indent) send_hex '\033[93;9u' ;; outdent) send_hex '\033[91;9u' ;; bs) send_hex '\033[127;9u' ;;
+        sleft) send_hex '\033[1;10D' ;; sright) send_hex '\033[1;10C' ;;
     esac
 elif [ "$agent" = 1 ]; then
     # Claude Code: emacs-style input keys. Its input has no selection / select-all / redo, and a drag
