@@ -16,6 +16,8 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias dots='builtin cd $DOTFILES_DIR'
 alias ro='builtin cd ~/git/roblox/'
+alias notes='builtin cd ~/git/roblox/meta/roblox-notes'
+alias skills='builtin cd ~/git/roblox/meta/skills'
 
 # config aliases
 alias cf="builtin cd ~/.config"
