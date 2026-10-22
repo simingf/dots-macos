@@ -69,7 +69,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ## Miscellaneous
 
 - When possible, write a deterministic script instead of completing a task manually.
-- When prompting the user to run something, copy it into their clipboard.
+- When prompting the user to run something, copy it into their clipboard: `printf '%s' '<cmd>' | pbcopy` (`clip` on Windows). This works on the Linux dev box too (`pbcopy` there forwards to the Mac clipboard over ssh via tmux/OSC 52), so don't skip it because the session is remote.
 - Use `gh` CLI.
 - No AI attributions in commits or PR bodies.
 
