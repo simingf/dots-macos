@@ -40,6 +40,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         ("scripts/tmux-cmdkey.sh", "scripts/tmux-cmdkey.sh"),
         ("scripts/tmux-notify.sh", "scripts/tmux-notify.sh"),
         ("scripts/tmux-lazygit.sh", "scripts/tmux-lazygit.sh"),
+        ("scripts/lazygit-tmux-edit.yml", "scripts/lazygit-tmux-edit.yml"),
         ("scripts/tmux-layout-classic.sh", "scripts/tmux-layout-classic.sh"),
         (".config/yazi/yazi.toml", ".config/yazi/yazi.toml"),
         (".config/yazi/keymap.toml", ".config/yazi/keymap.toml"),

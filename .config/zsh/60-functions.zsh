@@ -17,6 +17,12 @@ v() { nvim "${@:-.}"; }
 # lazygit
 lg() {
     local remote_host
+    # in tmux, layer scripts/lazygit-tmux-edit.yml on the main config: `e` opens files in this window's nvim
+    if [[ -n $TMUX && -z $LG_CONFIG_FILE ]]; then
+        local base=~/.config/lazygit/config.yml
+        [[ -f ~/Library/Application\ Support/lazygit/config.yml ]] && base=~/Library/Application\ Support/lazygit/config.yml
+        local -x LG_CONFIG_FILE="$base,$DOTFILES_DIR/scripts/lazygit-tmux-edit.yml"
+    fi
     remote_host=$(git remote get-url origin 2>/dev/null | sed 's|https://\([^/]*\)/.*|\1|; s|git@\([^:]*\):.*|\1|')
     if [[ "$remote_host" == "github.com" ]]; then
         local token
