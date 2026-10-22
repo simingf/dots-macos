@@ -15,6 +15,7 @@
 # doc emails). Scoped to vendor/ so your own config commits are still scanned.
 
 set -euo pipefail
+[[ $(uname) == Darwin ]] || { echo "${0##*/}: runs on the Mac (vendors its plugin trees; the dev box has no internet)" >&2; exit 1; }
 
 DOTS_LINUX="${HOME}/dots-linux"
 [ -d "$DOTS_LINUX" ] || { echo "dots-linux not found at $DOTS_LINUX" >&2; exit 1; }

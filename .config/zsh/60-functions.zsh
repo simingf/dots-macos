@@ -50,6 +50,34 @@ metalg() {
     "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
 }
 
+# Lazygit, one column per dots repo cloned on this host (all three on the
+# Mac; dots-macos + dots-linux on the dev box).
+dotslg() {
+    if [[ -z "$_REAL_TMUX" ]]; then
+        echo "Not in a tmux session" >&2
+        return 1
+    fi
+    local repos=(~/dots-{macos,linux,windows}/.git(/N:h))
+    if (( ! $#repos )); then
+        echo "No dots repos in ~" >&2
+        return 1
+    fi
+    local real_panes=$(tmux list-panes -F '#{@sidebar}' | grep -vc '^1$')
+    if [[ "$real_panes" -gt 1 ]]; then
+        tmux new-window -n "dots" -c "$repos[1]"
+        tmux send-keys "lg" Enter
+    else
+        tmux rename-window "dots"
+        tmux send-keys "cd ${(q)repos[1]} && lg" Enter
+    fi
+    local r
+    for r in $repos[2,-1]; do
+        tmux split-window -h -c "$r"
+        tmux send-keys "lg" Enter
+    done
+    "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
+}
+
 # Lazygit, one column per repo in ~/git/roblox/active. Main clones only:
 # a worktree's .git is a file, so the `.git(/)` dir glob skips it.
 activelg() {

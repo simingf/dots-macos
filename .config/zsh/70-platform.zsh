@@ -43,31 +43,6 @@ claude() {
     SHELL=/bin/bash command declawd --yolo "$@"
 }
 
-# Lazygit on all three dots repos side by side.
-dotslg() {
-    if [[ -z "$_REAL_TMUX" ]]; then
-        echo "Not in a tmux session" >&2
-        return 1
-    fi
-    # Count real panes (exclude the agent sidebar) so a lone working pane + sidebar
-    # reuses the current window instead of spawning a new one and orphaning the sidebar.
-    local real_panes=$(tmux list-panes -F '#{@sidebar}' | grep -vc '^1$')
-    if [[ "$real_panes" -gt 1 ]]; then
-        tmux new-window -n "dots" -c "$HOME/dots-macos"
-        tmux send-keys "lg" Enter
-    else
-        tmux rename-window "dots"
-        tmux send-keys "cd ~/dots-macos && lg" Enter
-    fi
-    tmux split-window -h -c "$HOME/dots-linux"
-    tmux send-keys "lg" Enter
-    tmux split-window -h -c "$HOME/dots-windows"
-    tmux send-keys "lg" Enter
-    # Equalize the three lazygit columns. (Dropped a `tmux-agents.sh sidebar-open` seed here when the
-    # agent sidebar was retired — see archive/agent-sidebar/ to restore it.)
-    "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
-}
-
 # vscode/cursor
 k() {
     local editor

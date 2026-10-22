@@ -21,6 +21,7 @@
 # dirty is printed at the end for you to handle.
 
 set -euo pipefail
+[[ $(uname) == Darwin ]] || { echo "${0##*/}: runs on the Mac (vendors its plugin trees; the dev box has no internet)" >&2; exit 1; }
 
 DOTS_MACOS="${HOME}/dots-macos"
 DOTS_LINUX="${HOME}/dots-linux"
