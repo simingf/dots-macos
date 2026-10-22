@@ -49,7 +49,8 @@ dots-macos/
 │   ├── statusline-command.sh           # status-line renderer (Oh My Posh zen mirror)
 │   ├── themes/rose-pine.json           # Claude Code custom theme
 │   ├── hooks/agent-notify.sh           # Stop/Notification → transient top-right status-bar notif (via scripts/tmux-notify.sh); tmux-only, no OS toast
-│   └── hooks/agent-status.sh           # Stop/Notification → /tmp/agent-status-* state file → agent sidebar dot color
+│   ├── hooks/agent-status.sh           # Stop/Notification → /tmp/agent-status-* state file → agent sidebar dot color
+│   └── hooks/agent-clip.py             # Stop → copy each fenced block / `>` quote / `! cmd` in the reply (not commands it ran) to the clipboard, in order
 ├── scripts/
 │   ├── sync-dotfiles.py                # cross-repo orchestration: cp byte-identical files into siblings
 │   ├── refresh-linux.sh                # one-shot: update Mac plugins → vendor → sync → commit+push both repos

@@ -18,6 +18,7 @@ Library/Application Support/Code/User/*
 .claude/hooks/*
 !.claude/hooks/agent-notify.sh
 !.claude/hooks/agent-status.sh
+!.claude/hooks/agent-clip.py
 !.claude/themes/
 .claude/themes/*
 !.claude/themes/rose-pine.json

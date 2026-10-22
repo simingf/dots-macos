@@ -55,6 +55,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
         (".claude/statusline-command.sh", ".claude/statusline-command.sh"),
         (".claude/hooks/agent-notify.sh", ".claude/hooks/agent-notify.sh"),
         (".claude/hooks/agent-status.sh", ".claude/hooks/agent-status.sh"),
+        (".claude/hooks/agent-clip.py", ".claude/hooks/agent-clip.py"),
         (".config/zsh/mux-tmux.zsh", ".config/zsh/mux-tmux.zsh"),
         (".config/zsh/00-env.zsh", ".config/zsh/00-env.zsh"),
         (".config/zsh/00-history.zsh", ".config/zsh/00-history.zsh"),
