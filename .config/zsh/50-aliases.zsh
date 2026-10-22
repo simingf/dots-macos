@@ -2,6 +2,7 @@
 
 # general aliases
 alias e='exit'
+alias g='git'
 alias ls='eza --icons=auto --hyperlink=auto'
 alias ll='eza -la --git --icons=auto --hyperlink=auto'
 alias la='eza -a --icons=auto --hyperlink=auto'
