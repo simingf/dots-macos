@@ -24,3 +24,36 @@ gui:
       - '#f6c177'
     authorColors:
       '*': '#ceacf6'
+# Colemak-DH mnei schema (KEYBINDS.md): every default binding on m/n/e/i/h/j/k/l (either case) swaps
+# m↔h n↔j e↔k i↔l. A pure permutation, so no new conflicts: n/e down/up, m/i prev/next panel,
+# j/J next/prev match, k edit, h rebase menu, l ignore/interactive-rebase/gitflow/init.
+keybinding:
+  universal:
+    prevItem-alt: e
+    nextItem-alt: 'n'
+    prevBlock-alt: m
+    nextBlock-alt: i
+    scrollLeft: M
+    scrollRight: I
+    scrollUpMain-alt1: E
+    scrollDownMain-alt1: 'N'
+    nextMatch: j
+    prevMatch: J
+    new: j
+    edit: k
+    createRebaseOptionsMenu: h
+  files:
+    ignoreFile: l
+    openMergeOptions: H
+  branches:
+    mergeIntoCurrentBranch: H
+    moveCommitsToNewBranch: J
+    viewGitFlowOptions: l
+  commits:
+    startInteractiveRebase: l
+  main:
+    prevFile: J
+    nextFile: j
+    editSelectHunk: K
+  submodules:
+    init: l

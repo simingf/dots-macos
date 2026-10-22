@@ -35,6 +35,7 @@ a right-cmd tap via Karabiner) · **AeroSpace** = `alt`.
 | tmux pane select | `‹pfx›m` | `‹pfx›n` | `‹pfx›e` | `‹pfx›i` | `.tmux.conf` |
 | tmux pane resize | `‹pfx›M` | `‹pfx›N` | `‹pfx›E` | `‹pfx›I` | `.tmux.conf` |
 | tmux copy-mode | `m` | `n` | `e` | `i` | `.tmux.conf` |
+| lazygit (item / panel) | `m` | `n` | `e` | `i` | `Library/Application Support/lazygit/config.yml` |
 | AeroSpace focus | `alt-m` | `alt-n` | `alt-e` | `alt-i` | `.config/aerospace/aerospace.toml` |
 | AeroSpace join-with | `alt-shift-m` | `alt-shift-n` | `alt-shift-e` | `alt-shift-i` | `.config/aerospace/aerospace.toml` |
 
@@ -236,6 +237,27 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 | `‹pfx›f` | fuzzy-grep scrollback across panes → jump |
 | `‹pfx›y` | toggle synchronize-panes |
 | `‹pfx›C-r` | reload `~/.tmux.conf` |
+
+---
+
+## lazygit
+
+`Library/Application Support/lazygit/config.yml` (`keybinding:`). Mirrors the nvim swap: every
+default on `m`/`n`/`e`/`i`/`h`/`j`/`k`/`l` (either case) trades with its partner.
+
+| Key | Action | Was |
+|---|---|---|
+| `n` / `e` | next / previous item | `j` / `k` |
+| `m` / `i` | previous / next panel | `h` / `l` |
+| `N` / `E` | scroll main view down / up | `J` / `K` |
+| `M` / `I` | scroll main view left / right | `H` / `L` |
+| `j` / `J` | next / previous search match · main view: next / previous file | `n` / `N` |
+| `j` | new (branch, stash, …) | `n` |
+| `k` | edit file — in tmux, opens in the window's nvim (`scripts/tmux-lazygit.sh edit`) | `e` |
+| `K` | main view: edit hunk | `E` |
+| `h` · `H` | rebase options menu · merge options (files) / merge into current (branches) | `m` · `M` |
+| `l` | ignore file · interactive rebase · git-flow · submodule init | `i` |
+| `J` | branches: move commits to new branch | `N` |
 
 ---
 

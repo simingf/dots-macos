@@ -1,6 +1,7 @@
-# Layered on lazygit's config.yml by `lg` (60-functions.zsh) inside tmux only: `e` opens the file in an
-# nvim pane of lazygit's tmux window and focuses it (scripts/tmux-lazygit.sh edit), else a plain nvim.
+# Layered on lazygit's config.yml by `lg` (60-functions.zsh) inside tmux only: edit (`k`) opens the file in an
+# nvim pane of lazygit's tmux window and focuses it (scripts/tmux-lazygit.sh edit), else in a new nvim pane.
+# editInTerminal off: lazygit runs it without suspending (no "press enter to return").
 os:
   edit: '"$DOTFILES_DIR/scripts/tmux-lazygit.sh" edit {{filename}}'
   editAtLine: '"$DOTFILES_DIR/scripts/tmux-lazygit.sh" edit {{filename}} {{line}}'
-  editInTerminal: true
+  editInTerminal: false

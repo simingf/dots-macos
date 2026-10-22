@@ -23,7 +23,7 @@
 # Modes:
 #   toggle <path> <pane>  open (focused) on the resolved repo, or park this window's sidebar
 #   follow <nvim-pane>    swap the sidebar in <nvim-pane>'s window to its @nvim_repo, or pre-warm it if none open
-#   edit <file> [line]    lazygit's `e` (os.edit via scripts/lazygit-tmux-edit.yml): open in this window's nvim
+#   edit <file> [line]    lazygit's edit (`k`) (os.edit via scripts/lazygit-tmux-edit.yml): open in this window's nvim
 #   close <pane>          reclaim + kill <pane>; run by the pane itself when lazygit quits
 #   layout <win>    window-layout-changed hook: park a window's sidebar if it's the sole pane, then fix-width
 #   fix-width       window-resized hook: snap every sidebar back to its window's _width
@@ -287,10 +287,11 @@ _follow() {
   return 0
 }
 
-# _edit <file> [line]: lazygit's `e` — open <file> in an nvim pane of lazygit's own window (its @nvim_server,
+# _edit <file> [line]: lazygit's edit (`k`) — open <file> in an nvim pane of lazygit's own window (its @nvim_server,
 # published by nvim's lua/config/tmux_lazygit.lua) and focus that pane. Parking/swapping keeps a pane's id,
 # so $TMUX_PANE's window is wherever the sidebar is now. Several nvims: the one on <file>'s repo, then the
-# last-active pane. No reachable nvim → a plain nvim right here (os.editInTerminal suspends lazygit for it).
+# last-active pane. No reachable nvim → a new nvim pane, full-height on the window's right edge (focused); it
+# publishes @nvim_server, so later edits reuse it. os.editInTerminal is off, so lazygit never suspends for this.
 _edit() {
   local file=$1 line=${2:-0} repo np="" srv="" q="'"
   [[ $file == /* ]] || file=$PWD/$file
@@ -302,7 +303,8 @@ _edit() {
     tmux select-pane -t "$np"
     return 0
   fi
-  if ((line > 0)); then exec nvim "+$line" -- "$file"; else exec nvim -- "$file"; fi
+  local -a cmd=(nvim -- "$file"); ((line > 0)) && cmd=(nvim "+$line" -- "$file")
+  tmux split-window -h -f -t "${TMUX_PANE:-}" -c "${repo:-$(dirname "$file")}" "${cmd[@]}"
 }
 
 # _fix_width: snap every sidebar back to its window's _width. Runs on window-layout-changed, which its own

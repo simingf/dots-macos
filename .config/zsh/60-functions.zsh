@@ -17,7 +17,7 @@ v() { nvim "${@:-.}"; }
 # lazygit
 lg() {
     local remote_host
-    # in tmux, layer scripts/lazygit-tmux-edit.yml on the main config: `e` opens files in this window's nvim
+    # in tmux, layer scripts/lazygit-tmux-edit.yml on the main config: edit (`k`) opens files in this window's nvim
     if [[ -n $TMUX && -z $LG_CONFIG_FILE ]]; then
         local base=~/.config/lazygit/config.yml
         [[ -f ~/Library/Application\ Support/lazygit/config.yml ]] && base=~/Library/Application\ Support/lazygit/config.yml

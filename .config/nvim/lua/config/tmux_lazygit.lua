@@ -3,7 +3,7 @@
 -- it when it changes. "Looking at" = the explorer item under the cursor while the
 -- snacks explorer list is focused (so moving through the tree across repos switches),
 -- else the current file buffer's repo. Stored as the @nvim_repo option on this nvim's
--- tmux pane. Also publishes this nvim's RPC socket as @nvim_server, so lazygit's `e` in
+-- tmux pane. Also publishes this nvim's RPC socket as @nvim_server, so lazygit's edit (`k`) in
 -- the same window opens files here (tmux-lazygit.sh edit → TmuxLazygitEdit below). No-op
 -- outside tmux (so the byte-identical copy is inert on windows).
 local pane = vim.env.TMUX_PANE
@@ -94,7 +94,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "CursorMoved" }, {
 		timer:start(250, 0, vim.schedule_wrap(publish))
 	end,
 })
--- a stale @nvim_repo would keep steering prefix g after nvim quits (and @nvim_server, lazygit's `e`)
+-- a stale @nvim_repo would keep steering prefix g after nvim quits (and @nvim_server, lazygit's edit (`k`))
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	group = grp,
 	callback = function()
