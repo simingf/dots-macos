@@ -17,6 +17,9 @@ else
 fi
 export GH_HOST=github.rbx.com
 export NVM_DIR="$HOME/.nvm"
+# Python bytecode caches go under ~/.cache instead of __pycache__/ next to the
+# source, so they never land in (or block cleanup of) git repos.
+export PYTHONPYCACHEPREFIX="$HOME/.cache/pycache"
 
 # Rose-pine LS_COLORS (source of truth mirrored by yazi + nvim, see THEME.md):
 # themes ls/eza and zsh completion's list-colors (30-interactive.zsh).
