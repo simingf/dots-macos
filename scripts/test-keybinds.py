@@ -540,6 +540,17 @@ def mouse_cases():
         buf, cur = zsh_state()
         return [] if cur == 5 else [f"cursor {cur}, want 5"]
 
+    def zsh_click_multiline(dx, drow, want):
+        def f():
+            buf = "echo one\necho two\necho three"
+            x0, y0 = zsh_at(buf, 0)              # screen cell of buffer index 0 (after the prompt)
+            zsh_at(buf, len(buf))                # cursor at the end, like after a paste
+            x = x0 + dx if drow == 0 else dx     # rows after the first start at column 0
+            mouse([("down", x, y0 + drow), ("up", x, y0 + drow)])
+            buf, cur = zsh_state()
+            return [] if cur == want else [f"cursor {cur}, want {want}"]
+        return f
+
     def zsh_drag():
         clip_reset()
         x0, y = zsh_at("echo hello world", 16)
@@ -564,6 +575,11 @@ def mouse_cases():
         return problems
 
     return [("mouse zsh click moves the cursor", lambda: (select("zsh"), zsh_click())[1]),
+            ("mouse zsh multi-line click on the first line", lambda: (select("zsh"), zsh_click_multiline(3, 0, 3)())[1]),
+            ("mouse zsh multi-line click on a middle line", lambda: (select("zsh"), zsh_click_multiline(5, 1, 14)())[1]),
+            ("mouse zsh multi-line click past a line's end", lambda: (select("zsh"), zsh_click_multiline(40, 1, 17)())[1]),
+            ("mouse zsh multi-line click on the last line", lambda: (select("zsh"), zsh_click_multiline(2, 2, 20)())[1]),
+            ("mouse zsh multi-line click below the buffer is ignored", lambda: (select("zsh"), zsh_click_multiline(2, 4, 28)())[1]),
             ("mouse zsh drag copies + clears", lambda: (select("zsh"), zsh_drag())[1]),
             ("mouse nvim drag copies, stays selected", lambda: (select("nvim"), nvim_drag())[1])]
 

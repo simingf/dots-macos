@@ -36,17 +36,42 @@ bindkey '^[[B' down-line-or-beginning-search  # ↓  normal
 bindkey '^[OB' down-line-or-beginning-search  # ↓  application
 
 # mouse click-to-move — tmux's MouseUp1Pane bind (.tmux.conf) leaves the click's
-# offset from the cursor in the pane option @click ("dy dx width"), then sends
-# \e[9000~. Clicks past either end of the cursor's row clamp to the buffer; clicks
-# on other rows outside the buffer (old output, the prompt) are ignored. Column
-# math assumes single-width chars and no embedded newlines.
+# offset from the cursor in the pane option @click ("dy dx width cursor_x"), then
+# sends \e[9000~. The buffer is laid out the way zle draws it — rows wrap at the
+# pane width, a newline starts a row at column 0, row 0 starts after the prompt —
+# so multi-line buffers (pastes, recalled history) map clicks to the right char.
+# A click past either end of a buffer row clamps to that row; rows outside the
+# buffer (old output, the prompt's upper lines) are ignored. Assumes single-width chars.
 _click_move() {
     [[ -n $TMUX_PANE ]] || return
-    local dy dx w target
-    read -r dy dx w <<< "$(tmux show -pqv -t "$TMUX_PANE" @click)"
-    (( target = CURSOR + dy * w + dx ))
-    (( dy && (target < 0 || target > $#BUFFER) )) && return
-    (( CURSOR = target < 0 ? 0 : target > $#BUFFER ? $#BUFFER : target ))
+    local dy dx w cx reply
+    read -r dy dx w cx <<< "$(tmux show -pqv -t "$TMUX_PANE" @click)"
+    local -i c0 i row col crow ccol trow tcol first=-1 hit=-1 saved=$CURSOR
+    if [[ $LBUFFER != *$'\n'* ]]; then
+        (( c0 = ((cx - CURSOR) % w + w) % w ))   # cursor's row is the prompt row: derive from it
+    else
+        # Ask the terminal where the buffer starts: the report comes back in-band, after the redraw.
+        CURSOR=0; zle -R
+        print -n '\e[6n' >/dev/tty
+        read -rs -t 1 -d R reply </dev/tty
+        CURSOR=$saved
+        (( c0 = ${reply##*;} - 1 ))
+    fi
+    local -a rows cols
+    (( row = 0, col = c0 ))
+    for (( i = 0; i <= $#BUFFER; i++ )); do
+        (( col >= w )) && (( row++, col = 0 ))
+        rows[i+1]=$row cols[i+1]=$col
+        if [[ ${BUFFER[i+1]} == $'\n' ]]; then (( row++, col = 0 )); else (( col++ )); fi
+    done
+    (( trow = rows[CURSOR+1] + dy, tcol = cols[CURSOR+1] + dx ))
+    for (( i = 0; i <= $#BUFFER; i++ )); do
+        (( rows[i+1] == trow )) || continue
+        (( first < 0 && (first = i) ))
+        (( cols[i+1] <= tcol && (hit = i) ))
+    done
+    (( first < 0 )) && return                      # row outside the buffer
+    (( CURSOR = hit < 0 ? first : hit ))
 }
 zle -N _click_move
 bindkey '^[[9000~' _click_move
