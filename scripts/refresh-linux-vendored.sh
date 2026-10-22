@@ -101,7 +101,23 @@ gh release download --repo mjakob-gh/build-static-tmux \
 gunzip -c "$TMPDIR/tmux.linux-amd64.stripped.gz" > "$DOTS_LINUX/vendor/bin/tmux"
 echo "  tmux ✓"
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux}
+# rsvg-convert: SVG → PNG for the new-diagram skill. Not in the box image, and
+# apt installs land outside ~ so they vanish every restart. No static build exists,
+# so take Ubuntu's binary straight from its .deb: librsvg2-bin ships only this one
+# file, and every lib it links (librsvg2-2, cairo, pango, …) is already in the image
+# (Ubuntu 24.04, noble). Bump RSVG_DEB if the image moves to a newer release.
+RSVG_DEB=librsvg2-bin_2.58.0+dfsg-1ubuntu0.1_amd64.deb
+curl -fsSL -o "$TMPDIR/$RSVG_DEB" "http://archive.ubuntu.com/ubuntu/pool/universe/libr/librsvg/$RSVG_DEB"
+(cd "$TMPDIR" && ar x "$RSVG_DEB" data.tar.zst)
+if command -v zstd >/dev/null; then
+  zstd -dc "$TMPDIR/data.tar.zst" | tar -xf - -C "$TMPDIR" ./usr/bin/rsvg-convert
+else
+  tar -xf "$TMPDIR/data.tar.zst" -C "$TMPDIR" ./usr/bin/rsvg-convert  # bsdtar reads zstd itself
+fi
+cp "$TMPDIR/usr/bin/rsvg-convert" "$DOTS_LINUX/vendor/bin/rsvg-convert"
+echo "  rsvg-convert ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert}
 
 # Commit the refreshed vendor/ tree. SKIP=gitleaks bypasses the infosec
 # pre-commit hook (see header) — sanctioned here because the tree is entirely
