@@ -283,3 +283,25 @@ p() {
     fi
     python3 "$@"
 }
+
+# copy the last command — its prompt line + output — to the clipboard: walks the
+# pane's scrollback back from the line that ran this to the previous prompt
+# (oh-my-posh's transient `❯ `, or the fallback `zsh|`). tmux-only: the shell
+# can't read the terminal itself. pbcopy on linux is dots-linux/bin/pbcopy
+# (OSC 52 → Mac).
+cpterm() {
+    if [[ -z $TMUX ]]; then
+        echo "Not in a tmux session" >&2
+        return 1
+    fi
+    local lines=("${(@f)$(tmux capture-pane -pJ -S - -t "$TMUX_PANE")}") i
+    for (( i = $#lines - 1; i > 0; i-- )); do
+        [[ $lines[i] == ('❯ '|'zsh|')* ]] && break
+    done
+    if (( ! i )); then
+        echo "No previous prompt in scrollback" >&2
+        return 1
+    fi
+    print -rl -- "${(@)lines[i,-2]}" | pbcopy
+    "$DOTFILES_DIR/scripts/tmux-notify.sh" "copied $(( $#lines - i )) lines"
+}
