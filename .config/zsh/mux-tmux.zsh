@@ -41,7 +41,7 @@ kk() {
     (( ${#files} )) || files=("$paneroot") # no files → open the root as a dir tree
     local nvim_cmd="nvim ${(j: :)${(q@)files}}" # (q@) quotes each file, (j) joins
     # nvim 50% just left of the origin pane (claude); _kk_stay drops it to a shell when nvim quits (see above).
-    tmux split-window -h -b -d -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")" || return
+    tmux split-window -h -b -d -t "$TMUX_PANE" -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")" || return
     # Name the Claude session after the tmux window so cross-session messaging (ListAgents) shows a
     # meaningful handle; skip if the caller already passed their own --name/-n.
     local -a nameflag=(--name "$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}')")
@@ -50,6 +50,24 @@ kk() {
         [[ "$f" == --name || "$f" == --name=* || "$f" == -n ]] && { nameflag=(); break; }
     done
     (cd "$paneroot" && claude "${nameflag[@]}" "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (rightmost); -d kept focus here
+}
+
+# kkactive: one background window per roblox-notes active project, each running `kk /get-notes <project>`
+# from ~/git/roblox (so nvim's tree shows the active/, context/ and meta/ repos). Skips projects that
+# already have a window of that name in this session, so re-runs only open what's missing. The keys go
+# to the new pane's interactive shell, where kk is defined.
+kkactive() {
+    emulate -L zsh
+    local root=~/git/roblox/meta/roblox-notes/active-workstreams d name pane
+    [[ -n "$TMUX" ]] || { echo "kkactive: run inside tmux" >&2; return 1; }
+    [[ -d "$root" ]] || { echo "kkactive: $root not found" >&2; return 1; }
+    local -a have=("${(@f)$(tmux list-windows -F '#{window_name}')}")
+    for d in "$root"/*(/N); do
+        name=${d:t}
+        (( ${have[(Ie)$name]} )) && continue
+        pane=$(tmux new-window -d -P -F '#{pane_id}' -n "$name" -c ~/git/roblox) || continue
+        tmux send-keys -t "$pane" "kk ${(q):-/get-notes $name}" Enter
+    done
 }
 
 # tmux
