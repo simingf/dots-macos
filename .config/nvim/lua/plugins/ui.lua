@@ -1,3 +1,6 @@
+-- standalone PNGs larger than this (px, long side) are scaled down to it by magick (snacks config)
+local PNG_MAX = 4096
+
 return {
 
 	-- which key
@@ -271,7 +274,10 @@ return {
 			notifier = { enabled = true },
 			bigfile = { enabled = true },
 			quickfile = { enabled = true },
-			image = { enabled = true }, -- inline image preview (kitty graphics; needs chafa/imagemagick)
+			image = { -- inline image preview (kitty graphics; needs chafa/imagemagick)
+				enabled = true,
+				convert = { magick = { png = { "{src}[0]", "-scale", PNG_MAX .. "x" .. PNG_MAX .. ">" } } },
+			},
 			-- indent guides + current-scope highlight (replaced indent-blankline)
 			indent = { indent = { char = "▏" }, scope = { char = "▏" } },
 		},
@@ -297,6 +303,33 @@ return {
 					return err(self)
 				end
 			end
+			-- • fit() only ever shrinks, so an image smaller than the window sits at its
+			--   natural size and a pane resize can't grow it. Scale standalone images to the
+			--   largest aspect-kept size the window holds; WinResized already re-runs update().
+			local state = P.state
+			function P:state()
+				local s = state(self)
+				if self.opts.inline or #s.wins == 0 then
+					return s
+				end
+				local ok, px = pcall(function()
+					return self.img.info and self.img.info.size or Snacks.image.util.dim(self.img.file)
+				end)
+				if not ok or not px or px.width == 0 or px.height == 0 then
+					return s
+				end
+				local w, h = math.huge, math.huge
+				for _, win in ipairs(s.wins) do
+					w = math.min(w, vim.api.nvim_win_get_width(win))
+					h = math.min(h, vim.api.nvim_win_get_height(win))
+				end
+				local term = Snacks.image.terminal.size()
+				local iw, ih = px.width / term.cell_width, px.height / term.cell_height
+				local scale = math.min(w / iw, h / ih)
+				s.loc.width = math.max(1, math.floor(iw * scale))
+				s.loc.height = math.max(1, math.floor(ih * scale))
+				return s
+			end
 			-- snacks' progress()/error() set_lines after attach resets 'modified', so an
 			-- image buffer comes up modified: closing prompts to save, and `:edit`
 			-- fails with E37. Image buffers are read-only.
@@ -319,6 +352,28 @@ return {
 			-- • disk: drop cached step outputs older than the source, then re-resolve
 			local C = require("snacks.image.convert")
 			local convert = C.convert
+			-- PNGs skip magick (the terminal takes PNG as is), so a huge one was sent at full
+			-- size: past 10000px the terminal drops it, and it's slow over ssh. Route PNGs over
+			-- PNG_MAX through the convert step (magick.png in opts scales them to fit).
+			local Convert
+			for i = 1, 20 do
+				local n, v = debug.getupvalue(convert, i)
+				if n == "Convert" or not n then
+					Convert = v
+					break
+				end
+			end
+			if Convert then
+				local resolve = Convert.resolve
+				function Convert:resolve()
+					local ok, px = pcall(Snacks.image.util.dim, self.src)
+					if self:ft() == "png" and not C.is_uri(self.src) and vim.fn.executable("magick") == 1
+						and ok and math.max(px.width, px.height) > PNG_MAX then
+						self:_resolve("convert")
+					end
+					return resolve(self)
+				end
+			end
 			function C.convert(opts)
 				local c = convert(vim.tbl_extend("force", {}, opts)) -- new() mutates opts.src
 				local src, stale = mtime(c.src), false

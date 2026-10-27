@@ -117,7 +117,35 @@ fi
 cp "$TMPDIR/usr/bin/rsvg-convert" "$DOTS_LINUX/vendor/bin/rsvg-convert"
 echo "  rsvg-convert ✓"
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert}
+# ImageMagick: snacks.nvim's image metadata/convert steps (and downscaling big PNGs, see
+# ui.lua). Same .deb route as rsvg-convert: Ubuntu's IM6 plus liblqr, the one lib it links
+# that the image lacks. It loads coders/config from compiled-in /usr and /etc paths, so it
+# lives under vendor/imagemagick/ and dots-linux bin/magick points it there via MAGICK_*
+# env vars. Bump IM_VER / LQR_VER with the image's Ubuntu release.
+IM_VER=6.9.12.98+dfsg1-5.2build2 LQR_VER=0.4.2-2.1build2
+IM="$DOTS_LINUX/vendor/imagemagick"
+UBU=http://archive.ubuntu.com/ubuntu/pool/universe
+mkdir -p "$TMPDIR/im"
+for deb in "i/imagemagick/imagemagick-6.q16_${IM_VER}_amd64" "i/imagemagick/libmagickcore-6.q16-7t64_${IM_VER}_amd64" \
+           "i/imagemagick/libmagickwand-6.q16-7t64_${IM_VER}_amd64" "i/imagemagick/imagemagick-6-common_${IM_VER}_all" \
+           "libl/liblqr/liblqr-1-0_${LQR_VER}_amd64"; do
+  curl -fsSL -o "$TMPDIR/im.deb" "$UBU/$deb.deb"
+  (cd "$TMPDIR" && ar x im.deb data.tar.zst)
+  if command -v zstd >/dev/null; then
+    zstd -dc "$TMPDIR/data.tar.zst" | tar -xf - -C "$TMPDIR/im"
+  else
+    tar -xf "$TMPDIR/data.tar.zst" -C "$TMPDIR/im"
+  fi
+  rm "$TMPDIR/im.deb" "$TMPDIR/data.tar.zst"
+done
+rm -rf "$IM" && mkdir -p "$IM/bin"
+cp "$TMPDIR/im/usr/bin/convert-im6.q16" "$TMPDIR/im/usr/bin/identify-im6.q16" "$IM/bin/"
+cp -R "$TMPDIR/im/usr/lib/x86_64-linux-gnu" "$IM/lib"
+cp -RL "$TMPDIR/im/etc/ImageMagick-6" "$IM/etc"
+cp -R "$TMPDIR/im/usr/share/ImageMagick-6" "$IM/share"
+echo "  imagemagick ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert} "$IM/bin"/*
 
 # Commit the refreshed vendor/ tree. SKIP=gitleaks bypasses the infosec
 # pre-commit hook (see header) — sanctioned here because the tree is entirely

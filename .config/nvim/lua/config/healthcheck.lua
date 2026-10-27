@@ -72,7 +72,7 @@ local checks = {
 				return "snacks.image.placement not require-able"
 			end
 			local gone = {}
-			for _, f in ipairs({ "update", "error", "wins", "hide", "show" }) do
+			for _, f in ipairs({ "update", "error", "state", "wins", "hide", "show" }) do
 				if type(P[f]) ~= "function" then
 					gone[#gone + 1] = f
 				end
@@ -86,6 +86,24 @@ local checks = {
 			end
 			if type(C.convert) ~= "function" then
 				return "snacks.image.convert.convert changed (stale-image reload)"
+			end
+			local U, T = require("snacks.image.util"), require("snacks.image.terminal")
+			if type(U.dim) ~= "function" or type(T.size) ~= "function" then
+				return "snacks.image util.dim / terminal.size changed (fit-to-window)"
+			end
+			local function upvalue(fn, name)
+				for i = 1, 50 do
+					local n, v = debug.getupvalue(fn, i)
+					if n == nil or n == name then
+						return v
+					end
+				end
+			end
+			-- ui.lua wraps C.convert, so the class is an upvalue of the original it captured
+			local orig = upvalue(C.convert, "convert")
+			local Convert = upvalue(type(orig) == "function" and orig or C.convert, "Convert")
+			if type(Convert) ~= "table" or type(Convert._resolve) ~= "function" or type(Convert.ft) ~= "function" then
+				return "snacks.image.convert Convert class / _resolve changed (big-PNG downscale)"
 			end
 		end,
 	},
