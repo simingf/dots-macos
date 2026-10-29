@@ -192,7 +192,8 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:rose-pine",
-  "verbose": true,
+  "verbose": false,
+  "viewMode": "focus",
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true
   }
