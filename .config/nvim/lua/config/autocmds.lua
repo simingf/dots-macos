@@ -30,3 +30,16 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
 		end
 	end,
 })
+-- no swap file for directory buffers. snacks' replace_netrw renames the dir buffer
+-- to "" on startup, which creates its swap file — named after the cwd — right then;
+-- several nvims started on the same dir at once (kkactive) race for that one name
+-- and the losers fail with E303. Registered before lazy, so it runs ahead of snacks.
+vim.api.nvim_create_autocmd("BufEnter", {
+	desc = "disable swapfile for directory buffers",
+	group = vim.api.nvim_create_augroup("dir-noswapfile", { clear = true }),
+	callback = function(ev)
+		if ev.file ~= "" and vim.fn.isdirectory(ev.file) == 1 then
+			vim.bo[ev.buf].swapfile = false
+		end
+	end,
+})
