@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # One-shot "refresh Linux vendored plugins" — fully hands-off. Runs on macOS.
 #
-#   1. Update the Mac's own plugin trees (nvim lazy.nvim + zinit) — the source.
+#   1. Update the Mac's own plugin trees (nvim lazy.nvim + zinit) — the source —
+#      and herdr's Claude detection rules (tmux-agent-state.py update-rules; its
+#      offline test must pass, else the refresh stops before anything is committed).
 #   2. Re-vendor them (+ binaries) into dots-linux; refresh-linux-vendored.sh
 #      commits vendor/ itself with SKIP=gitleaks (all third-party bytes trip the
 #      infosec gitleaks pre-commit hook with false positives).
@@ -16,7 +18,8 @@
 #  - `git push` is never scanned: the infosec wrapper only gates `git commit`
 #    (fast-paths everything else), so pushing the vendor commit is fine.
 #
-# Commits are pathspec-scoped to the refresh's footprint (nvim lazy-lock) so this
+# Commits are pathspec-scoped to the refresh's footprint (nvim lazy-lock, agent
+# detection rules) so this
 # never sweeps unrelated pending work into a refresh commit. Anything else left
 # dirty is printed at the end for you to handle.
 
@@ -32,9 +35,11 @@ DOTS_LINUX="${HOME}/dots-linux"
 # a zshrc that resets PAGER inside the interactive `zsh -ic`.
 export GIT_PAGER=cat PAGER=cat
 
-echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit)"
+echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit) + agent detection rules"
 nvim --headless +"Lazy! sync" +qa
 zsh -ic 'GIT_PAGER=cat PAGER=cat zinit update --all' || true  # exits non-zero on 'nothing to update'
+echo "    herdr Claude detection rules: $("$DOTS_MACOS/scripts/tmux-agent-state.py" update-rules)"
+"$DOTS_MACOS/scripts/test-agent-state.py" >/dev/null || { "$DOTS_MACOS/scripts/test-agent-state.py"; exit 1; }
 
 echo "==> [2/4] vendoring into dots-linux (commits vendor/ with SKIP=gitleaks)"
 "$DOTS_MACOS/scripts/refresh-linux-vendored.sh"
@@ -64,7 +69,9 @@ commit_push() {
   fi
 }
 
-commit_push "$DOTS_MACOS" "nvim: bump lazy-lock (plugin refresh)" .config/nvim/lazy-lock.json
-commit_push "$DOTS_LINUX" "nvim: sync lazy-lock (plugin refresh)" .config/nvim
+commit_push "$DOTS_MACOS" "refresh: bump nvim lazy-lock + herdr Claude detection rules" \
+  .config/nvim/lazy-lock.json scripts/agent-detection
+commit_push "$DOTS_LINUX" "refresh: sync nvim lazy-lock + herdr Claude detection rules" \
+  .config/nvim scripts/agent-detection
 
 echo "done."

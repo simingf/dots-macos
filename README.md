@@ -86,7 +86,7 @@ dots-macos/
 ## Things you can ask Claude
 
 - **"sync my dotfiles"** — runs `scripts/sync-dotfiles.py --apply` (byte-identical files only).
-- **"refresh the Linux vendored plugins"** — runs `scripts/refresh-linux.sh`: updates the Mac's plugin trees (`nvim Lazy! sync` + `zinit update`), re-vendors them into dots-linux, syncs config, and commits + pushes both repos.
+- **"refresh the Linux vendored plugins"** — runs `scripts/refresh-linux.sh`: updates the Mac's plugin trees (`nvim Lazy! sync` + `zinit update`) and herdr's Claude detection rules (`scripts/agent-detection/`), re-vendors them into dots-linux, syncs config, and commits + pushes both repos.
 - **"add this alias/function"** — goes in the shared zsh modules (`50-aliases` / `60-functions`, auto-synced to Linux) unless it needs a Mac-only tool, then `70-platform.zsh`.
 - **"mirror this function to Windows"** — hand-port a zsh module change into `dots-windows/Documents/PowerShell/Profile.ps1` (translating zsh→PowerShell, skipping work-only bits).
 - **"snapshot `<app>` preferences"** — copies `~/Library/Preferences/<domain>.plist` into `manual/preferences/` and commits.

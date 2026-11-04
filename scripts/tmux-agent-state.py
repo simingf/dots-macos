@@ -3,7 +3,7 @@
 
 State is read off the pane itself, the way herdr (github.com/herdrdev/herdr, Apache-2.0 — see
 agent-detection/LICENSE) does it: the OSC title + visible screen go through herdr's Claude detection
-manifest (agent-detection/claude.toml, vendored VERBATIM — refresh it with `update-rules`, never hand-edit)
+manifest (agent-detection/claude.toml, vendored VERBATIM — `update-rules` refreshes it, run by refresh-linux.sh)
 via a port of herdr's rule engine (src/detect/manifest.rs) and publish logic (src/pane/agent_detection.rs).
 Runs on macOS and the Linux box alike: stdlib-only Python ≥3.8 + tmux. tomllib is 3.11+, so the engine loads
 claude.json — the same manifest, converted by `update-rules` (Mac); test-agent-state.py checks they match.
