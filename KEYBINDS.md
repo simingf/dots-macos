@@ -32,6 +32,7 @@ a right-cmd tap via Karabiner) · **AeroSpace** = `alt`.
 |---|---|---|---|---|---|
 | nvim cursor (n/x/o) | `m` | `n` | `e` | `i`¹ | `…/lua/config/keymaps.lua` |
 | nvim windows | `<leader>m` | `<leader>n` | `<leader>e` | `<leader>i` | `…/lua/config/keymaps.lua` |
+| nvim window resize | `<leader>M` | `<leader>N` | `<leader>E` | `<leader>I` | `…/lua/config/keymaps.lua` |
 | tmux pane select | `‹pfx›m` | `‹pfx›n` | `‹pfx›e` | `‹pfx›i` | `.tmux.conf` |
 | tmux pane resize | `‹pfx›M` | `‹pfx›N` | `‹pfx›E` | `‹pfx›I` | `.tmux.conf` |
 | tmux copy-mode | `m` | `n` | `e` | `i` | `.tmux.conf` |
@@ -58,15 +59,32 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `j` / `J` | search repeat forward / backward (→ `n` / `N`) | n, x |
 | `*` / `#` | search the word under the cursor forward / backward | n |
 | `k` | word-end (→ `e`) | n, x, o |
-| `<leader>m` `<leader>n` `<leader>e` `<leader>i` | focus window left / down / up / right | n |
-| `<leader>\` | vertical split | n |
-| `<leader>-` | horizontal split | n |
+| `<leader>m` `<leader>n` `<leader>e` `<leader>i` | focus window left / down / up / right; at nvim's edge, the next tmux pane | n |
+| `<leader>M` `<leader>N` `<leader>E` `<leader>I` | resize: move the border left / down / up / right 5 cells (repeatable²) | n |
+| `<leader>\` / `<leader>-` | new empty split right / below (a tree open fills the first empty split) | n |
+| `<leader>\|` / `<leader>_` | new empty split left / above | n |
+| `<leader>[` / `<leader>]` | rotate window backward / forward (repeatable²) | n |
+| `<leader>0` · `<leader>P` · `<leader>x` | equalize windows · last window · close window (and its file, if shown nowhere else and saved) | n |
+| `<leader>z` · `<leader>!` | zoom window (toggle) · move window into its own tab (snacks.zen / `<C-w>T`) | n |
+| `<leader>r` | rename current file (LSP-aware, snacks.rename) | n |
+| `<leader><C-r>` | reload config (options / keymaps / autocmds) | n |
 | `<leader>j` | join lines (rehomed from `J`; `gJ` still joins w/o space) | n, x |
 | `0` / `L` | line start (`^`) / line end (`$`) | n, x, o |
 | `x` / `X` | delete char / line to black-hole register | n, x |
 | `gy` / `gp` | yank to / paste from system clipboard | n,x / n |
-| `<leader>f` | format buffer (conform → LSP fallback) | n, x |
+| `<leader>=` | format buffer (conform → LSP fallback) | n, x |
 | `<C-a>` / `<C-e>` | line start / end, like zsh | i |
+
+**Opening a file** — from the tree, a file picker (`<leader>w` `f` `tf` `tg` `tr` `td`), `gd`/`gD`, lazygit's edit or `/get-notes` — jumps to the window already showing it (any tab), else fills the tab's first empty window (new splits start empty), else opens a new tab with the tree (`…/lua/config/tabs.lua`). In pickers, `<C-v>` / `<C-s>` / `<C-t>` still split / tab explicitly.
+
+**Leader keys mirror tmux** (`<leader>X` ≈ `‹pfx›X`): nvim windows ↔ tmux panes, tabpages ↔ tmux
+windows (bufferline shows tabpages, so each tab keeps its own splits). Unmatched tmux keys: sessions (`s S C R K BTab`), `a`, `g` and `@` are tmux-level (they
+work in an nvim pane as-is); `p` (pane numbers) has no nvim twin, so `<leader>p` stays preview;
+`y` stays yazi.
+
+² Repeatable like tmux `bind -r` (`…/lua/config/repeat.lua`): within 500ms of the leader map, a
+bare tap of a key in the same group repeats it — `,` `.` `<` `>` (tabs) · `M` `N` `E` `I` `[` `]`
+(windows). Any other key ends the chain and keeps its normal meaning.
 
 Also `:FormatDisable[!]` / `:FormatEnable` toggle format-on-save (buffer / global).
 
@@ -87,10 +105,16 @@ All under `.config/nvim/lua/plugins/`.
 | Key | Action | Plugin | File |
 |---|---|---|---|
 | `<leader><leader>` | buffer-local keymap hints | which-key | `ui.lua` |
-| `<leader>w` · `<leader>x` · `<leader>t` · `<leader>b` | groups: windows · trouble · pickers · buffer | which-key | `ui.lua` |
-| `<leader>bi` / `<leader>bm` | next / prev buffer | bufferline | `ui.lua` |
-| `<leader>bp` | pick buffer (jump by letter) | bufferline | `ui.lua` |
-| `<leader>bc` | close buffer | snacks.bufdelete | `ui.lua` |
+| `<leader>v` · `<leader>d` · `<leader>t` · `<leader>b` | groups: windows (`<C-w>` proxy) · trouble · pickers · buffer | which-key | `ui.lua` |
+| `<leader>,` / `<leader>.` | prev / next tab (repeatable²) | — | `ui.lua` |
+| `<leader><` / `<leader>>` | move tab left / right (repeatable²) | — | `ui.lua` |
+| `<leader>1`…`<leader>9` | go to tab N | — | `ui.lua` |
+| `<leader><Tab>` / `<leader>W` | last tab | — | `ui.lua` |
+| `<leader>c` | new tab | — | `ui.lua` |
+| `<leader>bp` | pick tab (jump by letter) | bufferline | `ui.lua` |
+| `<leader>k` | close tab and its files that are shown nowhere else and saved (last tab: drop its buffer, keep the layout) | snacks.bufdelete | `ui.lua` |
+| `<leader>w` | switch buffer (fuzzy) | snacks.picker | `ui.lua` |
+| `<leader>f` | grep open buffers | snacks.picker | `ui.lua` |
 | `<leader>tt` | fuzzy find in buffer | snacks.picker | `ui.lua` |
 | `<leader>tg` | live grep | snacks.picker | `ui.lua` |
 | `<leader>tb` | buffers | snacks.picker | `ui.lua` |
@@ -106,7 +130,7 @@ All under `.config/nvim/lua/plugins/`.
 | `<leader>y` / `<leader>Y` | yazi @ current file / cwd | yazi.nvim | `navigation.lua` |
 | `<leader>p` | markdown preview toggle | markdown-preview | `treesitter.lua` |
 | `af`/`lf` · `ac`/`lc` · `as` | text-objects: function · class · scope (inner = `l`, see ¹) | ts-textobjects | `treesitter.lua` (x, o) |
-| `<leader>xx` / `<leader>xs` | diagnostics / symbols | trouble | `git.lua` |
+| `<leader>dd` / `<leader>ds` | diagnostics / symbols | trouble | `git.lua` |
 
 **blink.cmp** (`coding.lua`, `default` preset): `<C-Space>` complete · `<CR>` accept · `<Tab>`/`<S-Tab>`
 nav or snippet jump · `<C-e>` hide · `<C-p>`/`<C-n>` prev/next.
@@ -191,7 +215,7 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 
 | Key | Action |
 |---|---|
-| `‹pfx›m` `‹pfx›n` `‹pfx›e` `‹pfx›i` | select pane left / down / up / right |
+| `‹pfx›m` `‹pfx›n` `‹pfx›e` `‹pfx›i` | select pane left / down / up / right — in an nvim pane, nvim's splits first (`scripts/tmux-nav.sh`) |
 | `‹pfx›M` `‹pfx›N` `‹pfx›E` `‹pfx›I` | resize pane left / down / up / right (5 cells) |
 | `‹pfx›\` / `‹pfx›-` | split vertical / horizontal (inherit cwd) |
 | `‹pfx›[` / `‹pfx›]` | push pane backward / forward |

@@ -17,25 +17,23 @@ vim.system({ "tmux", "set-option", "-p", "-t", pane, "@nvim_server", vim.v.serve
 -- not the explorer or a float — out of insert mode. Scheduled so the RPC returns at once.
 function _G.TmuxLazygitEdit(file, line)
 	vim.schedule(function()
-		local function normal(w)
-			return vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "" and vim.api.nvim_win_get_config(w).relative == ""
-		end
-		if not normal(0) then
-			for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-				if normal(w) then
-					vim.api.nvim_set_current_win(w)
-					break
-				end
-			end
-		end
 		vim.cmd.stopinsert()
-		vim.cmd("drop " .. vim.fn.fnameescape(file))
+		require("config.tabs").open(file)
 		if line > 0 then
 			pcall(vim.api.nvim_win_set_cursor, 0, { line, 0 })
 			vim.cmd("normal! zz")
 		end
 	end)
 	return 0
+end
+
+-- called over RPC by tmux-nav.sh (prefix m/n/e/i in this pane): move one split toward dir
+-- (h/j/k/l); returns 1 if that moved inside nvim, 0 at nvim's edge (tmux moves to the
+-- next pane instead). <leader>m/n/e/i make the same hand-off in reverse (config/keymaps.lua).
+function _G.TmuxNav(dir)
+	local before = vim.api.nvim_get_current_win()
+	pcall(vim.cmd.wincmd, dir)
+	return vim.api.nvim_get_current_win() ~= before and 1 or 0
 end
 
 local last -- last repo published, so tmux is only poked on a change

@@ -14,12 +14,12 @@ return {
 		cmd = "Trouble",
 		keys = {
 			{
-				"<leader>xx",
+				"<leader>dd",
 				"<cmd>Trouble diagnostics toggle win.size=0.1<cr>",
 				desc = "Diagnostics (Trouble)",
 			},
 			{
-				"<leader>xs",
+				"<leader>ds",
 				"<cmd>Trouble symbols toggle focus=false win.size=0.25 win.position=right<cr>",
 				desc = "Symbols (Trouble)",
 			},

@@ -43,3 +43,26 @@ vim.api.nvim_create_autocmd("BufEnter", {
 		end
 	end,
 })
+-- wipe empty unnamed buffers once nothing shows them. Every tabnew (<leader>c), the
+-- last-tab close and replace_netrw leave a blank [No Name] buffer behind; listed and
+-- hidden, they pile up as "[Scratch]" entries in the buffer picker (<leader>w).
+vim.api.nvim_create_autocmd("BufHidden", {
+	desc = "wipe hidden empty unnamed buffers",
+	group = vim.api.nvim_create_augroup("wipe-empty-noname", { clear = true }),
+	callback = function(ev)
+		vim.schedule(function()
+			local b = ev.buf
+			if
+				vim.api.nvim_buf_is_valid(b)
+				and vim.api.nvim_buf_get_name(b) == ""
+				and vim.bo[b].buftype == ""
+				and not vim.bo[b].modified
+				and #vim.fn.win_findbuf(b) == 0
+				and vim.api.nvim_buf_line_count(b) == 1
+				and vim.api.nvim_buf_get_lines(b, 0, 1, false)[1] == ""
+			then
+				pcall(vim.api.nvim_buf_delete, b, {})
+			end
+		end)
+	end,
+})

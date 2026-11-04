@@ -69,6 +69,7 @@ dots-macos/
 │   ├── lazygit-tmux-edit.yml           # lazygit os.edit overlay `lg` layers on in tmux → `tmux-lazygit.sh edit`; byte-identical with dots-linux
 │   ├── tmux-layout-classic.sh          # helper: converts tmux ≥3.8's JSON #{window_layout} to the classic string the two layout rewriters parse; byte-identical with dots-linux
 │   ├── tmux-even-columns.sh            # prefix 0: equal-width columns but keep the agent sidebar's width + preserve vertical stacks; called from .tmux.conf, byte-identical with dots-linux
+│   ├── tmux-nav.sh                     # prefix m/n/e/i in an nvim pane: move between nvim splits first, cross to the next tmux pane at nvim's edge (asks nvim over RPC); byte-identical with dots-linux
 │   ├── tmux-rename.sh                  # prefix r/R: rename window/session via display-popup (Escape cancels), called from .tmux.conf, byte-identical with dots-linux
 │   ├── tmux-copy-dragend.sh           # root MouseDragEnd1Pane handler: copy+clear a drag-selection even when you release over another pane; called from .tmux.conf, byte-identical with dots-linux
 │   ├── test-keybinds.py               # end-to-end test of the ⌘-key / selection keybinds (KEYBINDS.md) across zsh / nvim / Claude Code, through real ghostty bytes + tmux; Mac-only

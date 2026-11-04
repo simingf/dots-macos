@@ -156,6 +156,19 @@ return {
 							-- lights up while the picker opt `wrap` is true (set by `W` below).
 							toggles = { wrap = "w" },
 							layout = { layout = { width = 24, min_width = 24 } },
+							-- open a file in its own tab, tmux-style (jump to the tab already
+							-- showing it; see config/tabs.lua). Dirs and search hits fall through
+							-- to the stock confirm (toggle / reveal). A separate name since the
+							-- explorer's setup force-overrides any user `confirm` action.
+							actions = {
+								tab_open = function(picker, item, action)
+									if item and not item.dir and not picker.input.filter.meta.searching then
+										require("config.tabs").open(Snacks.picker.util.path(item))
+									else
+										require("snacks.explorer.actions").actions.confirm(picker, item, action)
+									end
+								end,
+							},
 							win = {
 								-- `<Esc>` in the search box (opened with `/`) returns focus to the tree
 								-- instead of closing the picker (snacks' default `cancel`), so `/` then
@@ -168,7 +181,10 @@ return {
 								},
 								list = {
 									keys = {
-										["i"] = "confirm", -- Colemak right: open file / expand dir
+										["i"] = "tab_open", -- Colemak right: open file / expand dir
+										["l"] = "tab_open",
+										["<CR>"] = "tab_open",
+										["<2-LeftMouse>"] = "tab_open",
 										["m"] = "explorer_close", -- Colemak left: collapse dir
 										-- `R`: force-refresh tree + git status (see refresh_git above). The
 										-- built-in `u` only re-stats the tree; this also busts the git cache.
@@ -208,7 +224,7 @@ return {
 											if not item or item.dir then
 												return
 											end
-											p:action("confirm") -- open in the main window, not the sidebar
+											p:action("tab_open") -- open in its tab, not the sidebar
 											require("config.preview").current()
 										end,
 										-- `W`: toggle line wrap for the tree (off by default), matching
@@ -249,7 +265,9 @@ return {
 						Snacks.explorer.reveal()
 						p = Snacks.picker.get({ source = "explorer" })[1]
 						if p then
-							p:focus()
+							-- the tree, not its search box: a tree opened with focus = false
+							-- (config/tabs.lua, VimEnter above) would default to the input
+							p:focus("list")
 						end
 					end
 				end,

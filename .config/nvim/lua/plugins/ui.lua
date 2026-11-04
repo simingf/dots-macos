@@ -1,6 +1,16 @@
 -- standalone PNGs larger than this (px, long side) are scaled down to it by magick (snacks config)
 local PNG_MAX = 4096
 
+-- tab keys mirror tmux's window keys (`,` `.` prev/next, `<` `>` move), repeatable
+local tab_keys = require("config.repeat").group({
+	[","] = "tabprevious",
+	["."] = "tabnext",
+	["<"] = "silent! tabmove -1",
+	[">"] = "silent! tabmove +1",
+})
+
+local tabs = require("config.tabs")
+
 return {
 
 	-- which key
@@ -9,8 +19,8 @@ return {
 		event = "VeryLazy",
 		opts = {
 			spec = {
-				{ "<leader>w", proxy = "<c-w>", group = "windows" },
-				{ "<leader>x", group = "trouble" },
+				{ "<leader>v", proxy = "<c-w>", group = "windows" },
+				{ "<leader>d", group = "trouble" },
 				{ "<leader>t", group = "pickers" },
 				{ "<leader>b", group = "buffer" },
 			},
@@ -161,8 +171,11 @@ return {
 		end,
 	},
 
-	-- bufferline: open buffers as clickable tabs across the top. Mouse clicks
-	-- select tabs (mouse = "a"); <leader>bi/bm cycle next/prev and <leader>bp jumps by letter.
+	-- bufferline: vim tabpages as clickable tabs across the top — like tmux windows, each
+	-- tab keeps its own split layout (a tab is named after its focused window's file).
+	-- Mouse clicks select tabs (mouse = "a"); keys mirror tmux's window keys — <leader>,/.
+	-- prev/next and <leader></> move (repeatable, see config/repeat.lua), <leader>1-9 jump,
+	-- <leader><Tab>/W last, <leader>c new, <leader>k close; <leader>bp jumps by letter.
 	-- offsets shifts the bar right of the explorer sidebar so they don't overlap;
 	-- rose-pine themes the highlights automatically.
 	{
@@ -172,20 +185,33 @@ return {
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		opts = {
 			options = {
-				mode = "buffers", -- every buffer is a tab (not vim tabpages)
+				mode = "tabs", -- tabpages, not buffers
+				-- name a tab after its file window, not whatever is focused — otherwise
+				-- focusing the explorer (an unnamed nofile buffer) shows "[No Name]".
+				-- An empty split (fresh splits start empty) defers to the tab's first file.
+				name_formatter = function(t)
+					if not (t.tabnr and vim.api.nvim_tabpage_is_valid(t.tabnr)) then
+						return
+					end
+					local wins = vim.api.nvim_tabpage_list_wins(t.tabnr)
+					local fw = tabs.file_win(t.tabnr)
+					if fw then
+						table.insert(wins, 1, fw)
+					end
+					for _, w in ipairs(wins) do
+						local buf = vim.api.nvim_win_get_buf(w)
+						local name = vim.api.nvim_buf_get_name(buf)
+						if vim.bo[buf].buftype == "" and name ~= "" then
+							return vim.fn.fnamemodify(name, ":t")
+						end
+					end
+				end,
 				diagnostics = "nvim_lsp",
 				-- all tab backgrounds are uniform, so the current buffer is marked
 				-- by a full-width bright-iris underline rather than a bg shift.
 				indicator = { style = "underline" },
-				-- close via Snacks so the window layout survives: the default
-				-- `bdelete %d` collapses the edit window when the last buffer
-				-- goes, letting the explorer sidebar expand to fill the screen.
-				close_command = function(n)
-					Snacks.bufdelete(n)
-				end,
-				right_mouse_command = function(n)
-					Snacks.bufdelete(n)
-				end,
+				close_command = tabs.close,
+				right_mouse_command = tabs.close,
 				offsets = {
 					{
 						filetype = "snacks_picker_list",
@@ -233,11 +259,29 @@ return {
 			end
 			require("bufferline").setup(opts)
 		end,
-		keys = {
-			{ "<leader>bi", "<cmd>BufferLineCycleNext<cr>", desc = "next buffer" },
-			{ "<leader>bm", "<cmd>BufferLineCyclePrev<cr>", desc = "prev buffer" },
-			{ "<leader>bp", "<cmd>BufferLinePick<cr>", desc = "pick buffer" },
-		},
+		keys = vim.list_extend({
+			{ "<leader>,", tab_keys[","], desc = "prev tab" },
+			{ "<leader>.", tab_keys["."], desc = "next tab" },
+			{ "<leader><", tab_keys["<"], desc = "move tab left" },
+			{ "<leader>>", tab_keys[">"], desc = "move tab right" },
+			{ "<leader><Tab>", "<cmd>tabnext #<cr>", desc = "last tab" },
+			{ "<leader>W", "<cmd>tabnext #<cr>", desc = "last tab" },
+			{ "<leader>c", tabs.new, desc = "new tab" },
+			{ "<leader>k", function() tabs.close() end, desc = "close tab" },
+			{ "<leader>bp", "<cmd>BufferLinePick<cr>", desc = "pick tab" },
+			{ "<leader>!", function() tabs.break_out() end, desc = "split → own tab" },
+		}, vim.tbl_map(function(n)
+			-- like tmux ‹pfx›1-9: a missing tab toasts instead of erroring
+			return {
+				"<leader>" .. n,
+				function()
+					if not pcall(vim.cmd, n .. "tabnext") then
+						vim.notify("no tab " .. n)
+					end
+				end,
+				desc = "tab " .. n,
+			}
+		end, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })),
 	},
 
 	-- snacks.nvim: picker, notifier, bigfile, quickfile (replaces telescope + nvim-notify)
@@ -270,7 +314,35 @@ return {
 			end
 		end,
 		opts = {
-			picker = { ui_select = true }, -- also replaces vim.ui.select
+			picker = {
+				ui_select = true, -- also replaces vim.ui.select
+				-- file pickers open like the tree does (config/tabs.lua): jump to the split
+				-- showing the file, else fill an empty split, else a new tab. <C-v>/<C-s>/<C-t>
+				-- (which pass a cmd) and multi-selects keep snacks' own jump.
+				actions = {
+					tab_jump = function(picker, item, action)
+						local items = picker:selected({ fallback = true })
+						local path = item and (item.buf and vim.api.nvim_buf_get_name(item.buf) or Snacks.picker.util.path(item))
+						if action.cmd or #items > 1 or not path or path == "" then
+							return Snacks.picker.actions.jump(picker, item, action)
+						end
+						-- a buffer item's pos is its last-left mark: don't yank the cursor of a
+						-- split already showing it (grep hits do want their pos)
+						local pos = item.pos
+						if picker.opts.source == "buffers" and #vim.fn.win_findbuf(item.buf) > 0 then
+							pos = nil
+						end
+						picker:close()
+						vim.cmd.stopinsert()
+						vim.schedule(function()
+							tabs.jump(path, pos)
+						end)
+					end,
+				},
+				sources = vim.tbl_map(function()
+					return { confirm = "tab_jump" }
+				end, { files = 0, recent = 0, grep = 0, grep_buffers = 0, buffers = 0, diagnostics = 0 }),
+			},
 			notifier = { enabled = true },
 			bigfile = { enabled = true },
 			quickfile = { enabled = true },
@@ -438,6 +510,21 @@ return {
 				end,
 				desc = "buffers",
 			},
+			-- tmux ‹pfx›w (fzf window switch) / ‹pfx›f (grep scrollback across panes)
+			{
+				"<leader>w",
+				function()
+					Snacks.picker.buffers()
+				end,
+				desc = "switch buffer",
+			},
+			{
+				"<leader>f",
+				function()
+					Snacks.picker.grep_buffers()
+				end,
+				desc = "grep open buffers",
+			},
 			{
 				"<leader>tf",
 				function()
@@ -465,13 +552,6 @@ return {
 					Snacks.picker.notifications()
 				end,
 				desc = "notifications",
-			},
-			{
-				"<leader>bc",
-				function()
-					Snacks.bufdelete()
-				end,
-				desc = "close buffer",
 			},
 		},
 	},

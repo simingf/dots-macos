@@ -66,8 +66,25 @@ return {
 					local map = function(lhs, rhs, desc)
 						vim.keymap.set("n", lhs, rhs, { buffer = args.buf, desc = desc })
 					end
-					map("gd", vim.lsp.buf.definition, "LSP: definition")
-					map("gD", vim.lsp.buf.declaration, "LSP: declaration")
+					-- a single target opens like the tree does (config/tabs.lua: its split,
+					-- an empty split, or a new tab); several go to the quickfix list
+					local function via_tabs(fn)
+						return function()
+							fn({
+								on_list = function(o)
+									if #o.items == 1 then
+										local it = o.items[1]
+										require("config.tabs").jump(it.filename, { it.lnum, it.col - 1 })
+									else
+										vim.fn.setqflist({}, " ", o)
+										vim.cmd("botright copen")
+									end
+								end,
+							})
+						end
+					end
+					map("gd", via_tabs(vim.lsp.buf.definition), "LSP: definition")
+					map("gD", via_tabs(vim.lsp.buf.declaration), "LSP: declaration")
 				end,
 			})
 		end,

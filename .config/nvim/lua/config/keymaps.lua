@@ -1,7 +1,7 @@
 -- set the leader key
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
--- (<leader>w → <C-w> chain is registered as a which-key proxy in the plugin spec below
+-- (<leader>v → <C-w> chain is registered as a which-key proxy in the plugin spec below
 --  so the popup shows the full <C-w>* hint set; ctrl-w is hard to reach otherwise.)
 -- Colemak-DH: hjkl ↔ mnei swap, and i ↔ l everywhere (normal / visual / operator-
 -- pending): `i` moves right, `l` does whatever `i` did — insert in normal mode, the
@@ -72,14 +72,52 @@ vim.on_key(function(key)
 end, vim.api.nvim_create_namespace("auto_hlsearch"))
 vim.keymap.set(_nxo, "k", "e")
 -- `h`/`H` are claimed by arrow.nvim (buffer / global UI); use `:mark x` to set marks.
--- pane switching: <leader>{mnei} matches the colemak-swap movement keys
-vim.keymap.set("n", "<leader>m", "<C-w>h", { silent = true, desc = "win left" })
-vim.keymap.set("n", "<leader>n", "<C-w>j", { silent = true, desc = "win down" })
-vim.keymap.set("n", "<leader>e", "<C-w>k", { silent = true, desc = "win up" })
-vim.keymap.set("n", "<leader>i", "<C-w>l", { silent = true, desc = "win right" })
--- splits: match tmux (`\` = vertical divider, `-` = horizontal divider)
-vim.keymap.set("n", "<leader>\\", "<cmd>vsplit<cr>", { silent = true, desc = "vsplit" })
-vim.keymap.set("n", "<leader>-", "<cmd>split<cr>", { silent = true, desc = "hsplit" })
+-- pane switching: <leader>{mnei} matches the colemak-swap movement keys. At nvim's edge
+-- it moves on to the next tmux pane, like prefix m/n/e/i does the other way (tmux-nav.sh).
+for key, d in pairs({ m = { "h", "L", "left" }, n = { "j", "D", "down" }, e = { "k", "U", "up" }, i = { "l", "R", "right" } }) do
+	vim.keymap.set("n", "<leader>" .. key, function()
+		local before = vim.api.nvim_get_current_win()
+		vim.cmd.wincmd(d[1])
+		if vim.api.nvim_get_current_win() == before and vim.env.TMUX and vim.env.TMUX_PANE then
+			vim.system({ "tmux", "select-pane", "-t", vim.env.TMUX_PANE, "-" .. d[2] })
+		end
+	end, { silent = true, desc = "win " .. d[3] })
+end
+-- splits: match tmux (`\` = vertical divider, `-` = horizontal divider; shifted = before).
+-- Each starts empty, like a fresh tmux pane; opening a file from the tree fills the
+-- first empty split (config/tabs.lua).
+vim.keymap.set("n", "<leader>\\", "<cmd>vnew<cr>", { silent = true, desc = "vsplit" })
+vim.keymap.set("n", "<leader>-", "<cmd>new<cr>", { silent = true, desc = "hsplit" })
+vim.keymap.set("n", "<leader>|", "<cmd>leftabove vnew<cr>", { silent = true, desc = "vsplit left" })
+vim.keymap.set("n", "<leader>_", "<cmd>aboveleft new<cr>", { silent = true, desc = "hsplit above" })
+-- rest of tmux's pane keys: resize (M/N/E/I, 5 cells, moves the border in that direction
+-- like resize-pane), swap ([ ] → rotate), even out (0), last (P), close (x)
+local function resize(dir)
+	local vert = dir == "m" or dir == "i"
+	local far = vert and "l" or "j" -- side whose border moves when one exists
+	local grow = (dir == "i" or dir == "n") == (vim.fn.winnr(far) ~= vim.fn.winnr())
+	vim.cmd((vert and "vertical " or "") .. "resize " .. (grow and "+5" or "-5"))
+end
+local win_keys = require("config.repeat").group({
+	M = function() resize("m") end,
+	N = function() resize("n") end,
+	E = function() resize("e") end,
+	I = function() resize("i") end,
+	["["] = "wincmd R",
+	["]"] = "wincmd r",
+})
+for k, desc in pairs({ M = "resize left", N = "resize down", E = "resize up", I = "resize right", ["["] = "rotate split backward", ["]"] = "rotate split forward" }) do
+	vim.keymap.set("n", "<leader>" .. k, win_keys[k], { desc = desc })
+end
+vim.keymap.set("n", "<leader>0", "<C-w>=", { desc = "equalize splits" })
+vim.keymap.set("n", "<leader>P", "<C-w>p", { desc = "last split" })
+vim.keymap.set("n", "<leader>x", function()
+	require("config.tabs").close_split()
+end, { desc = "close split" })
+-- zoom the split to full size and back, like tmux ‹pfx›z
+vim.keymap.set("n", "<leader>z", function()
+	Snacks.zen.zoom()
+end, { desc = "zoom split" })
 -- join lines (J reclaimed for search-prev above)
 vim.keymap.set({ "n", "x" }, "<leader>j", "J", { desc = "join lines" })
 -- prevent x or X from modifying the internal register
@@ -191,8 +229,9 @@ vim.keymap.set("x", "<LeftRelease>", '"+ygv', { desc = "copy mouse selection" })
 -- bind 0 to ^ and L to $ (H is taken by arrow.nvim)
 vim.keymap.set({ "n", "x", "o" }, "0", "^", { noremap = true, silent = true })
 vim.keymap.set({ "n", "x", "o" }, "L", "$", { noremap = true, silent = true })
--- format with conform (falls back to LSP if no formatter is configured for the filetype)
-vim.keymap.set({ "n", "x" }, "<leader>f", function()
+-- format with conform (falls back to LSP if no formatter is configured for the filetype);
+-- `=` like the builtin reindent operator (<leader>f is grep, like tmux ‹pfx›f)
+vim.keymap.set({ "n", "x" }, "<leader>=", function()
 	require("conform").format({ async = true, lsp_format = "fallback" })
 end, { desc = "format" })
 -- browser preview of the current file: md → markdown-preview (themed), else → live-preview.
@@ -205,13 +244,18 @@ end, { desc = "browser preview" })
 -- Safe because each is idempotent on re-run (keymaps/options overwrite; autocmds
 -- use clear=true augroups). Plugin *spec* changes aren't covered by this — lazy runs
 -- a plugin's config once; use `:Lazy reload <plugin>` (e.g. snacks.nvim) for those.
-vim.keymap.set("n", "<leader>r", function()
+-- <C-r> like tmux ‹pfx›C-r (reload config).
+vim.keymap.set("n", "<leader><C-r>", function()
 	for _, m in ipairs({ "config.options", "config.keymaps", "config.autocmds" }) do
 		package.loaded[m] = nil
 		require(m)
 	end
 	vim.notify("reloaded config (options/keymaps/autocmds)", vim.log.levels.INFO)
 end, { desc = "reload nvim config" })
+-- rename the current file (LSP-aware), like tmux ‹pfx›r renaming the window tab
+vim.keymap.set("n", "<leader>r", function()
+	Snacks.rename.rename_file()
+end, { desc = "rename file" })
 -- toggle format-on-save: :FormatDisable (buffer) or :FormatDisable! (global), :FormatEnable to re-enable
 vim.api.nvim_create_user_command("FormatDisable", function(args)
 	if args.bang then
