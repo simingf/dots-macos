@@ -50,15 +50,18 @@ elif [ "$agent" = 1 ]; then
     # ⌘F does nothing either: Claude draws on the alternate screen, so copy-mode would only search the
     # visible rows (no scrollback). ⌘⌫ = Ctrl-U (delete to line start).
     # ⇧⌘⌫ = Esc Esc (clears the whole input and saves it to history — ↑ recalls it), but only while idle:
-    # mid-turn the first Esc would interrupt Claude. Working = a spinner frame leading the title (same test
-    # as tmux-agents.sh, incl. its fallback for locales whose grep can't handle the multibyte range).
+    # mid-turn the first Esc would interrupt Claude. Working = a spinner frame leading the title (herdr's
+    # osc_title_working; with a fallback for locales whose grep can't handle the range), or the screen-detected
+    # @agent_state (tmux-agent-state.py) — the title can sit on ✳ mid-turn. Blocked counts too: Esc would
+    # dismiss the permission/question dialog.
     case $key in
         z) tmux send-keys -t "$pane" C-_ ;;
         left) tmux send-keys -t "$pane" C-a ;; right) tmux send-keys -t "$pane" C-e ;;
         bs) tmux send-keys -t "$pane" C-u ;;
         clear)
             printf '⠿◐' | grep -qE '[⠀-⣿◐-◓]' 2>/dev/null || export LC_ALL=en_US.UTF-8
-            if tmux display -p -t "$pane" '#{pane_title}' | grep -qE '^[⠀-⣿◐-◓]'; then
+            if tmux display -p -t "$pane" '#{pane_title}' | grep -qE '^[⠀-⣿◐-◓]' \
+               || case $(tmux show -pqv -t "$pane" @agent_state) in working|blocked) true ;; *) false ;; esac; then
                 "$(dirname "$0")/tmux-notify.sh" "Claude is working — Esc would interrupt it"
             else
                 tmux send-keys -t "$pane" Escape; sleep 0.1; tmux send-keys -t "$pane" Escape

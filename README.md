@@ -61,7 +61,10 @@ dots-macos/
 │   ├── iina-cli-activate.sh            # open IINA via /usr/bin/open for tmux GUI compat
 │   ├── tag-casks-orange.sh             # Finder tag paid casks for visibility
 │   ├── tmux-fzf-*.sh                   # prefix s/w = session/window pickers; prefix f = pane-content grep; centered rounded popups, called from .tmux.conf, byte-identical with dots-linux
-│   ├── tmux-agents.sh                  # agent picker/count/sidebar (prefix a/A, left panel auto-seeded on prefix c); detects panes by OSC title
+│   ├── tmux-agents.sh                  # agent picker (prefix a), status-bar count + per-tab status dots; byte-identical with dots-linux
+│   ├── tmux-agent-state.py             # Claude agent state detection — a port of herdr's engine over the title + screen (`explain <pane>` to debug); byte-identical with dots-linux
+│   ├── agent-detection/                # herdr's Claude manifest (claude.toml, verbatim) + claude.json (generated from it, what the engine loads) — both via `tmux-agent-state.py update-rules` — + herdr's Apache-2.0 LICENSE; byte-identical with dots-linux
+│   ├── test-agent-state.py             # offline test of tmux-agent-state.py against hand-built Claude screens; Mac-only
 │   ├── tmux-lazygit.sh                 # prefix g: toggle a focused lazygit (25% of the window, min 75 cols) sidebar on the far left — opens on nvim's current repo (else cwd's repo, else top-zoxide nested repo, else a notif) and follows nvim as you switch files/tree rows; closing parks lazygit in a hidden `_lazygit` session so reopening is instant, and nvim pre-warms one for its repo so the first open is too; `k` (edit) on a file opens it in the window's nvim (focused, at the diff line); byte-identical with dots-linux
 │   ├── lazygit-tmux-edit.yml           # lazygit os.edit overlay `lg` layers on in tmux → `tmux-lazygit.sh edit`; byte-identical with dots-linux
 │   ├── tmux-layout-classic.sh          # helper: converts tmux ≥3.8's JSON #{window_layout} to the classic string the two layout rewriters parse; byte-identical with dots-linux
