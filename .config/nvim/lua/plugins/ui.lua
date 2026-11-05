@@ -210,6 +210,9 @@ return {
 				-- all tab backgrounds are uniform, so the current buffer is marked
 				-- by a full-width bright-iris underline rather than a bg shift.
 				indicator = { style = "underline" },
+				-- no tabline-wide ✕ at the far right (a bare %999X: closes a tab without
+				-- naming which); each tab keeps its own ✕, and <leader>k closes the current one
+				show_close_icon = false,
 				close_command = tabs.close,
 				right_mouse_command = tabs.close,
 				offsets = {
