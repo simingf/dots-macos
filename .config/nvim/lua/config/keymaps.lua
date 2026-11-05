@@ -73,13 +73,11 @@ end, vim.api.nvim_create_namespace("auto_hlsearch"))
 vim.keymap.set(_nxo, "k", "e")
 -- `h`/`H` are claimed by arrow.nvim (buffer / global UI); use `:mark x` to set marks.
 -- pane switching: <leader>{mnei} matches the colemak-swap movement keys. At nvim's edge
--- it moves on to the next tmux pane, like prefix m/n/e/i does the other way (tmux-nav.sh).
+-- it moves on to the next tmux pane, like prefix m/n/e/i does (config/nav.lua, tmux-nav.sh).
 for key, d in pairs({ m = { "h", "L", "left" }, n = { "j", "D", "down" }, e = { "k", "U", "up" }, i = { "l", "R", "right" } }) do
 	vim.keymap.set("n", "<leader>" .. key, function()
-		local before = vim.api.nvim_get_current_win()
-		vim.cmd.wincmd(d[1])
-		if vim.api.nvim_get_current_win() == before and vim.env.TMUX and vim.env.TMUX_PANE then
-			vim.system({ "tmux", "select-pane", "-t", vim.env.TMUX_PANE, "-" .. d[2] })
+		if not require("config.nav").move(d[1]) and vim.env.TMUX_PANE and vim.env.DOTFILES_DIR then
+			vim.system({ vim.env.DOTFILES_DIR .. "/scripts/tmux-nav.sh", d[2], vim.env.TMUX_PANE })
 		end
 	end, { silent = true, desc = "win " .. d[3] })
 end
@@ -91,7 +89,7 @@ vim.keymap.set("n", "<leader>-", "<cmd>new<cr>", { silent = true, desc = "hsplit
 vim.keymap.set("n", "<leader>|", "<cmd>leftabove vnew<cr>", { silent = true, desc = "vsplit left" })
 vim.keymap.set("n", "<leader>_", "<cmd>aboveleft new<cr>", { silent = true, desc = "hsplit above" })
 -- rest of tmux's pane keys: resize (M/N/E/I, 5 cells, moves the border in that direction
--- like resize-pane), swap ([ ] → rotate), even out (0), last (P), close (x)
+-- like resize-pane), swap ([ ], file splits only), even out (0), last (P), close (x)
 local function resize(dir)
 	local vert = dir == "m" or dir == "i"
 	local far = vert and "l" or "j" -- side whose border moves when one exists
@@ -103,10 +101,10 @@ local win_keys = require("config.repeat").group({
 	N = function() resize("n") end,
 	E = function() resize("e") end,
 	I = function() resize("i") end,
-	["["] = "wincmd R",
-	["]"] = "wincmd r",
+	["["] = function() require("config.tabs").swap(-1) end,
+	["]"] = function() require("config.tabs").swap(1) end,
 })
-for k, desc in pairs({ M = "resize left", N = "resize down", E = "resize up", I = "resize right", ["["] = "rotate split backward", ["]"] = "rotate split forward" }) do
+for k, desc in pairs({ M = "resize left", N = "resize down", E = "resize up", I = "resize right", ["["] = "swap split backward", ["]"] = "swap split forward" }) do
 	vim.keymap.set("n", "<leader>" .. k, win_keys[k], { desc = desc })
 end
 vim.keymap.set("n", "<leader>0", "<C-w>=", { desc = "equalize splits" })

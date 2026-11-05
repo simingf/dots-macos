@@ -84,6 +84,28 @@ function M.jump(file, pos)
 	end
 end
 
+-- swap the current split's file with the previous (-1) / next (+1) file split, wrapping,
+-- and follow it — like tmux ‹pfx›[ / ‹pfx›] (swap-pane). Only file splits take part,
+-- so the explorer stays docked on the left.
+function M.swap(delta)
+	local wins = vim.tbl_filter(normal, vim.api.nvim_tabpage_list_wins(0))
+	local cur = vim.api.nvim_get_current_win()
+	local i = vim.fn.index(wins, cur) + 1
+	if #wins < 2 or i == 0 then
+		vim.notify("Only one split!")
+		return
+	end
+	local other = wins[(i - 1 + delta) % #wins + 1]
+	local buf_a, buf_b = vim.api.nvim_win_get_buf(cur), vim.api.nvim_win_get_buf(other)
+	local view_a = vim.api.nvim_win_call(cur, vim.fn.winsaveview)
+	local view_b = vim.api.nvim_win_call(other, vim.fn.winsaveview)
+	vim.api.nvim_win_set_buf(cur, buf_b)
+	vim.api.nvim_win_set_buf(other, buf_a)
+	vim.api.nvim_win_call(cur, function() vim.fn.winrestview(view_b) end)
+	vim.api.nvim_win_call(other, function() vim.fn.winrestview(view_a) end)
+	vim.api.nvim_set_current_win(other)
+end
+
 -- move the current split into its own new tab, like tmux ‹pfx›! (break-pane); the
 -- new tab gets the tree when this one has it (see M.new)
 function M.break_out()

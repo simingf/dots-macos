@@ -63,7 +63,7 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `<leader>M` `<leader>N` `<leader>E` `<leader>I` | resize: move the border left / down / up / right 5 cells (repeatable²) | n |
 | `<leader>\` / `<leader>-` | new empty split right / below (a tree open fills the first empty split) | n |
 | `<leader>\|` / `<leader>_` | new empty split left / above | n |
-| `<leader>[` / `<leader>]` | rotate window backward / forward (repeatable²) | n |
+| `<leader>[` / `<leader>]` | swap the file with the previous / next file window, following it; the tree stays put (repeatable²) | n |
 | `<leader>0` · `<leader>P` · `<leader>x` | equalize windows · last window · close window (and its file, if shown nowhere else and saved) | n |
 | `<leader>z` · `<leader>!` | zoom window (toggle) · move window into its own tab (snacks.zen / `<C-w>T`) | n |
 | `<leader>r` | rename current file (LSP-aware, snacks.rename) | n |
@@ -215,7 +215,7 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 
 | Key | Action |
 |---|---|
-| `‹pfx›m` `‹pfx›n` `‹pfx›e` `‹pfx›i` | select pane left / down / up / right — in an nvim pane, nvim's splits first (`scripts/tmux-nav.sh`) |
+| `‹pfx›m` `‹pfx›n` `‹pfx›e` `‹pfx›i` | select pane left / down / up / right (wraps) — in an nvim pane, nvim's splits first (the tree counts as one); moving into nvim lands on its entry-edge split; a `<leader>z`-zoomed split counts as all of nvim (moves straight to the next tmux pane, zoom kept); in a tmux-zoomed nvim pane it wraps around inside nvim (`scripts/tmux-nav.sh`) |
 | `‹pfx›M` `‹pfx›N` `‹pfx›E` `‹pfx›I` | resize pane left / down / up / right (5 cells) |
 | `‹pfx›\` / `‹pfx›-` | split vertical / horizontal (inherit cwd) |
 | `‹pfx›[` / `‹pfx›]` | push pane backward / forward |

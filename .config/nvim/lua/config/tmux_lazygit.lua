@@ -27,13 +27,16 @@ function _G.TmuxLazygitEdit(file, line)
 	return 0
 end
 
--- called over RPC by tmux-nav.sh (prefix m/n/e/i in this pane): move one split toward dir
--- (h/j/k/l); returns 1 if that moved inside nvim, 0 at nvim's edge (tmux moves to the
--- next pane instead). <leader>m/n/e/i make the same hand-off in reverse (config/keymaps.lua).
+-- called over RPC by tmux-nav.sh for prefix m/n/e/i (see config/nav.lua): TmuxNav moves
+-- one split toward dir (h/j/k/l) and returns 1 if nvim handled it, 0 at nvim's edge (tmux
+-- moves to the next pane instead); TmuxNavEnter lands on the entry-edge split when tmux
+-- moves into this pane.
 function _G.TmuxNav(dir)
-	local before = vim.api.nvim_get_current_win()
-	pcall(vim.cmd.wincmd, dir)
-	return vim.api.nvim_get_current_win() ~= before and 1 or 0
+	return require("config.nav").move(dir) and 1 or 0
+end
+function _G.TmuxNavEnter(dir)
+	require("config.nav").enter(dir)
+	return 0
 end
 
 local last -- last repo published, so tmux is only poked on a change
