@@ -171,7 +171,7 @@ Alcove, AlDente, Alfred, AltTab, BetterTouchTool, Clop, LookAway, Shottr
 Managed via Jamf Self Service or auto-installed by Roblox IT:
 
 - **Self Service**: Google Chrome, Docker Desktop, VS Code, Zoom, JetBrains Rider, Roblox Player, Roblox Studio
-- **Auto-managed**: Falcon, GlobalProtect, Jamf Self Service, Roscan, Santa
+- **Auto-managed**: Falcon, GlobalProtect, Jamf Self Service, Roscan, Santa, Slack
 
 ### xclient.info / 52mac.com / macked.app
 
