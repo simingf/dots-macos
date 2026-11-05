@@ -319,8 +319,9 @@ def toml_to_json(body: str) -> str:
 
 
 def update_rules() -> None:
-    body = subprocess.run(["gh", "api", RULES_URL, "-H", "Accept: application/vnd.github.raw"],
-                          capture_output=True, encoding="utf-8", check=True).stdout
+    # --hostname: the shell exports GH_HOST=github.rbx.com, where herdr doesn't exist
+    body = subprocess.run(["gh", "api", "--hostname", "github.com", RULES_URL, "-H", "Accept: application/vnd.github.raw"],
+                          stdout=subprocess.PIPE, encoding="utf-8", check=True).stdout
     generated = toml_to_json(body)
     manifest = json.loads(generated)
     [Rule(r) for r in manifest.get("rules", [])]   # every regex must compile in Python — else write nothing
