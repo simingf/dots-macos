@@ -181,6 +181,9 @@ return {
 								},
 								list = {
 									keys = {
+										-- `<Esc>` in the tree is a no-op instead of closing the sidebar;
+										-- `q` still closes it.
+										["<Esc>"] = false,
 										["i"] = "tab_open", -- Colemak right: open file / expand dir
 										["l"] = "tab_open",
 										["<CR>"] = "tab_open",
@@ -292,6 +295,28 @@ return {
 		},
 		opts = {
 			open_for_directories = false,
+			-- picking a dir (<CR> on it) would `:edit` it, which snacks' replace_netrw
+			-- handler treats as "toggle the explorer" — closing an open tree. The hook
+			-- below cds into it instead; files open as usual.
+			open_file_function = function(chosen)
+				if vim.fn.isdirectory(chosen) == 0 then
+					require("yazi.openers").open_file(chosen)
+				end
+			end,
+			hooks = {
+				-- however yazi closes, cd nvim to the picked dir, else the dir yazi was last
+				-- in; the explorer follows DirChanged, so the sidebar re-roots there too.
+				-- Exactly one cd: two back-to-back re-root the tree twice, and snacks lets
+				-- an aborted-before-it-started find of a small dir run to completion
+				-- into the same list — the tree shows the dir twice.
+				yazi_closed_successfully = function(chosen, _, state)
+					if chosen and vim.fn.isdirectory(chosen) == 1 then
+						vim.cmd.cd(chosen)
+					else
+						vim.cmd.cd(state.last_directory.filename)
+					end
+				end,
+			},
 		},
 	},
 
