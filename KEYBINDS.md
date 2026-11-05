@@ -82,7 +82,7 @@ windows (bufferline shows tabpages, so each tab keeps its own splits). Unmatched
 work in an nvim pane as-is); `p` (pane numbers) has no nvim twin, so `<leader>p` stays preview;
 `y` stays yazi.
 
-² Repeatable like tmux `bind -r` (`…/lua/config/repeat.lua`): within 500ms of the leader map, a
+² Repeatable like tmux `bind -r` (`…/lua/config/repeat.lua`): within 300ms of the leader map (tmux `repeat-time` matches), a
 bare tap of a key in the same group repeats it — `,` `.` `<` `>` (tabs) · `M` `N` `E` `I` `[` `]`
 (windows). Any other key ends the chain and keeps its normal meaning.
 

@@ -1,8 +1,8 @@
--- tmux-style repeatable leader maps, like `bind -r` + `repeat-time 500`. Used by the
+-- tmux-style repeatable leader maps, like `bind -r` + `repeat-time 300` (.tmux.conf). Used by the
 -- buffer-tab keys (plugins/ui.lua) and the window keys (config/keymaps.lua).
 --
 -- M.group({ [key] = rhs, ... }) returns { [key] = fn }; map each fn on <leader>key.
--- After one fires, a bare tap of any key in its group within 500ms fires again
+-- After one fires, a bare tap of any key in its group within 300ms fires again
 -- without re-pressing the leader. The bare keys are mapped only while the chain is
 -- live (each tap restarts the timer); any other key ends it, restoring their
 -- builtin meanings. rhs is an Ex command string or a function.
@@ -35,7 +35,7 @@ function M.group(rhs)
 			for k in pairs(rhs) do
 				vim.keymap.set("n", k, fns[k], { nowait = true })
 			end
-			timer:start(500, 0, vim.schedule_wrap(stop))
+			timer:start(300, 0, vim.schedule_wrap(stop))
 			vim.on_key(function(_, typed)
 				if typed ~= "" and not rhs[typed] then
 					stop()
