@@ -260,6 +260,20 @@ return {
 			}) do
 				opts.highlights[k] = vim.tbl_extend("force", opts.highlights[k] or {}, { bg = "#191724" })
 			end
+			-- while a tab has unsaved changes, bufferline swaps its ✕ for a ● — so the tab
+			-- can't be clicked closed. Show the ● in place of the file icon instead and keep
+			-- the ✕ (closing then asks to save, config/tabs.lua). Wraps the internal
+			-- Tabpage model (FRAGILE.md; checked in config/healthcheck.lua).
+			local Tabpage = require("bufferline.models").Tabpage
+			local tab_new = Tabpage.new
+			Tabpage.new = function(self, tab)
+				local t = tab_new(self, tab)
+				if t.modified then
+					t.modified = false
+					t.icon, t.icon_highlight = "●", "BufferLineModifiedSelected"
+				end
+				return t
+			end
 			require("bufferline").setup(opts)
 		end,
 		keys = vim.list_extend({

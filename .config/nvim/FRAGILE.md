@@ -53,6 +53,17 @@ Both `nvim-treesitter` and `-textobjects` track the in-development `main` rewrit
 
 ---
 
+
+### bufferline Tabpage wrap — `lua/plugins/ui.lua`
+bufferline's renderer (`ui.lua` `add_suffix`) shows a tab's ✕ **or** its ● (unsaved),
+never both — so an unsaved tab can't be clicked closed. The bufferline `config` wraps the
+internal `require("bufferline.models").Tabpage.new`: when `t.modified`, it clears it and
+moves the ● onto `t.icon` (`BufferLineModifiedSelected`), so the ✕ stays and closing asks to
+save (`config/tabs.lua` `settle_unsaved`).
+- **Failure mode:** if `Tabpage`/`new` moves, the wrap errors at setup; if the fields
+  (`modified`, `icon`, `icon_highlight`) are renamed, unsaved tabs silently go back to ● with no ✕.
+- **Health check covers:** `bufferline.models.Tabpage.new` exists.
+
 ## 🟡 Medium — vendored files / third-party sources
 
 ### markdown-preview bundled CSS — `lua/plugins/treesitter.lua`

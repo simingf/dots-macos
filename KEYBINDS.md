@@ -64,7 +64,7 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `<leader>\` / `<leader>-` | new empty split right / below (a tree open fills the first empty split) | n |
 | `<leader>\|` / `<leader>_` | new empty split left / above | n |
 | `<leader>[` / `<leader>]` | swap the file with the previous / next file window, following it; the tree stays put (repeatable²) | n |
-| `<leader>0` · `<leader>P` · `<leader>x` | equalize windows · last window · close window (and its file, if shown nowhere else and saved) | n |
+| `<leader>0` · `<leader>P` · `<leader>x` | equalize windows · last window · close window and its file if shown nowhere else (unsaved → Save / Don't Save / Cancel; a tab's last window closes the tab) | n |
 | `<leader>z` · `<leader>!` | zoom window (toggle) · move window into its own tab (snacks.zen / `<C-w>T`) | n |
 | `<leader>r` | rename current file (LSP-aware, snacks.rename) | n |
 | `<leader><C-r>` | reload config (options / keymaps / autocmds) | n |
@@ -112,7 +112,7 @@ All under `.config/nvim/lua/plugins/`.
 | `<leader><Tab>` / `<leader>W` | last tab | — | `ui.lua` |
 | `<leader>c` | new tab | — | `ui.lua` |
 | `<leader>bp` | pick tab (jump by letter) | bufferline | `ui.lua` |
-| `<leader>k` | close tab and its files that are shown nowhere else and saved (last tab: drop its buffer, keep the layout) | snacks.bufdelete | `ui.lua` |
+| `<leader>k` | close tab and its files shown nowhere else (unsaved → Save / Don't Save / Cancel; last tab: drop its buffer, keep the layout). Each tab's ✕ does the same; an unsaved tab shows ● in place of its icon | snacks.bufdelete | `ui.lua` |
 | `<leader>w` | switch buffer (fuzzy) | snacks.picker | `ui.lua` |
 | `<leader>f` | grep open buffers | snacks.picker | `ui.lua` |
 | `<leader>tt` | fuzzy find in buffer | snacks.picker | `ui.lua` |

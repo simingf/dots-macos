@@ -65,6 +65,15 @@ local checks = {
 		end,
 	},
 	{
+		name = "bufferline Tabpage model (ui.lua: ● on the icon, ✕ kept on unsaved tabs)",
+		fn = function()
+			local ok, models = pcall(require, "bufferline.models")
+			if not (ok and type(models.Tabpage) == "table" and type(models.Tabpage.new) == "function") then
+				return "bufferline.models.Tabpage.new missing"
+			end
+		end,
+	},
+	{
 		name = "snacks image placement internals (ui.lua)",
 		fn = function()
 			local ok, P = pcall(require, "snacks.image.placement")

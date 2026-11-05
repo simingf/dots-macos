@@ -122,8 +122,9 @@ function M.break_out()
 end
 
 -- closing a split/tab closes its files too, like killing a tmux pane: delete each of
--- bufs that's now shown nowhere, so the buffer list (<leader>w) is what's on screen.
--- Unsaved files stay open; closed ones remain in recent files (<leader>tr).
+-- bufs that's now shown nowhere, so the buffer list (<leader>w) is what's on screen —
+-- unsaved ones included, once settle_unsaved has saved or discarded them. Closed files
+-- remain in recent files (<leader>tr).
 local function drop_unshown(bufs)
 	for _, b in ipairs(bufs) do
 		if
@@ -137,23 +138,83 @@ local function drop_unshown(bufs)
 	end
 end
 
+-- before closing wins: for each unsaved file in them that no other window shows, ask
+-- Save / Don't Save / Cancel (like `:confirm quit`). Don't Save discards it, so
+-- drop_unshown can close it. false = cancelled (or the save failed): don't close.
+local function settle_unsaved(wins)
+	local closing = {}
+	for _, w in ipairs(wins) do
+		closing[w] = true
+	end
+	for _, w in ipairs(wins) do
+		local b = vim.api.nvim_win_get_buf(w)
+		local elsewhere = vim.tbl_filter(function(o)
+			return not closing[o]
+		end, vim.fn.win_findbuf(b))
+		if vim.bo[b].modified and vim.bo[b].buftype == "" and #elsewhere == 0 then
+			local name = vim.api.nvim_buf_get_name(b)
+			local label = name == "" and "[No Name]" or vim.fn.fnamemodify(name, ":~:.")
+			local choice = vim.fn.confirm(("Save changes to %s?"):format(label), "&Save\n&Don't Save\n&Cancel", 1, "Question")
+			if choice == 1 then
+				if name == "" then
+					name = vim.fn.input("Save as: ", "", "file")
+					if name == "" then
+						return false
+					end
+				end
+				-- silent: the "written" message after the dialog would stop on a hit-enter prompt
+				local ok, err = pcall(vim.api.nvim_buf_call, b, function()
+					vim.cmd("silent write " .. vim.fn.fnameescape(name))
+				end)
+				if not ok then
+					vim.notify(err, vim.log.levels.ERROR)
+					return false
+				end
+			elseif choice == 2 then
+				vim.bo[b].modified = false
+			else
+				vim.cmd.redraw() -- clear the dialog line
+				return false
+			end
+			vim.cmd.redraw()
+		end
+	end
+	return true
+end
+
 -- close a tabpage (default: the current one), like tmux ‹pfx›k. The last tab can't
 -- close, so it drops its buffer via Snacks instead — that keeps the window layout
 -- (plain `bdelete` collapses the edit window, letting the explorer fill the screen).
 function M.close(tab)
 	tab = tab or vim.api.nvim_get_current_tabpage()
 	if #vim.api.nvim_list_tabpages() > 1 then
-		local bufs = vim.tbl_map(vim.api.nvim_win_get_buf, vim.api.nvim_tabpage_list_wins(tab))
+		local wins = vim.api.nvim_tabpage_list_wins(tab)
+		if not settle_unsaved(wins) then
+			return
+		end
+		local bufs = vim.tbl_map(vim.api.nvim_win_get_buf, wins)
 		vim.cmd("tabclose " .. vim.api.nvim_tabpage_get_number(tab))
 		drop_unshown(bufs)
 	else
-		Snacks.bufdelete()
+		-- ask with the same dialog first, so Snacks then finds nothing unsaved
+		if settle_unsaved({ vim.api.nvim_get_current_win() }) then
+			Snacks.bufdelete()
+		end
 	end
 end
 
--- close the current split, like tmux ‹pfx›x
+-- close the current split, like tmux ‹pfx›x; the tab's last file split closes the
+-- tab, as tmux closes a window with its last pane
 function M.close_split()
-	local buf = vim.api.nvim_get_current_buf()
+	local win = vim.api.nvim_get_current_win()
+	local buf = vim.api.nvim_win_get_buf(win)
+	if #vim.tbl_filter(normal, vim.api.nvim_tabpage_list_wins(0)) < 2 then
+		M.close()
+		return
+	end
+	if not settle_unsaved({ win }) then
+		return
+	end
 	local ok, err = pcall(vim.cmd.close)
 	if not ok then
 		vim.notify(err, vim.log.levels.WARN)
