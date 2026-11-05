@@ -14,7 +14,8 @@
 # pre-commit hook with false positives (git SHAs read as tokens, example IPs,
 # doc emails). Scoped to vendor/ so your own config commits are still scanned.
 
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
 [[ $(uname) == Darwin ]] || { echo "${0##*/}: runs on the Mac (vendors its plugin trees; the dev box has no internet)" >&2; exit 1; }
 
 DOTS_LINUX="${HOME}/dots-linux"
@@ -40,21 +41,21 @@ export GH_HOST=github.com
 
 gh release download --repo eza-community/eza \
   --pattern 'eza_x86_64-unknown-linux-musl.tar.gz' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 tar -xzf "$TMPDIR/eza_x86_64-unknown-linux-musl.tar.gz" -C "$TMPDIR" ./eza
 cp "$TMPDIR/eza" "$DOTS_LINUX/vendor/bin/eza"
 echo "  eza ✓"
 
 gh release download --repo ajeetdsouza/zoxide \
   --pattern 'zoxide-*-x86_64-unknown-linux-musl.tar.gz' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 tar -xzf "$TMPDIR"/zoxide-*-x86_64-unknown-linux-musl.tar.gz -C "$TMPDIR" zoxide
 cp "$TMPDIR/zoxide" "$DOTS_LINUX/vendor/bin/zoxide"
 echo "  zoxide ✓"
 
 gh release download --repo sxyazi/yazi \
   --pattern 'yazi-x86_64-unknown-linux-musl.zip' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 unzip -qo "$TMPDIR/yazi-x86_64-unknown-linux-musl.zip" \
   'yazi-x86_64-unknown-linux-musl/yazi' \
   'yazi-x86_64-unknown-linux-musl/ya' \
@@ -68,7 +69,7 @@ echo "  yazi, ya ✓"
 # (too old for the agent sidebar panel's flags).
 gh release download --repo junegunn/fzf \
   --pattern 'fzf-*-linux_amd64.tar.gz' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 tar -xzf "$TMPDIR"/fzf-*-linux_amd64.tar.gz -C "$TMPDIR" fzf
 cp "$TMPDIR/fzf" "$DOTS_LINUX/vendor/bin/fzf"
 echo "  fzf ✓"
@@ -77,16 +78,18 @@ echo "  fzf ✓"
 # the plugin falls back to raw syntax-highlighted markdown.
 gh release download --repo charmbracelet/glow \
   --pattern 'glow_*_Linux_x86_64.tar.gz' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 tar -xzf "$TMPDIR"/glow_*_Linux_x86_64.tar.gz -C "$TMPDIR"
-find "$TMPDIR" -type f -name glow -exec cp {} "$DOTS_LINUX/vendor/bin/glow" \;
+# find exits 0 on no match — cp of an empty path fails instead.
+glow=$(find "$TMPDIR" -type f -name glow | head -1)
+cp "$glow" "$DOTS_LINUX/vendor/bin/glow"
 echo "  glow ✓"
 
 # oh-my-posh: prompt engine driving zsh's rose-pine zen theme
 # (.config/ohmyposh/zen.toml). Single static Go binary — no archive to extract.
 gh release download --repo JanDeDobbeleer/oh-my-posh \
   --pattern 'posh-linux-amd64' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 cp "$TMPDIR/posh-linux-amd64" "$DOTS_LINUX/vendor/bin/oh-my-posh"
 echo "  oh-my-posh ✓"
 
@@ -97,7 +100,7 @@ echo "  oh-my-posh ✓"
 # shadows /usr/bin/tmux via ~/.local/bin. Single gzipped binary — no archive.
 gh release download --repo mjakob-gh/build-static-tmux \
   --pattern 'tmux.linux-amd64.stripped.gz' \
-  --dir "$TMPDIR" --clobber >/dev/null 2>&1
+  --dir "$TMPDIR" --clobber >/dev/null
 gunzip -c "$TMPDIR/tmux.linux-amd64.stripped.gz" > "$DOTS_LINUX/vendor/bin/tmux"
 echo "  tmux ✓"
 

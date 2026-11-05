@@ -23,7 +23,8 @@
 # never sweeps unrelated pending work into a refresh commit. Anything else left
 # dirty is printed at the end for you to handle.
 
-set -euo pipefail
+set -Eeuo pipefail
+trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
 [[ $(uname) == Darwin ]] || { echo "${0##*/}: runs on the Mac (vendors its plugin trees; the dev box has no internet)" >&2; exit 1; }
 
 DOTS_MACOS="${HOME}/dots-macos"
@@ -36,9 +37,14 @@ DOTS_LINUX="${HOME}/dots-linux"
 export GIT_PAGER=cat PAGER=cat
 
 echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit) + agent detection rules"
-nvim --headless +"Lazy! sync" +qa
-zsh -ic 'GIT_PAGER=cat PAGER=cat zinit update --all' || true  # exits non-zero on 'nothing to update'
-echo "    herdr Claude detection rules: $("$DOTS_MACOS/scripts/tmux-agent-state.py" update-rules)"
+# nvim exits 0 even when a plugin's fetch/checkout fails — check lazy's task errors.
+nvim --headless +"Lazy! sync" +'lua local P, bad = require("lazy.core.plugin"), {}
+  for n, p in pairs(require("lazy.core.config").plugins) do if P.has_errors(p) then bad[#bad + 1] = n end end
+  if #bad > 0 then io.stderr:write("Lazy! sync failed: " .. table.concat(bad, ", ") .. "\n") vim.cmd("cquit 1") end' +qa
+zsh -ic 'GIT_PAGER=cat PAGER=cat zinit update --all'
+# Assign first: a failure inside $(...) in echo's args wouldn't trip set -e.
+rules=$("$DOTS_MACOS/scripts/tmux-agent-state.py" update-rules)
+echo "    herdr Claude detection rules: $rules"
 "$DOTS_MACOS/scripts/test-agent-state.py" >/dev/null || { "$DOTS_MACOS/scripts/test-agent-state.py"; exit 1; }
 
 echo "==> [2/4] vendoring into dots-linux (commits vendor/ with SKIP=gitleaks)"
