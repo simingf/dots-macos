@@ -1,42 +1,24 @@
 local env = require("config.env")
 
+-- One server list for both hosts: mason installs it on the Mac; the Linux box has no
+-- internet, so there each server is enabled only if its (vendored) binary is on PATH.
+-- C# is roslyn.nvim's.
+local servers = { "pyright", "rust_analyzer", "lua_ls", "clangd", "gopls", "bashls" }
+
 return {
 
-	-- LSP: mason installs servers; nvim-lspconfig ships the per-server default
-	-- configs as lsp/<name>.lua on the runtimepath, consumed by vim.lsp.config.
-	{
-		"mason-org/mason.nvim",
-		enabled = not env.IS_SSH,
-		opts = {
-			-- Crashdummyy registry provides the `roslyn` LSP package used by roslyn.nvim.
-			registries = env.HAS_DOTNET and {
-				"github:mason-org/mason-registry",
-				"github:Crashdummyy/mason-registry",
-			} or {
-				"github:mason-org/mason-registry",
-			},
-		},
-	},
-	{ "neovim/nvim-lspconfig" },
-	{
-		"mason-org/mason-lspconfig.nvim",
-		enabled = not env.IS_SSH,
-		dependencies = {
-			"mason-org/mason.nvim",
-			"neovim/nvim-lspconfig",
-			"saghen/blink.cmp",
-		},
-		config = function()
-			-- C# is handled separately by roslyn.nvim (not listed here).
-			local servers = { "gopls", "pyright", "clangd", "lua_ls", "bashls" }
+	{ "mason-org/mason.nvim", enabled = not env.IS_SSH, opts = {} },
 
-			-- Defaults applied to every server (blink.cmp capabilities).
+	-- nvim-lspconfig supplies the default lsp/<name>.lua configs; overrides + keys here run on both hosts
+	{
+		"neovim/nvim-lspconfig",
+		dependencies = { "saghen/blink.cmp" },
+		config = function()
 			vim.lsp.config("*", {
 				capabilities = require("blink.cmp").get_lsp_capabilities(),
 			})
 
-			-- Per-server overrides. These are deep-merged on top of '*' and the
-			-- defaults shipped by nvim-lspconfig in lsp/<name>.lua.
+			-- per-server overrides, deep-merged over '*' and lspconfig's defaults
 			vim.lsp.config("lua_ls", {
 				settings = {
 					Lua = {
@@ -47,27 +29,28 @@ return {
 				},
 			})
 
-			-- bash-language-server handles zsh on a best-effort basis.
+			-- best-effort zsh support
 			vim.lsp.config("bashls", {
 				filetypes = { "sh", "bash", "zsh" },
 			})
 
-			-- mason-lspconfig v2 installs missing servers and calls vim.lsp.enable
-			-- for each (automatic_enable defaults to true).
-			require("mason-lspconfig").setup({
-				ensure_installed = servers,
-			})
+			-- no mason on the box: enable whichever servers are installed
+			if env.IS_SSH then
+				for _, name in ipairs(servers) do
+					local cmd = vim.lsp.config[name] and vim.lsp.config[name].cmd
+					if type(cmd) == "table" and vim.fn.executable(cmd[1]) == 1 then
+						vim.lsp.enable(name)
+					end
+				end
+			end
 
-			-- Buffer-local keymaps when an LSP attaches. nvim 0.11+ defaults:
-			-- K (hover), grr (refs), gri (impl), grn (rename), gra (code action),
-			-- gO (doc symbols), [d/]d (diag nav), <C-s> (sig help in insert).
+			-- on top of nvim's defaults (K, grr, gri, grn, gra, gO, [d ]d, i_<C-s>)
 			vim.api.nvim_create_autocmd("LspAttach", {
 				callback = function(args)
 					local map = function(lhs, rhs, desc)
 						vim.keymap.set("n", lhs, rhs, { buffer = args.buf, desc = desc })
 					end
-					-- a single target opens like the tree does (config/tabs.lua: its split,
-					-- an empty split, or a new tab); several go to the quickfix list
+					-- one target opens tmux-style (tabs.jump); several → quickfix
 					local function via_tabs(fn)
 						return function()
 							fn({
@@ -90,7 +73,16 @@ return {
 		end,
 	},
 
-	-- mason-tool-installer: ensure formatters/linters/LSPs installed via Mason
+	-- v2 installs missing servers and vim.lsp.enable()s each (automatic_enable)
+	{
+		"mason-org/mason-lspconfig.nvim",
+		enabled = not env.IS_SSH,
+		dependencies = { "mason-org/mason.nvim", "neovim/nvim-lspconfig" },
+		-- roslyn_ls is roslyn.nvim's to start, not mason-lspconfig's
+		opts = { ensure_installed = servers, automatic_enable = { exclude = { "roslyn_ls" } } },
+	},
+
+	-- mason-tool-installer: formatters for conform (+ roslyn)
 	{
 		"WhoIsSethDaniel/mason-tool-installer.nvim",
 		enabled = not env.IS_SSH,
@@ -104,7 +96,7 @@ return {
 				"shfmt",
 				"clang-format",
 				"csharpier",
-				"roslyn", -- C# LSP, consumed by roslyn.nvim
+				"roslyn-language-server", -- for roslyn.nvim
 			} or {
 				"goimports",
 				"gofumpt",
@@ -116,11 +108,11 @@ return {
 		},
 	},
 
-	-- roslyn.nvim: Microsoft's Roslyn-based C# LSP (replaces omnisharp).
-	-- Auto-discovers the server installed by Mason via the Crashdummyy registry.
+	-- roslyn.nvim: C# LSP; runs `roslyn-language-server` (Mason on the Mac, vendored on the box).
+	-- cond, not enabled, so lazy still installs it on hosts without dotnet (→ vendored to the box).
 	{
 		"seblyng/roslyn.nvim",
-		enabled = env.HAS_DOTNET,
+		cond = env.HAS_DOTNET,
 		ft = "cs",
 		opts = {},
 	},

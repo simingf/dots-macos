@@ -127,7 +127,45 @@ cp -RL "$TMPDIR/im/etc/ImageMagick-6" "$IM/etc"
 cp -R "$TMPDIR/im/usr/share/ImageMagick-6" "$IM/share"
 echo "  imagemagick ✓"
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert} "$IM/bin"/*
+# LSP servers (nvim's plugins/lsp.lua list), at the Mac mason versions so both hosts match. The box
+# already has rust-analyzer, clangd-20 (dots-linux bin/clangd picks it), node and dotnet; the
+# dots-linux bin/ wrappers run these. mason_ver <pkg> → version from the Mac's mason receipt.
+echo "==> LSP servers"
+MASON=~/.local/share/nvim/mason/packages
+LSP="$DOTS_LINUX/vendor/lsp"
+mkdir -p "$LSP"
+mason_ver() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["source"]["id"].rsplit("@",1)[1])' "$MASON/$1/mason-receipt.json"; }
+
+for p in pyright bash-language-server; do   # pure JS: the Mac's mason install runs as-is on the box's node
+  "${RSYNC[@]}" --exclude='mason-*' "$MASON/$p/" "$LSP/$p/"
+done
+echo "  pyright $(mason_ver pyright), bash-language-server $(mason_ver bash-language-server) ✓"
+
+LUALS_VER=$(mason_ver lua-language-server)
+gh release download "$LUALS_VER" --repo LuaLS/lua-language-server \
+  --pattern "lua-language-server-$LUALS_VER-linux-x64.tar.gz" --dir "$TMPDIR" --clobber >/dev/null
+rm -rf "$LSP/lua-language-server" && mkdir -p "$LSP/lua-language-server"
+tar -xzf "$TMPDIR/lua-language-server-$LUALS_VER-linux-x64.tar.gz" -C "$LSP/lua-language-server"
+echo "  lua-language-server $LUALS_VER ✓"
+
+GOPLS_VER=$(mason_ver gopls)
+GOPATH="$TMPDIR/go" GOMODCACHE="$TMPDIR/go/mod" GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+  go install -trimpath -ldflags='-s -w' "golang.org/x/tools/gopls@$GOPLS_VER"
+cp "$TMPDIR/go/bin/linux_amd64/gopls" "$DOTS_LINUX/vendor/bin/gopls"
+chmod -R u+w "$TMPDIR/go"   # module cache is read-only; let the EXIT trap delete it
+echo "  gopls $GOPLS_VER ✓"
+
+# roslyn: mason's version (registry, since the Mac has no dotnet → nothing installed), linux-x64 nupkg.
+# Needs .NET ≥10 on the box. Locales / pdbs / the .NET Framework build host are dropped (~40MB).
+ROSLYN_VER=$(gh api repos/mason-org/mason-registry/contents/packages/roslyn-language-server/package.yaml \
+  --jq .content | base64 -d | sed -n 's/.*pkg:nuget\/roslyn-language-server@//p')
+curl -fsSL -o "$TMPDIR/roslyn.nupkg" "https://www.nuget.org/api/v2/package/roslyn-language-server.linux-x64/$ROSLYN_VER"
+rm -rf "$LSP/roslyn" "$TMPDIR/roslyn" && unzip -q "$TMPDIR/roslyn.nupkg" -d "$TMPDIR/roslyn"
+mv "$TMPDIR/roslyn/tools/net10.0/linux-x64" "$LSP/roslyn"
+(cd "$LSP/roslyn" && rm -rf BuildHost-net472 cs de es fr it ja ko pl pt-BR ru tr zh-Hans zh-Hant && find . -name '*.pdb' -delete)
+echo "  roslyn-language-server $ROSLYN_VER ✓"
+
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert,gopls} "$IM/bin"/*
 
 # SKIP=gitleaks: vendor/ is all third-party bytes (SHAs, example IPs trip false
 # positives). Pathspec-scoped so config commits are still scanned. No push here.

@@ -84,11 +84,13 @@ github-markdown CSS variable names.
   remain); `#page-ctn` renamed → width override silently stops.
 - **Health check covers:** the bundled `markdown.css` existing (skipped over SSH).
 
-### roslyn third-party mason registry — `lua/plugins/lsp.lua`
-C# LSP needs `github:Crashdummyy/mason-registry` to keep shipping a `roslyn` package
-(gated on `HAS_DOTNET`).
-- **Failure mode:** registry gone / renamed → roslyn install fails.
-- Not health-checked (would need a mason registry query).
+### roslyn server name — `lua/plugins/lsp.lua`, dots-linux `bin/roslyn-language-server`
+roslyn.nvim runs `roslyn-language-server` (mason's package, or the box's wrapper over the
+vendored linux-x64 nupkg, which needs .NET ≥10). mason-lspconfig must not also start it
+(`automatic_enable.exclude = { "roslyn_ls" }`).
+- **Failure mode:** roslyn.nvim renames the binary it looks for → no C# LSP; the nupkg's
+  `tools/net10.0/linux-x64` layout changes → `refresh-linux-vendored.sh` fails.
+- Not health-checked.
 
 ### mason-lspconfig v2 auto-enable — `lua/plugins/lsp.lua`
 Relies on nvim 0.11 `vim.lsp.config` / `vim.lsp.enable` + mason-lspconfig v2

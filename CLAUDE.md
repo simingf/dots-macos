@@ -56,7 +56,7 @@ When the user says **"refresh Linux vendored plugins"**, run the one-shot orches
 ~/dots-macos/scripts/refresh-linux.sh
 ```
 
-Hands-off: (1) `nvim Lazy! sync` + `zinit update` on the Mac, plus `tmux-agent-state.py update-rules` (stops unless `test-agent-state.py` passes), (2) `refresh-linux-vendored.sh` re-vendors plugins + binaries into dots-linux, (3) `sync-dotfiles.py --apply linux`, (4) commit + push both repos. Any failing step stops with `FAILED (line N): <command>` — including a Lazy plugin that failed to sync (nvim itself exits 0).
+Hands-off: (1) `nvim Lazy! sync` + `zinit update` on the Mac, plus `tmux-agent-state.py update-rules` (stops unless `test-agent-state.py` passes), (2) `refresh-linux-vendored.sh` re-vendors plugins + binaries + nvim LSP servers (at the Mac's mason versions; the box has no mason) into dots-linux, (3) `sync-dotfiles.py --apply linux`, (4) commit + push both repos. Any failing step stops with `FAILED (line N): <command>` — including a Lazy plugin that failed to sync (nvim itself exits 0).
 
 Commits: `vendor/` is committed with `SKIP=gitleaks` (third-party bytes trip Roblox's gitleaks hook with false positives). Config commits (lazy-lock.json, …) are scanned normally, so a real secret still blocks. `git push` is never scanned (the infosec `git` wrapper only gates `commit`). Commits are pathspec-scoped to the refresh footprint (nvim lazy-lock, `scripts/agent-detection/`), so unrelated pending work isn't swept in. Details: header of `scripts/refresh-linux.sh`.
 
