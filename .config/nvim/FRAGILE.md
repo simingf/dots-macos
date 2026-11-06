@@ -1,109 +1,117 @@
 # FRAGILE.md — brittle spots in this nvim config
 
 Places that reach into plugin **internals** or **vendored upstream files** instead of a
-documented `opts` / `keys` / public-API surface. They work today but can break on a plugin
-update — and usually **silently**, because they're guarded to no-op rather than error. So a
-feature quietly stops working instead of throwing a stacktrace.
+documented `opts` / `keys` / public API. A plugin update can break them, usually
+**silently** (they're guarded to no-op, not error).
 
-`lua/config/healthcheck.lua` validates the load-bearing *module/API* assumptions on startup
-and warns (once, on `VeryLazy`) if one broke. Run `:ConfigHealth` for the full report
-(healthy checks included). **After a `:Lazy update` / `:Lazy sync`, watch for that warning.**
+`lua/config/healthcheck.lua` checks the startup-visible assumptions and warns once after
+`VeryLazy` if one broke; `:ConfigHealth` prints the full report. **After `:Lazy update` /
+`:Lazy sync`, watch for that warning.**
 
-> Mac-only doc (like `THEME.md`). The code it describes is byte-identical across
-> `dots-{macos,linux,windows}`, and `healthcheck.lua` syncs with it — only this write-up
-> stays on the Mac control plane.
+> Mac-only doc (like `THEME.md`); the code it describes, `healthcheck.lua` included, is
+> byte-identical across `dots-{macos,linux,windows}`.
 
 ---
 
 ## 🔴 High — undocumented internals, fast-moving upstreams
 
 ### snacks explorer internals — `lua/plugins/navigation.lua`
-The explorer `keys` handlers (`o`, `y`, `W`) and the width-toggle `WinEnter` autocmd reach
-deep into snacks' private picker structure: `Snacks.picker.get({source="explorer"})[1]`,
-`p.list.win.win`, `p.list.win:valid()`, **`p.layout.root.win`**, `p.input`/`p.preview`,
-`p:current()`, `p:action("confirm")`, `p:selected()`, `Snacks.picker.util.path()`,
-`p.list:set_selected()`, `p:update_titles()`, `p.opts.wrap`, plus `p:is_focused()` in the
-`<leader>o` reveal. The width toggle specifically exploits *how snacks derives the visible
-float from a hidden root split* — pure implementation detail.
-- **Failure mode:** silent no-op — the `if not p … return` guards swallow it, so the
-  explorer still works but `o` / `y` / `W` / the width-expand quietly stop.
-- **Health check covers:** the module-level API (`picker.get`, `picker.util.path`,
-  `explorer`, `explorer.reveal`, `bufdelete`). It **cannot** check the instance fields
-  (`p.list.win.win`, `p.layout.root.win`) — those need a live open picker, so they remain
-  silent-fail. If the explorer misbehaves after an update, suspect these first.
+- Picker instance fields: `Snacks.picker.get({source="explorer"})[1]`, `p.list.win.win`,
+  `p.list.win:valid()`, **`p.layout.root.win`**, `p.input` / `p.preview`, `p:current()`,
+  `p:action("tab_open")`, `p:selected()`, `p.list:set_selected()`, `p:update_titles()`,
+  `p.opts.wrap`, `p:is_focused()` / `p:focus("list")` (`<leader>o`).
+- Private modules: `snacks.explorer.git.refresh` + `snacks.explorer.actions.update` (`R`,
+  FocusGained; busts git.lua's `CACHE_TTL`), `snacks.explorer.actions.actions.confirm` and
+  `picker.input.filter.meta.searching` (`tab_open`).
+- The 24/40 width toggle resizes the hidden root split the list float is derived from.
+- **Failure mode:** silent no-op (the `if not p … return` guards) — `o` / `y` / `W` / `R` /
+  width toggle quietly stop.
+- **Health check covers:** `picker.get`, `picker.util.path`, `explorer`, `explorer.reveal`,
+  `bufdelete`. Not instance fields or the private modules — suspect those first.
+
+### explorer layout / zen detection — `lua/config/nav.lua`, `lua/config/keymaps.lua`
+The docked explorer box is found by filetype **`snacks_layout_box`** (snacks `layout.lua`)
+in `nav.lua` `tree_box()` and keymaps.lua `keep_column()`; `<leader>z` zoom by
+`Snacks.zen.win`.
+- **Failure mode:** split nav treats the tree as floats (wincmd skips past it), `<leader>M/I`
+  rebalance squeezes the explorer, nav ignores a zoom.
+- Not health-checked.
 
 ### snacks explorer cursor for the lazygit sidebar — `lua/config/tmux_lazygit.lua`
-Reads the tree row under the cursor via `Snacks.picker.get({source="explorer"})[1]:current()`
-+ `Snacks.picker.util.path(item)` / `item.dir`, and detects "the tree is focused" by the list
-buffer's filetype **`snacks_picker_list`** (set in snacks' `picker/core/list.lua`).
-- **Failure mode:** silent — if the filetype or `current()` changes, moving through the tree stops
-  switching the `prefix g` lazygit sidebar (file buffers still drive it via `BufEnter`).
-- **Health check covers:** `picker.get` / `picker.util.path` (shared with the explorer entry above);
-  not the filetype string.
+Reads the tree row via `p:current()` + `Snacks.picker.util.path(item)` / `item.dir`, and
+detects "tree focused" by filetype **`snacks_picker_list`** (snacks `picker/core/list.lua`).
+- **Failure mode:** moving through the tree stops switching the `prefix g` sidebar (file
+  buffers still drive it).
+- **Health check covers:** `picker.get` / `picker.util.path`; not the filetype.
 
-### nvim-treesitter `main` branch — `lua/plugins/treesitter.lua`
-Both `nvim-treesitter` and `-textobjects` track the in-development `main` rewrite:
-`require("nvim-treesitter").install(...)`, the manual `select_textobject` wiring, and
-`@local.scope` in group `"locals"`. `main`'s `setup()` silently drops unknown fields.
-- **Failure mode:** `main` is explicitly unstable — a sync can change `install()` /
-  `select_textobject` signatures and break parser install or the `af`/`ac`/`as` textobjects.
-  The commit is pinned in `lazy-lock.json`, so breakage only lands on an explicit update.
-- **Health check covers:** `nvim-treesitter.install` and `textobjects.select.select_textobject`
-  still being functions.
-
----
-
+### snacks image patches — `lua/plugins/ui.lua`
+The snacks `config` monkey-patches `snacks.image.placement` (`update`, `error`, `state`),
+`snacks.image.convert.convert`, the private `Convert` class (fetched as an upvalue of
+`convert`; `resolve` / `_resolve` / `ft`), and `snacks.image.image.new`; uses `util.dim` and
+`terminal.size`.
+- **Failure mode:** standalone images go blank after leaving the window, show "Image
+  Conversion Failed" without magick, don't fill the window, keep stale pixels after an
+  overwrite, or big PNGs go out full size.
+- **Health check covers:** those functions existing, and `Convert._resolve` / `ft`.
 
 ### bufferline Tabpage wrap — `lua/plugins/ui.lua`
-bufferline's renderer (`ui.lua` `add_suffix`) shows a tab's ✕ **or** its ● (unsaved),
-never both — so an unsaved tab can't be clicked closed. The bufferline `config` wraps the
-internal `require("bufferline.models").Tabpage.new`: when `t.modified`, it clears it and
-moves the ● onto `t.icon` (`BufferLineModifiedSelected`), so the ✕ stays and closing asks to
-save (`config/tabs.lua` `settle_unsaved`).
-- **Failure mode:** if `Tabpage`/`new` moves, the wrap errors at setup; if the fields
-  (`modified`, `icon`, `icon_highlight`) are renamed, unsaved tabs silently go back to ● with no ✕.
+bufferline's renderer (`ui.lua` `add_suffix`) shows a tab's ✕ **or** its ● (unsaved). The
+`config` wraps internal `require("bufferline.models").Tabpage.new`: on `t.modified` it clears
+it and puts ● on `t.icon` (`BufferLineModifiedSelected`), so ✕ stays and closing asks to save
+(`config/tabs.lua` `settle_unsaved`).
+- **Failure mode:** `Tabpage` / `new` moved → setup errors; fields renamed (`modified`,
+  `icon`, `icon_highlight`) → unsaved tabs silently go back to ● with no ✕.
 - **Health check covers:** `bufferline.models.Tabpage.new` exists.
+
+### nvim-treesitter `main` branch — `lua/plugins/treesitter.lua`
+Both `nvim-treesitter` and `-textobjects` track the unstable `main` rewrite:
+`require("nvim-treesitter").install(...)`, manual `select_textobject` wiring, `@local.scope`
+in group `"locals"`. `main`'s `setup()` silently drops unknown fields.
+- **Failure mode:** an update breaks parser install or the `af`/`lf`/`ac`/`lc`/`as`
+  textobjects. Pinned in `lazy-lock.json`, so only on an explicit update.
+- **Health check covers:** `nvim-treesitter.install` and
+  `textobjects.select.select_textobject` being functions.
+
+---
 
 ## 🟡 Medium — vendored files / third-party sources
 
 ### markdown-preview bundled CSS — `lua/plugins/treesitter.lua`
-The mkdp `config` reads the plugin's *bundled* `app/_static/markdown.css` by hardcoded
-`stdpath("data")` path, appends the rose-pine overrides, and depends on the `#page-ctn`
-container id and the github-markdown CSS-variable names.
-- **Failure mode:** if mkdp restructures `app/` or renames the file, `io.open` fails → base
-  CSS becomes `""`, silently losing GitHub typography (only the overrides remain); the
-  `#page-ctn` width hack also breaks quietly if that id is renamed.
-- **Health check covers:** the bundled `markdown.css` still being present.
+Reads the plugin's bundled `app/_static/markdown.css` by hardcoded `stdpath("data")` path and
+appends overrides that depend on the `#page-ctn` id (capped in `page.css`) and
+github-markdown CSS variable names.
+- **Failure mode:** file moved → base CSS becomes `""` (GitHub typography lost, overrides
+  remain); `#page-ctn` renamed → width override silently stops.
+- **Health check covers:** the bundled `markdown.css` existing (skipped over SSH).
 
 ### roslyn third-party mason registry — `lua/plugins/lsp.lua`
-C# LSP depends on `github:Crashdummyy/mason-registry` existing and still shipping a `roslyn`
-package (mac-only, gated on `HAS_DOTNET`).
-- **Failure mode:** the external registry disappears/renames → roslyn install fails.
-- Not health-checked (would need a mason registry query at startup).
+C# LSP needs `github:Crashdummyy/mason-registry` to keep shipping a `roslyn` package
+(gated on `HAS_DOTNET`).
+- **Failure mode:** registry gone / renamed → roslyn install fails.
+- Not health-checked (would need a mason registry query).
 
 ### mason-lspconfig v2 auto-enable — `lua/plugins/lsp.lua`
-On the nvim 0.11 `vim.lsp.config`/`vim.lsp.enable` API + mason-lspconfig v2 `automatic_enable`
-(the v1→v2 change already broke this once).
-- **Failure mode:** a future mason-lspconfig major could shift the enable flow again.
-- Not health-checked (behavioral, not a missing symbol).
+Relies on nvim 0.11 `vim.lsp.config` / `vim.lsp.enable` + mason-lspconfig v2
+`automatic_enable` (v1→v2 already broke this once).
+- **Failure mode:** a future major shifts the enable flow → servers don't start.
+- Not health-checked (behavioral).
 
 ---
 
 ## 🟢 Low — cosmetic, degrades gracefully
 
 ### bufferline highlight-key list — `lua/plugins/ui.lua`
-A hardcoded ~30-entry list of bufferline highlight-group names whose bg is flattened to the
-editor bg. New/renamed groups just won't be flattened → a stray shade, never an error.
+Hardcoded list of bufferline highlight groups whose bg is flattened. New / renamed groups
+just aren't flattened → a stray shade, never an error.
 
 ### snacks hl-group names + `SNACKS_GHOSTTY` — `lua/plugins/ui.lua`
-`SnacksPickerDirectory`/`Link`/`Box`/… group names (LS_COLORS mirror) and the
-`SNACKS_GHOSTTY` env escape hatch for image detection. If snacks renames them, theming or
-image detection silently no-ops (cosmetic).
+`SnacksPicker{,List,Input,Box,Directory,Link,LinkBroken}` (LS_COLORS mirror) and the
+`SNACKS_GHOSTTY` env escape hatch for image detection. Renamed → theming or image detection
+silently no-ops.
 
 ---
 
 ## Adding a fragile spot
 
-If you add code that depends on a plugin internal or a vendored file, add a row here and — if
-the assumption is a startup-checkable symbol/file — a check to `lua/config/healthcheck.lua`
-so the breakage surfaces loudly instead of silently.
+Add an entry here and, if the assumption is a startup-checkable symbol / file, a check in
+`lua/config/healthcheck.lua`.

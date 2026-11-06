@@ -51,8 +51,8 @@ Canonical Rose Pine (main), with **iris overridden to a brighter custom value**:
 | git | `.config/git/common.inc` | hand-rolled `[color]` (diff/status/branch/decorate); byte-identical to linux + windows | `#ceacf6` |
 | PowerShell (windows) | `dots-windows/Documents/PowerShell/Profile.ps1` | hand copies of `LS_COLORS`, `FZF_DEFAULT_OPTS`, and `ZSH_HIGHLIGHT_STYLES` → PSReadLine `-Colors` | `#ceacf6` |
 | ripgrep | `.config/ripgrep/rg.conf` | `--colors` RGB triples (path/line/match) | `#ceacf6` |
-| markdown-preview (browser md) | `.config/nvim/lua/plugins/treesitter.lua` | `g:mkdp_markdown_css` rose-pine prose override (appended to bundled github-markdown.css) + `g:mkdp_theme = "dark"`. Mirrors the glow row's prose palette 1:1 (h1 dark-on-iris label, iris/foam/rose/gold/pine headings, gold bold / rose italic / muted strikethrough, iris links, love inline-code, muted hr+blockquote); fenced-code syntax tokens keep mkdp's highlight.js default (same "not matched" split as the glow row). | `#ceacf6` prose |
-| glow (yazi md preview) | `.config/yazi/plugins/glow.yazi/rose-pine.json` | hand-rolled glamour style; `glow --style <json>` from `main.lua`. Themes all prose chrome (headings/emph/links/inline-code/quotes/lists/hr). Fenced-code syntax tokens use glow 3.0.0's built-in 256-color chroma (style JSON's `chroma` block is inert in this binary; kept for newer glow on the linux box). | `#ceacf6` prose |
+| markdown-preview (browser md) | `.config/nvim/lua/plugins/treesitter.lua` | `g:mkdp_markdown_css` = bundled css + rose-pine prose overrides, `g:mkdp_theme = "dark"`. Prose palette matches the glow row 1:1; fenced-code tokens keep highlight.js defaults. | `#ceacf6` prose |
+| glow (yazi md preview) | `.config/yazi/plugins/glow.yazi/rose-pine.json` | hand-rolled glamour style (`glow --style <json>` from `main.lua`) for all prose chrome. Fenced-code tokens use glow 3.0.0's built-in chroma (the JSON's `chroma` block is inert there; kept for newer glow on linux). | `#ceacf6` prose |
 
 ## Sync contract
 
@@ -90,5 +90,5 @@ Pick its accent per the convention, add a row to **Where theming lives**, and �
 
 ## Not yet themed / off-theme
 
-- **live-preview.nvim (browser HTML)** — no config CSS hook, so its markdown can't be rose-pined without forking the plugin's bundled `github-markdown.min.css`. Instead the shared browser-preview router (`lua/config/preview.lua`, reached via the snacks-explorer `o` key and the `<leader>p` keymap) sends `.md` → markdown-preview (themed) and only HTML/SVG → live-preview, where your own file provides the styling. So there's nothing to theme here by design.
+- **live-preview.nvim (browser HTML)** — no CSS hook. By design it only gets HTML/SVG (your file supplies the styling): the preview router (`lua/config/preview.lua`; explorer `o`, `<leader>p`) sends `.md` to markdown-preview instead.
 - **man-pages / Alfred** — unthemed (`LESS_TERMCAP` unset; Alfred theme is a GUI export).

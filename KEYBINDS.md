@@ -23,9 +23,13 @@ consistently in **both nvim and tmux copy-mode**:
 - **`k`** → word-end motion (took over from `e`).
 - **`l`** → insert, and the inner-text-object prefix (took over from `i`; nvim only).
 
-Modifier prefix per system: **nvim** `<leader>` = Space · **tmux** prefix = `C-Space`. In ghostty,
-hold right-opt / right-cmd and Karabiner sends Space / `C-Space` before every key pressed — chainable,
-release in any order (`scripts/karabiner-hold-leaders.py`), so nothing is `-r`-repeatable and tmux `repeat-time` is 0. Multi-key leader maps still work held (`<leader>t<leader>t` = `<leader>tt`: `keymaps.lua` maps `<leader>{prefix}<leader>` back to `<leader>{prefix}`) · **AeroSpace** = `alt`.
+Modifier prefix per system: **nvim** `<leader>` = Space · **tmux** prefix = `C-Space` · **AeroSpace** = `alt`.
+
+**Hold-to-lead** (ghostty only, `scripts/karabiner-hold-leaders.py`): while right ⌘ is held, Karabiner
+sends `C-Space` before every key; right ⌥ sends Space. Chain binds by keeping it held; release in any
+order; no tap action. Holding replaces repeat binds: tmux has no `-r` binds (`repeat-time 0`) and
+nvim no repeatable leader maps. Multi-key leader maps still work held (`<leader>t<leader>t` arrives and
+`keymaps.lua` maps `<leader>{prefix}<leader>` back to `<leader>{prefix}`).
 
 ### Directional matrix (the same four keys, per context)
 
@@ -66,7 +70,7 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `<leader>\|` / `<leader>_` | new empty split left / above | n |
 | `<leader>[` / `<leader>]` | swap the file with the previous / next file window, following it; the tree stays put | n |
 | `<leader>0` · `<leader>P` · `<leader>x` | equalize windows · last window · close window and its file if shown nowhere else (unsaved → Save / Don't Save / Cancel; a tab's last window closes the tab) | n |
-| `<leader>z` · `<leader>!` | zoom window (toggle) · move window into its own tab (snacks.zen / `<C-w>T`) | n |
+| `<leader>z` · `<leader>!` | zoom window (toggle, snacks.zen) · move window into its own tab | n |
 | `<leader>r` | rename current file (LSP-aware, snacks.rename) | n |
 | `<leader><C-r>` | reload config (options / keymaps / autocmds) | n |
 | `<leader>j` | join lines (rehomed from `J`; `gJ` still joins w/o space) | n, x |
@@ -79,9 +83,9 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 **Opening a file** — from the tree, a file picker (`<leader>w` `f` `tf` `tg` `tr` `td`), `gd`/`gD`, lazygit's edit or `/get-notes` — jumps to the window already showing it (any tab), else fills the tab's first empty window (new splits start empty), else opens a new tab with the tree (`…/lua/config/tabs.lua`). In pickers, `<C-v>` / `<C-s>` / `<C-t>` still split / tab explicitly.
 
 **Leader keys mirror tmux** (`<leader>X` ≈ `‹pfx›X`): nvim windows ↔ tmux panes, tabpages ↔ tmux
-windows (bufferline shows tabpages, so each tab keeps its own splits). Unmatched tmux keys: sessions (`s S C R K BTab`), `a`, `g` and `@` are tmux-level (they
-work in an nvim pane as-is); `p` (pane numbers) has no nvim twin, so `<leader>p` stays preview;
-`y` stays yazi.
+windows (bufferline shows tabpages, so each tab keeps its own splits). Unmatched tmux keys: sessions
+(`s S C R K BTab`), `a`, `g` and `@` are tmux-level (they work in an nvim pane as-is); `p` (pane
+numbers) has no nvim twin, so `<leader>p` stays preview; `y` stays yazi.
 
 Also `:FormatDisable[!]` / `:FormatEnable` toggle format-on-save (buffer / global).
 
@@ -124,7 +128,7 @@ All under `.config/nvim/lua/plugins/`.
 | `q` `Q` `<C-q>` `cq` `dq` | macro: rec · play · switch slot (3: a/b/c) · edit · delete-all | recorder | `editor.lua` |
 | `<leader>o` | reveal / leave file tree | snacks.explorer | `navigation.lua` |
 | `<leader>y` / `<leader>Y` | yazi @ current file / cwd | yazi.nvim | `navigation.lua` |
-| `<leader>p` | markdown preview toggle | markdown-preview | `treesitter.lua` |
+| `<leader>p` | browser preview: markdown → markdown-preview, HTML/SVG → live-preview (same router as the tree's `o`) | — | `config/preview.lua` (map in `config/keymaps.lua`) |
 | `af`/`lf` · `ac`/`lc` · `as` | text-objects: function · class · scope (inner = `l`, see ¹) | ts-textobjects | `treesitter.lua` (x, o) |
 | `<leader>dd` / `<leader>ds` | diagnostics / symbols | trouble | `git.lua` |
 
@@ -196,7 +200,7 @@ indent, empty line, multi-line input, with / without a selection) and the mouse 
 after touching any of these keys; `-k <text>` runs only the matching cases.
 
 ⌥⌫ works with either Option key: ghostty binds `alt+backspace` to `\e\x7f`, since
-`macos-option-as-alt = left` leaves the right Option for typing special characters.
+`macos-option-as-alt = left` only covers the left one (in ghostty the right ⌥ is the held nvim leader).
 In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again. In any other app
 (lazygit, less, …) ⌘← / ⌘→ send Home / End, ⌘⌫ sends `C-u` and ⌘F searches the scrollback.
 
@@ -212,10 +216,12 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 | Key | Action |
 |---|---|
 | `‹pfx›m` `‹pfx›n` `‹pfx›e` `‹pfx›i` | select pane left / down / up / right (wraps) — in an nvim pane, nvim's splits first (the tree counts as one); moving into nvim lands on its entry-edge split; a `<leader>z`-zoomed split counts as all of nvim (moves straight to the next tmux pane, zoom kept); in a tmux-zoomed nvim pane it wraps around inside nvim (`scripts/tmux-nav.sh`) |
-| `‹pfx›M` `‹pfx›N` `‹pfx›E` `‹pfx›I` | resize pane left / down / up / right (5 cells) |
-| `‹pfx›\` / `‹pfx›-` | split vertical / horizontal (inherit cwd) |
+| `‹pfx›M` `‹pfx›N` `‹pfx›E` `‹pfx›I` | resize pane left / down / up / right (5 cells); after `M`/`I` the other columns share the change evenly |
+| `‹pfx›\` / `‹pfx›-` | split right / below (inherit cwd) |
+| `‹pfx›\|` / `‹pfx›_` | split left / above (inherit cwd) |
 | `‹pfx›[` / `‹pfx›]` | push pane backward / forward |
-| `‹pfx›0` | even-horizontal layout |
+| `‹pfx›0` | equal-width columns (the lazygit sidebar keeps its width, vertical stacks stay stacked) |
+| `‹pfx›z` | zoom pane (toggle) |
 | `‹pfx›p` / `‹pfx›P` | show pane numbers / last pane |
 | `‹pfx›x` | kill pane (menu) |
 | `‹pfx›@` | join pane into an fzf-picked window |
@@ -233,7 +239,8 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 
 | Key | Action |
 |---|---|
-| `‹pfx›c` | new window (+ agent sidebar) |
+| `‹pfx›c` | new window (inherit cwd) |
+| `‹pfx›1`…`‹pfx›9` | go to window N |
 | `‹pfx›w` / `‹pfx›W` | switch window (fzf) / last window |
 | `‹pfx›,` / `‹pfx›.` | previous / next window |
 | `‹pfx›<` / `‹pfx›>` | push window backward / forward |
@@ -253,7 +260,8 @@ In a tmux copy-mode pane, ⌘C / ⌘X copy the selection and ⌘F searches again
 
 | Key | Action |
 |---|---|
-| `‹pfx›a` / `‹pfx›A` | agent picker (fzf) / toggle agent sidebar |
+| `‹pfx›a` | agent picker (fzf) |
+| `‹pfx›g` | toggle the lazygit sidebar (left, focused) |
 | `‹pfx›f` | fuzzy-grep scrollback across panes → jump |
 | `‹pfx›y` | toggle synchronize-panes |
 | `‹pfx›C-r` | reload `~/.tmux.conf` |
