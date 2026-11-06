@@ -122,7 +122,7 @@ def main():
     for name, got, want in checks:
         if got != want:
             fails += 1
-            print(f"FAIL publish {name}: got {got}, want {want}")
+            print(f"FAIL {name}: got {got}, want {want}")
 
     total = len(CASES) + len(checks)
     print(f"{total - fails}/{total} passed")

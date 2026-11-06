@@ -20,5 +20,7 @@ path+=$HOME/.docker/bin
 
 # Rust (Homebrew's rustup doesn't create ~/.cargo/bin proxies)
 if command -v rustup &>/dev/null; then
-    export PATH="$HOME/.cargo/bin:$(rustup which cargo 2>/dev/null | xargs dirname 2>/dev/null):$PATH"
+    _cargo=$(rustup which cargo 2>/dev/null) && PATH="${_cargo:h}:$PATH"
+    export PATH="$HOME/.cargo/bin:$PATH"
+    unset _cargo
 fi

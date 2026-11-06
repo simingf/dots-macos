@@ -1,6 +1,7 @@
 .config/kitty/kitty.conf.bak
 .config/gh/hosts.yml
 Library/Application Support/lazygit/state.yml
+Library/Application Support/lazygit/github_pull_requests.json
 
 # VS Code — only track settings.json and keybindings.json
 Library/Application Support/Code/*

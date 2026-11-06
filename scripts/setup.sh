@@ -61,11 +61,14 @@ find "$DOTS" -type f \
     -not -path "$DOTS/scripts/*" \
     -not -path "$DOTS/manual/*" \
     -not -path "$DOTS/ssh-dots/*" \
+    -not -path "$DOTS/learnings/*" \
+    -not -path "$DOTS/archive/*" \
     -not -name '.DS_Store' \
     -not -name '.gitignore' \
     -not -name 'Brewfile' \
     -not -name 'README.md' \
-    -not -name 'WORK.md' \
+    -not -name 'KEYBINDS.md' \
+    -not -name 'THEME.md' \
     -not -name 'CLAUDE.md' \
 | while IFS= read -r f; do
   target="$HOME/${f#$DOTS/}"
@@ -102,7 +105,7 @@ stow --dir="$DOTS" --target="$HOME" .
 # (mirrors dots-linux/setup.sh; BSD ln has no -r).
 mkdir -p "$HOME/.claude/hooks" "$HOME/.claude/themes"
 for f in CLAUDE.md settings.json statusline-command.sh \
-         hooks/agent-notify.sh hooks/agent-status.sh themes/rose-pine.json; do
+         hooks/agent-notify.sh hooks/agent-status.sh hooks/agent-clip.py themes/rose-pine.json; do
   rel=$(/usr/bin/python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' \
         "$DOTS/.claude/$f" "$(dirname "$HOME/.claude/$f")")
   ln -sfn "$rel" "$HOME/.claude/$f"
@@ -268,6 +271,7 @@ step "kitten on PATH (for icat image previews)"
 # `kitten` lives in kitty.app; the `icat` alias uses it under ghostty (kitty graphics protocol)
 kitten_bin="/Applications/kitty.app/Contents/MacOS/kitten"
 if [ -x "$kitten_bin" ]; then
+  mkdir -p "$HOME/.local/bin"
   ln -sf "$kitten_bin" "$HOME/.local/bin/kitten"
 fi
 

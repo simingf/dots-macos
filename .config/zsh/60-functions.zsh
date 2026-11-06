@@ -199,18 +199,6 @@ _sup_resolve() {
 }
 
 # --- misc ---
-# kk fallback: claude with flags + prompt (path args dropped). Overridden by mux-tmux.zsh.
-kk() {
-    emulate -L zsh
-    local a
-    local -a cflags cprompt
-    for a in "$@"; do
-        if [[ "$a" == -* ]]; then cflags+=("$a")
-        elif [[ ! -e "$a" ]]; then cprompt+=("$a"); fi
-    done
-    claude "${cflags[@]}" "${cprompt[@]}"
-}
-
 # pullrepos / lsrepos: wrap the skills repo's scripts/pull_repos.sh.
 pullrepos() {
     local script=~/git/roblox/meta/skills/scripts/pull_repos.sh

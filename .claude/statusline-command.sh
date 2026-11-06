@@ -15,6 +15,7 @@ if [ -n "$branch" ]; then
 fi
 
 # Session cost, computed by Claude Code (resets on /clear) — no price table needed.
+cost=
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty' 2>/dev/null)
 [ -n "$cost_usd" ] && cost=$(printf '$%.2f' "$cost_usd")
 
