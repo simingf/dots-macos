@@ -156,13 +156,15 @@ chmod -R u+w "$TMPDIR/go"   # module cache is read-only; let the EXIT trap delet
 echo "  gopls $GOPLS_VER ✓"
 
 # roslyn: mason's version (registry, since the Mac has no dotnet → nothing installed), linux-x64 nupkg.
-# Needs .NET ≥10 on the box. Locales / pdbs / the .NET Framework build host are dropped (~40MB).
+# Needs .NET ≥10 on the box. Locales / pdbs / doc xml / the .NET Framework build host are dropped.
 ROSLYN_VER=$(gh api repos/mason-org/mason-registry/contents/packages/roslyn-language-server/package.yaml \
   --jq .content | base64 -d | sed -n 's/.*pkg:nuget\/roslyn-language-server@//p')
 curl -fsSL -o "$TMPDIR/roslyn.nupkg" "https://www.nuget.org/api/v2/package/roslyn-language-server.linux-x64/$ROSLYN_VER"
 rm -rf "$LSP/roslyn" "$TMPDIR/roslyn" && unzip -q "$TMPDIR/roslyn.nupkg" -d "$TMPDIR/roslyn"
 mv "$TMPDIR/roslyn/tools/net10.0/linux-x64" "$LSP/roslyn"
-(cd "$LSP/roslyn" && rm -rf BuildHost-net472 cs de es fr it ja ko pl pt-BR ru tr zh-Hans zh-Hant && find . -name '*.pdb' -delete)
+(cd "$LSP/roslyn" && rm -rf BuildHost-net472 cs de es fr it ja ko pl pt-BR ru tr zh-Hans zh-Hant \
+  && find . \( -name '*.pdb' -o -name '*.xml' ! -name DotnetToolSettings.xml \) -delete \
+  && chmod +x roslyn-language-server Microsoft.CodeAnalysis.LanguageServer)   # unzip drops the apphosts' exec bit
 echo "  roslyn-language-server $ROSLYN_VER ✓"
 
 chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert,gopls} "$IM/bin"/*
