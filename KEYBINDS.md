@@ -25,7 +25,7 @@ consistently in **both nvim and tmux copy-mode**:
 
 Modifier prefix per system: **nvim** `<leader>` = Space · **tmux** prefix = `C-Space`. In ghostty,
 hold right-opt / right-cmd and Karabiner sends Space / `C-Space` before every key pressed — chainable,
-release in any order (`scripts/karabiner-hold-leaders.py`), so nothing is `-r`-repeatable and tmux `repeat-time` is 0 · **AeroSpace** = `alt`.
+release in any order (`scripts/karabiner-hold-leaders.py`), so nothing is `-r`-repeatable and tmux `repeat-time` is 0. Multi-key leader maps still work held (`<leader>t<leader>t` = `<leader>tt`: `keymaps.lua` maps `<leader>{prefix}<leader>` back to `<leader>{prefix}`) · **AeroSpace** = `alt`.
 
 ### Directional matrix (the same four keys, per context)
 
@@ -61,7 +61,7 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `*` / `#` | search the word under the cursor forward / backward | n |
 | `k` | word-end (→ `e`) | n, x, o |
 | `<leader>m` `<leader>n` `<leader>e` `<leader>i` | focus window left / down / up / right; at nvim's edge, the next tmux pane | n |
-| `<leader>M` `<leader>N` `<leader>E` `<leader>I` | resize: move the border left / down / up / right 5 cells | n |
+| `<leader>M` `<leader>N` `<leader>E` `<leader>I` | resize: move the border left / down / up / right 5 cells; after `M`/`I` the other columns share the change evenly (the tree keeps its width), like tmux | n |
 | `<leader>\` / `<leader>-` | new empty split right / below (a tree open fills the first empty split) | n |
 | `<leader>\|` / `<leader>_` | new empty split left / above | n |
 | `<leader>[` / `<leader>]` | swap the file with the previous / next file window, following it; the tree stays put | n |

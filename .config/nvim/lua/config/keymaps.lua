@@ -90,11 +90,63 @@ vim.keymap.set("n", "<leader>|", "<cmd>leftabove vnew<cr>", { silent = true, des
 vim.keymap.set("n", "<leader>_", "<cmd>aboveleft new<cr>", { silent = true, desc = "hsplit above" })
 -- rest of tmux's pane keys: resize (M/N/E/I, 5 cells, moves the border in that direction
 -- like resize-pane), swap ([ ], file splits only), even out (0), last (P), close (x)
+-- M/I then rebalance like tmux's (scripts/tmux-even-columns.sh keep mode): the resized window's
+-- top-level column keeps its new width and the other columns split the rest evenly (the explorer
+-- keeps its width, like tmux's sidebar). Any shape but a top-level left/right split is left as-is.
+local function keep_column(win)
+	local layout = vim.fn.winlayout()
+	if layout[1] ~= "row" then
+		return
+	end
+	local function first(node)
+		while node[1] ~= "leaf" do
+			node = node[2][1]
+		end
+		return node[2]
+	end
+	local function holds(node)
+		if node[1] == "leaf" then
+			return node[2] == win
+		end
+		for _, c in ipairs(node[2]) do
+			if holds(c) then
+				return true
+			end
+		end
+		return false
+	end
+	local keep, free, used = {}, {}, #layout[2] - 1 -- separators
+	for _, c in ipairs(layout[2]) do
+		local w = first(c)
+		local tree = c[1] == "leaf" and vim.bo[vim.api.nvim_win_get_buf(w)].filetype == "snacks_layout_box"
+		if holds(c) or tree then
+			keep[w] = vim.api.nvim_win_get_width(w)
+			used = used + keep[w]
+		else
+			free[#free + 1] = w
+		end
+	end
+	if #free == 0 then
+		return
+	end
+	local each, extra = math.floor((vim.o.columns - used) / #free), (vim.o.columns - used) % #free
+	for _ = 1, 2 do -- each set_width moves a neighbour, so a second pass settles them
+		for i, w in ipairs(free) do
+			vim.api.nvim_win_set_width(w, each + (i <= extra and 1 or 0))
+		end
+		for w, width in pairs(keep) do
+			vim.api.nvim_win_set_width(w, width)
+		end
+	end
+end
 local function resize(dir)
 	local vert = dir == "m" or dir == "i"
 	local far = vert and "l" or "j" -- side whose border moves when one exists
 	local grow = (dir == "i" or dir == "n") == (vim.fn.winnr(far) ~= vim.fn.winnr())
 	vim.cmd((vert and "vertical " or "") .. "resize " .. (grow and "+5" or "-5"))
+	if vert then
+		keep_column(vim.api.nvim_get_current_win())
+	end
 end
 for k, m in pairs({
 	M = { function() resize("m") end, "resize left" },
@@ -265,3 +317,34 @@ vim.api.nvim_create_user_command("FormatEnable", function()
 	vim.b.disable_autoformat = false
 	vim.g.disable_autoformat = false
 end, { desc = "Re-enable format-on-save" })
+
+-- held right-⌥ (Karabiner, scripts/karabiner-hold-leaders.py) sends <leader> before every key, so
+-- <leader>tt arrives as <leader>t<leader>t: map <leader>{prefix}<leader> back to the pending
+-- <leader>{prefix} for every multi-key leader map's prefix. Single-key maps still chain (M M M).
+vim.api.nvim_create_autocmd("User", {
+	pattern = "VeryLazy",
+	once = true,
+	callback = function()
+		local leader = vim.keycode(vim.g.mapleader)
+		local seen = {}
+		for _, m in ipairs(vim.api.nvim_get_keymap("n")) do
+			if vim.startswith(m.lhs, leader) then
+				local prefix, keys, rest = "", {}, m.lhs:sub(#leader + 1)
+				while rest ~= "" do -- split into keys: <C-R>, <lt>, or one char
+					local k = rest:match("^<[^>]+>") or rest:sub(1, 1)
+					keys[#keys + 1], rest = k, rest:sub(#k + 1)
+				end
+				for i = 1, #keys - 1 do
+					prefix = prefix .. keys[i]
+					if not seen[prefix] then
+						seen[prefix] = true
+						vim.keymap.set("n", "<leader>" .. prefix .. "<leader>", "<leader>" .. prefix, {
+							remap = true,
+							desc = "held-⌥ leader: back to <leader>" .. prefix,
+						})
+					end
+				end
+			end
+		end
+	end,
+})
