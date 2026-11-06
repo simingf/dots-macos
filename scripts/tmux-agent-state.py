@@ -43,8 +43,8 @@ RULES_FILE = HERE / "agent-detection" / "claude.json"   # what the engine loads 
 RULES_URL = "repos/herdrdev/herdr/contents/src/detect/manifests/claude.toml"
 
 # Claude panes: under the declawd sandbox the process is a wrapper (zsh), so the title is the main signal —
-# spinner frames (braille ≤2.1.227, half-circles after), "Claude Code", or the idle ✳-family marker.
-AGENT_TITLE_RE = re.compile(r"[\u2800-\u28FF\u25D0-\u25D3]|Claude Code|[✳✶✻✽]")
+# spinner frames (braille ≤2.1.227, half-circles after), "Claude Code", or the idle ✳-family marker, at the start (same test as .tmux.conf @is_agent).
+AGENT_TITLE_RE = re.compile(r"^(?:[\u2800-\u28FF\u25D0-\u25D3✳✶✻✽]|Claude Code)")
 
 # herdr confirms working→plain-idle by polling at 100ms; we read less often, so publish once a plain-idle
 # read lands ≥ HOLD_MS after the first (a working read restarts it), re-checking after RECHECK_S.

@@ -7,7 +7,6 @@
 # Modes:
 #   pick    (default)  fzf popup → switch to the chosen agent pane
 #   count              "✳ <busy>/<total>" for status-right (nothing when none run); also repaints the dots
-#   paint              write each window's @agent_dot
 #   agent-panes <win>  pane ids of the agent panes in a window (tmux-rename.sh)
 #   refresh | refresh-agents | mark-read   internal, from tmux hooks
 #
@@ -54,7 +53,7 @@ _jump() {
 __fzf() {
   local rows sel
   rows=$(_agents_status)
-  [ -n "$rows" ] || { tmux display-message "No agents running"; return 0; }
+  [ -n "$rows" ] || { "$(dirname "$0")/tmux-notify.sh" "No agents running"; return 0; }
   sel=$(printf '%s\n' "$rows" | _fmt \
         | "$FZF" --ansi --no-sort --delimiter='\t' --with-nth=2 --prompt='agent> ' \
         | cut -f1)
@@ -132,7 +131,7 @@ _refresh() {
 
 # pane-title-changed: the spinner fires many times/sec; the mkdir lock coalesces a burst into one refresh.
 _refresh_agents() {
-  local lock="/tmp/agent-sidebar-refresh-${UID:-0}.lock"
+  local lock="/tmp/agent-refresh-${UID:-0}.lock"
   mkdir "$lock" 2>/dev/null || return 0                                 # already scheduled
   ( trap 'rmdir "$lock" 2>/dev/null' EXIT; sleep 0.4; _refresh ) &
 }
@@ -149,10 +148,9 @@ case "${1:-pick}" in
   pick)           _pick ;;
   __fzf)          __fzf ;;                                   # internal
   count)          _count ;;
-  paint)          _paint ;;
   agent-panes)    [ -n "${2:-}" ] && python3 "$STATE" panes "$2" 2>/dev/null ;;
   refresh)        _refresh ;;
   refresh-agents) _refresh_agents ;;
   mark-read)      _mark_read ;;
-  *) echo "tmux-agents: unknown mode '${1}' (expected: pick|count|paint|agent-panes)" >&2; exit 1 ;;
+  *) echo "tmux-agents: unknown mode '${1}' (expected: pick|count|agent-panes|refresh|refresh-agents|mark-read)" >&2; exit 1 ;;
 esac

@@ -234,10 +234,7 @@ _open() {
 }
 
 _toggle() {
-  local existing pane=${2:-}
-  # no pane arg (a server still running a pre-reload `bind g`): fall back to the current client's pane
-  [ -n "$pane" ] || pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null)
-  set -- "${1:-}" "$pane"
+  local existing pane=$2
   existing=$(tmux list-panes -t "$pane" -F '#{pane_id} #{@sidebar}' | awk '$2 == "1" { print $1; exit }')
   if [ -n "$existing" ]; then _close "$existing" park; else _open "$@"; fi
 }
@@ -322,7 +319,7 @@ case "${1:-}" in
   toggle)    _toggle "${2:-}" "${3:-}" ;;
   follow)    [ -n "${2:-}" ] && _follow "$2" ;;
   edit)      [ -n "${2:-}" ] && _edit "$2" "${3:-}" ;;
-  close)     [ -n "${2:-}" ] && _close "$2" "${3:-}" ;;   # $3: a pre-stash pane's gen → plain kill
+  close)     [ -n "${2:-}" ] && _close "$2" ;;
   layout)    _reap "${2:-}"; _fix_width ;;
   fix-width) _fix_width ;;
   gc)        _gc ;;
