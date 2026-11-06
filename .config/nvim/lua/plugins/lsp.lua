@@ -87,11 +87,14 @@ return {
 	},
 
 	-- roslyn.nvim: C# LSP; runs `roslyn-language-server` (Mason on the Mac, vendored on the box).
-	-- cond, not enabled, so lazy still installs it on hosts without dotnet (→ vendored to the box).
+	-- Installed everywhere so the Mac (no dotnet) still vendors it; only set up where dotnet exists.
 	{
 		"seblyng/roslyn.nvim",
-		cond = env.HAS_DOTNET,
 		ft = "cs",
-		opts = {},
+		config = function()
+			if env.HAS_DOTNET then
+				require("roslyn").setup({})
+			end
+		end,
 	},
 }
