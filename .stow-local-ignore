@@ -7,7 +7,6 @@ CLAUDE.md
 Brewfile
 manual
 scripts
-ssh-dots
 \.docker
 \.claude
 \.DS_Store

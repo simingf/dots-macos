@@ -60,7 +60,6 @@ find "$DOTS" -type f \
     -not -path "$DOTS/.git/*" \
     -not -path "$DOTS/scripts/*" \
     -not -path "$DOTS/manual/*" \
-    -not -path "$DOTS/ssh-dots/*" \
     -not -path "$DOTS/learnings/*" \
     -not -path "$DOTS/archive/*" \
     -not -name '.DS_Store' \

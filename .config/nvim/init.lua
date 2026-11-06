@@ -2,10 +2,6 @@ require("config.options")
 require("config.keymaps")
 require("config.autocmds")
 
-if vim.env.NVIM_REMOTE then
-	return
-end
-
 require("config.lazy")
 
 -- publish nvim's repo/socket to tmux for the prefix g lazygit sidebar
