@@ -14,9 +14,7 @@ if [ -n "$branch" ]; then
   [ -n "$dirty" ] && branch="${branch}*"
 fi
 
-# Total session cost. Claude Code computes this client-side across every API
-# call this session (resets on /clear) with current pricing for all model
-# families and the 1M-context premium tier, so no per-model price table needed.
+# Session cost, computed by Claude Code (resets on /clear) — no price table needed.
 cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty' 2>/dev/null)
 [ -n "$cost_usd" ] && cost=$(printf '$%.2f' "$cost_usd")
 

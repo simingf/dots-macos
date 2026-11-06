@@ -1,8 +1,5 @@
-# AI agents (Claude Code, etc.) shell out to standard commands and expect
-# native behavior. Drop aliases that shadow coreutils so `rm` actually deletes
-# (not trash), `ls`/`rg` emit plain output (no eza/ripgrep icons+hyperlinks),
-# `mkdir` doesn't imply -p, and `pwd` has no pbcopy side effect. Interactive
-# shells keep all the aliases above.
+# AI agents expect native commands: drop aliases that shadow them (plain ls/rg
+# output, no implied mkdir -p, no pwd→pbcopy).
 if [[ -n "$AI_AGENT" ]]; then
     unalias rm ls mkdir pwd rg 2>/dev/null
 fi

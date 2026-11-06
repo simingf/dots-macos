@@ -1,13 +1,9 @@
--- Patched for yazi 26.x plugin API (upstream Reledia/glow.yazi is stale as of
--- 2025-06). Modeled on yazi's own preset json.lua ANSI previewer: run glow with
--- forced color, read its ANSI output line-by-line, wrap, and render.
+-- Patched for yazi 26.x (upstream Reledia/glow.yazi is stale); modeled on yazi's
+-- preset json.lua ANSI previewer.
 local M = {}
 
 function M:peek(job)
-	-- Rose Pine glamour style ships alongside this plugin; resolve via $HOME so
-	-- the byte-identical copy works on mac, the linux box and windows (all link
-	-- to ~/.config/yazi; native windows has no HOME, so use USERPROFILE). Falls
-	-- back to glow's built-in "dark" if neither is set.
+	-- Rose Pine style beside this plugin; windows has no HOME → USERPROFILE.
 	local home = os.getenv("HOME") or os.getenv("USERPROFILE")
 	local style = home and home .. "/.config/yazi/plugins/glow.yazi/rose-pine.json" or "dark"
 	local child = Command("glow")

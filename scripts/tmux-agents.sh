@@ -1,17 +1,8 @@
 #!/usr/bin/env bash
-# tmux-agents.sh — find, jump to, count, and surface Claude Code agent status across all tmux sessions.
-#
-# This file is the tmux UI glue. WHICH panes are agents and WHAT state they're in comes from
-# scripts/tmux-agent-state.py (a port of herdr's screen + title detection — see its docstring), which emits
-# one row per agent pane: status <TAB> sess:win.pane <TAB> window <TAB> pane_id <TAB> title.
-# Statuses → dots: gold ●=working, foam ●=waiting (needs your answer), love ●=errored, iris ●=compacting,
-# gray ●=done-unread, gray ○=read. A window shows its most urgent agent's dot (window-status-format
-# draws @agent_dot); a window with no agent gets none. (The retired clickable agent sidebar lives in
-# archive/agent-sidebar/.)
-#
-# When we re-read: structural hooks + focus changes (immediate), pane-title-changed (debounced), every Claude
-# hook (.claude/hooks/agent-status.sh), and `count` in status-right — re-run every status-interval, it's the
-# poll that catches screen-only transitions (no title change, no hook).
+# tmux-agents.sh — Claude agent picker, status-bar count, and per-tab dots (tmux UI glue).
+# Detection lives in tmux-agent-state.py; its rows: status <TAB> sess:win.pane <TAB> window <TAB> pane_id <TAB> title.
+# Dots: gold working, foam waiting, love errored, iris compacting, gray ● unread, gray ○ read.
+# Re-read on tmux hooks, Claude hooks (agent-status.sh), and the status-right `count` poll.
 #
 # Modes:
 #   pick    (default)  fzf popup → switch to the chosen agent pane
@@ -20,26 +11,19 @@
 #   agent-panes <win>  pane ids of the agent panes in a window (tmux-rename.sh)
 #   refresh | refresh-agents | mark-read   internal, from tmux hooks
 #
-# No `set -e`/`pipefail`: every function here is fire-and-forget tmux glue run from `run-shell -b` hooks
-# *during* structural churn, when a `tmux list-*` target can be transiently gone. pipefail would turn that
-# into a failed pipeline and set -e would abort before the code's own `|| return 0` / `${x:-0}` guards run —
-# surfacing as a pane-blanking "'…tmux-agents.sh …' returned 1" overlay. Keep nounset (the code guards for it).
+# No set -e / pipefail: hooks run during churn when targets can vanish, and a non-zero exit shows as a
+# pane-blanking "returned 1" overlay. Failures are guarded inline instead.
 set -u
 
 STATE="$(dirname "$0")/tmux-agent-state.py"
 
-# Prefer a vendored fzf over an old system one: Debian's apt fzf (0.44) is too old
-# for the panel's flags, and tmux resolves bare `fzf` from the server PATH, which on
-# non-login setups misses ~/.local/bin. Pick the vendored one explicitly when present.
+# Vendored fzf first: Debian's is old, and the server PATH may miss ~/.local/bin.
 FZF="$HOME/.local/bin/fzf"; [ -x "$FZF" ] || FZF=fzf
 
-# _agents_status: the detector's rows (busy first, then most-recently-active). Also advances its per-pane
-# state, so every caller doubles as a re-read.
+# Detector rows (busy first, then most recent). Also advances per-pane state, so every call is a re-read.
 _agents_status() { python3 "$STATE" status 2>/dev/null || true; }
 
-# _fmt: _agents_status rows → "target <TAB> ● session:window  description" for the picker (col1 = jump target,
-# hidden by --with-nth=2; col2 = the shown line). Dot colored like the tab dots (_dot), session:window in
-# bright rose, the agent's task summary (its title) trailing in muted gray.
+# rows → "target <TAB> ● session:window  title" for the picker (col1 hidden by --with-nth=2).
 _fmt() {
   awk -F'\t' '
     function col(st) {
@@ -53,13 +37,12 @@ _fmt() {
       printf "%s\t%s%s\033[0m \033[1;38;2;224;222;244m%s:%s\033[0m  \033[38;2;110;106;134m%s\033[0m\n", $2, col($1), g, s, $3, $5 }'
 }
 
-# _focused_pane: pane id of the attached client's currently-visible pane (skipping a sidebar). Empty if none.
+# Attached client's active pane (not a @sidebar), or empty.
 _focused_pane() {
   tmux list-panes -a -F '#{session_attached}	#{window_active}	#{pane_active}	#{@sidebar}	#{pane_id}' 2>/dev/null \
   | awk -F'\t' '$1>=1 && $2==1 && $3==1 && $4!=1 {print $5; exit}' || true
 }
 
-# _jump: switch the client to the agent pane identified by target ($1).
 _jump() {
   [ -n "${1:-}" ] || return 0
   tmux switch-client -t "$1"
@@ -67,7 +50,7 @@ _jump() {
   tmux select-pane   -t "$1"
 }
 
-# __fzf: the picker — runs *inside* pick's popup. Enter jumps (and closes the popup).
+# Runs inside pick's popup.
 __fzf() {
   local rows sel
   rows=$(_agents_status)
@@ -78,7 +61,7 @@ __fzf() {
   [ -n "$sel" ] && _jump "$sel"
 }
 
-# pick: centered popup (matches tmux-fzf-sessions.sh / tmux-fzf-windows.sh). Height = agents + 5.
+# Popup height = agents + 5.
 _pick() {
   local n
   n=$(python3 "$STATE" panes 2>/dev/null | wc -l | tr -d ' ')
@@ -86,9 +69,7 @@ _pick() {
   tmux display-popup -E -w 70% -h "$((n + 5))" -T ' agents ' "'$0' __fzf" || true
 }
 
-# count: "✳ <busy>/<total>" for status-right, busy = working|compacting; prints nothing when none run so the
-# bar stays clean (the glyph lives here, so the empty state leaves no orphan mark). Repaints the dots from
-# the same rows in the background — the #() job must print and exit fast.
+# "✳ busy/total" (busy = working|compacting), empty when none run. Paints in the background — #() must exit fast.
 _count() {
   local rows total busy
   rows=$(_agents_status)
@@ -99,9 +80,7 @@ _count() {
   printf '✳ %s/%s' "$busy" "$total"
 }
 
-# _dot: rose-pine colored glyph for a status, as tmux #[..] style directives (NOT raw ANSI) so
-# window-status-format draws it via #{E:@agent_dot}. The leading space is uncolored so the dot separates
-# cleanly from the window name it trails.
+# Status → tmux #[…] styled glyph (not ANSI), drawn via #{E:@agent_dot}.
 _dot() {
   case "${1:-}" in
     working)    printf ' #[fg=#f6c177]●#[default]' ;;
@@ -114,11 +93,8 @@ _dot() {
   esac
 }
 
-# paint [rows]: set each window's @agent_dot to its most urgent agent's dot (errored > waiting > compacting >
-# working > unread > read), unset it where no agent runs. Takes pre-fetched rows (count) or reads its own.
-# Diffed against each window's CURRENT @agent_dot (one list-windows), so a steady state repaints nothing and
-# only a real transition redraws — and diffing live tmux state (not a cache) means overlapping runs or a
-# server restart can't leave a stale dot: the next run always converges.
+# paint [rows]: each window's @agent_dot = its most urgent agent (errored > waiting > compacting > working >
+# unread > read). Diffed against live tmux state, so steady state redraws nothing and runs always converge.
 _paint() {
   local map changed w cur want
   map=$(printf '%s\n' "${1:-$(_agents_status)}" | awk -F'\t' '
@@ -138,8 +114,7 @@ _paint() {
   [ "$changed" = 1 ] && tmux refresh-client -S 2>/dev/null || true
 }
 
-# _prune: delete hook flag files whose pane no longer exists — left when a session ends by kill/crash so
-# SessionEnd never fired; a stale one would mis-flag a new pane reusing the id after a server restart.
+# Delete hook flag files of dead panes (kill/crash skips SessionEnd; a reused pane id would inherit them).
 _prune() {
   local live f d
   live=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null | tr -d '%')
@@ -155,18 +130,14 @@ _refresh() {
   _prune
 }
 
-# _refresh_agents: the pane-title-changed path. A working agent's spinner rewrites its title several
-# times/second; the mkdir lock coalesces a burst into one refresh ~0.4s later, and _paint's diff keeps a
-# steady spinner at zero redraws.
+# pane-title-changed: the spinner fires many times/sec; the mkdir lock coalesces a burst into one refresh.
 _refresh_agents() {
   local lock="/tmp/agent-sidebar-refresh-${UID:-0}.lock"
-  mkdir "$lock" 2>/dev/null || return 0                                 # a refresh is already scheduled → coalesce
+  mkdir "$lock" 2>/dev/null || return 0                                 # already scheduled
   ( trap 'rmdir "$lock" 2>/dev/null' EXIT; sleep 0.4; _refresh ) &
 }
 
-# mark-read: you switched into a pane (keyboard nav, tab/session switch, or click) — if it's an agent that
-# finished while you were away (@agent_unread, set by the detector), it's now seen: gray ● → ○. Refreshes
-# regardless, so a transition on the pane you land in repaints.
+# Focus changed: the pane you landed on is now seen (clear @agent_unread: ● → ○).
 _mark_read() {
   local pid
   pid=$(_focused_pane)
@@ -176,7 +147,7 @@ _mark_read() {
 
 case "${1:-pick}" in
   pick)           _pick ;;
-  __fzf)          __fzf ;;                                   # internal: invoked inside the popup
+  __fzf)          __fzf ;;                                   # internal
   count)          _count ;;
   paint)          _paint ;;
   agent-panes)    [ -n "${2:-}" ] && python3 "$STATE" panes "$2" 2>/dev/null ;;

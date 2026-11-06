@@ -1,4 +1,4 @@
-# Ignore these files universally
+# Global gitignore
 
 # IDE configs
 .idea

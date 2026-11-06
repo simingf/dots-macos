@@ -1,21 +1,9 @@
--- Clipboard on the Linux devspace: force Neovim's built-in OSC 52 provider so
--- `"+y` / `gy` reach the macOS clipboard — the yank rides nvim → tmux
--- (set-clipboard on / allow-passthrough) → ssh → ghostty → macOS clipboard.
---
--- Key purely on OS, not on SSH env or tool presence, because both mislead here:
---   - SSH_CONNECTION is empty under a persistent Coder tmux server, so SSH
---     detection silently skips this.
---   - The box ships xsel/xclip AND sets $DISPLAY, but its X server has no real
---     clipboard — xsel fails with `BadWindow` (see :checkhealth). So nvim's
---     auto-detect, and any "is a clipboard tool installed?" check, pick the
---     broken xsel and gy fails.
--- The only Linux target in these dotfiles is that headless dev box, which always
--- wants OSC 52. So: macOS keeps pbcopy, Windows its native clipboard, everything
--- else → OSC 52. This tree is byte-identical across hosts; the choice is runtime.
---
--- Paste reads the last-yank register instead of round-tripping an OSC 52 read
--- (terminals refuse clipboard-read by default, which would hang `gp`); terminal
--- paste (cmd+v) still pulls the Mac clipboard in.
+-- Clipboard: off Mac/Windows (= the headless Linux dev box) force nvim's OSC 52 provider
+-- so yanks reach the Mac clipboard via tmux -> ssh -> ghostty. Keyed on OS because
+-- SSH_CONNECTION is empty under a persistent tmux server, and the box's xsel/$DISPLAY
+-- exist but are broken (BadWindow), which fools auto-detect.
+-- Paste reads the unnamed register: OSC 52 reads are refused by terminals and would
+-- hang `gp` (cmd+v still pastes the Mac clipboard).
 if vim.fn.has("mac") == 0 and vim.fn.has("win32") == 0 and vim.fn.has("nvim-0.10") == 1 then
 	local osc52 = require("vim.ui.clipboard.osc52")
 	local function paste()
@@ -28,52 +16,42 @@ if vim.fn.has("mac") == 0 and vim.fn.has("win32") == 0 and vim.fn.has("nvim-0.10
 	}
 end
 
--- enable absolute line numbers
+-- UI
 vim.opt.number = true
 vim.opt.relativenumber = false
--- keep sign column on
 vim.opt.signcolumn = "yes"
--- highlight current line
 vim.opt.cursorline = true
--- minimal number of screen lines to keep above and below the cursor
 vim.opt.scrolloff = 5
--- line wrapping
 vim.opt.wrap = true
--- preserve indentation when line wrapping
 vim.opt.breakindent = true
--- enable mouse for all modes
-vim.opt.mouse = "a"
--- ⇧+arrows start a visual selection and plain arrows end it (GUI-style, same as zsh)
-vim.opt.keymodel = "startsel,stopsel"
--- include both lower and upper case for search
-vim.opt.ignorecase = true
--- ignore upper case letters unless the search includes upper case letters
-vim.opt.smartcase = true
--- highlight all search matches — only while searching: config/keymaps.lua turns it
--- off on the first normal-mode key that isn't a search key
-vim.opt.hlsearch = true
--- set how many spaces a tab is
-vim.opt.tabstop = 4
--- set how many spaces << and >> indent by
-vim.opt.shiftwidth = 4
--- enable converting a tab into spaces
-vim.opt.expandtab = true
--- disable showing current mode since lualine shows
-vim.opt.showmode = false
--- reclaim the empty command-line row below the statusline. It auto-expands back
--- to one line while typing a command (:/ ) or when a message needs to display.
-vim.opt.cmdheight = 0
--- enable hexademical colors instead of only 256 colors
+vim.opt.showmode = false -- lualine shows it
+vim.opt.cmdheight = 0 -- expands while typing a command or showing a message
 vim.opt.termguicolors = true
--- configure how new splits should be opened
 vim.opt.splitright = true
 vim.opt.splitbelow = true
--- persist undo history across sessions (survives quit/reopen)
+
+-- input
+vim.opt.mouse = "a"
+-- ⇧+arrows start a visual selection, plain arrows end it (GUI-style, same as zsh)
+vim.opt.keymodel = "startsel,stopsel"
+
+-- search
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+-- only lit while searching: keymaps.lua clears it on the first non-search key
+vim.opt.hlsearch = true
+
+-- indent
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = true
+
+-- misc
 vim.opt.undofile = true
--- faster idle response: CursorHold-driven autoread checktime + which-key popup
--- (default 4000ms). Lower = snappier disk-change reloads and hint menus.
+-- snappier CursorHold (autoread checktime) and which-key popup (default 4000)
 vim.opt.updatetime = 250
--- diagnostic config
+
+-- diagnostics
 local signs_text = {
 	[vim.diagnostic.severity.ERROR] = "",
 	[vim.diagnostic.severity.WARN] = "",

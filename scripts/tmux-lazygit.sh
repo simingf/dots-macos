@@ -1,24 +1,13 @@
 #!/usr/bin/env bash
-# Lazygit sidebar: a fixed-width, full-height lazygit pane on the far left of the window (prefix g toggles).
-# Same pop-open mechanics as the retired agent sidebar (archive/agent-sidebar/): -f -h -b split, tagged
-# @sidebar=1 (generic fixed-width-left-sidebar pane tag) so tmux-even-columns.sh keeps its width, automatic-rename keeps the window name, and the
-# real-pane counts (dotslg/metalg/activelg) skip it; width re-pinned on resize/layout change; closing hands
-# its width back proportionally. Unlike the agent sidebar it is a normal, focusable pane — opening it
-# focuses it and nothing deflects focus away (no mark-read deflect), since you work in it.
+# tmux-lazygit.sh — lazygit sidebar (prefix g): fixed-width, full-height, focused pane on the window's left.
+# Tagged @sidebar=1, so even-columns keeps its width, automatic-rename ignores it, and pane counts skip it.
 #
-# Which repo (_resolve, first hit wins): the repo an nvim pane in this window is looking at (@nvim_repo,
-# published by nvim's lua/config/tmux_lazygit.lua — the active pane's first); else the repo containing the
-# active pane's dir; else, among repos ≤3 levels below it, the highest zoxide score (newest .git mtime if
-# none of them are in zoxide); else nothing opens and a "no git repo here" notification shows instead.
-# While open, the sidebar follows nvim: when nvim's repo changes, `follow` swaps in that repo's lazygit.
-# While closed, `follow` pre-warms instead: it parks a lazygit for nvim's repo, so the first open is instant.
+# Repo (_resolve, first hit wins): an nvim pane's @nvim_repo in this window (lua/config/tmux_lazygit.lua),
+# the active pane's repo, the top-zoxide repo ≤3 levels below (else newest .git), else a notification.
+# `follow` (called by nvim) swaps in the lazygit for nvim's repo while open, or pre-warms one while closed.
 #
-# Instant toggle: closing never kills lazygit, it parks the pane (break-pane) in the hidden STASH session,
-# one per repo, and opening/following joins/swaps a parked one back in (~tens of ms, state kept) — only a
-# repo with nothing parked cold-starts lazygit. The STASH_MAX most recently parked are kept; `gc` (on
-# session-closed) kills the stash once no real session is left, so it never keeps the server alive alone.
-# Sessions named `_*` are hidden from the session pickers (tmux-fzf-sessions.sh, tl/ta/tk, pane-content).
-# Quitting lazygit (q) still really closes the pane.
+# Parking: closing break-panes lazygit into the hidden `_lazygit` session (one per repo, newest STASH_MAX
+# kept) and opening joins it back (~tens of ms, state kept). Quitting lazygit (q) really closes the pane.
 #
 # Modes:
 #   toggle <path> <pane>  open (focused) on the resolved repo, or park this window's sidebar
@@ -30,19 +19,18 @@
 #   gc              session-closed hook: kill the stash when it's the only session left
 set -uo pipefail
 
-SIDEBAR_PCT=25     # sidebar width: this % of the window, but never under SIDEBAR_MIN columns
+SIDEBAR_PCT=25     # % of window width, min SIDEBAR_MIN columns
 SIDEBAR_MIN=75
 STASH=_lazygit
 STASH_MAX=5
 
-# _width <window-width>: sidebar columns for a window that wide.
+# _width <window-width> → sidebar columns
 _width() {
   local w=$(($1 * SIDEBAR_PCT / 100))
   echo $((w < SIDEBAR_MIN ? SIDEBAR_MIN : w))
 }
 
-# _csum: tmux layout_checksum (layout-custom.c) over a layout body — excludes the leading "csum,".
-# Same algorithm as tmux-even-columns.sh; needed to re-sign a rewritten layout for select-layout.
+# tmux layout_checksum (layout-custom.c) over a layout body (no "csum,"); same as tmux-even-columns.sh.
 _csum() {
   local s=$1 c=0 i ch
   for ((i = 0; i < ${#s}; i++)); do
@@ -53,20 +41,16 @@ _csum() {
   printf '%04x' "$c"
 }
 
-# _reclaim_layout: given the live window layout ($1) and the sidebar's numeric pane id ($2), compute the
-# layout that should apply AFTER the sidebar column is removed — the remaining top-level columns rescaled
-# proportionally to fill the width the sidebar vacated, so closing is width-neutral (even columns stay even,
-# no ratchet onto the neighbour). Prints "csum,body", or returns 1 on shapes it won't touch (top level not a
-# left/right split, a column with a nested left/right split, sidebar not found, <2 real columns) — the caller
-# then plain-kills and lets tmux redistribute. Copied from the archived agent sidebar.
+# _reclaim_layout <layout> <sidebar-num>: the layout after removing the sidebar column, the other columns
+# scaled proportionally into its width (so closing doesn't all go to the neighbour). Prints "csum,body";
+# returns 1 on shapes it won't touch, and the caller lets tmux redistribute.
 _reclaim_layout() {
   local layout=$1 sidebar_id=$2 body root W inner
   body=${layout#*,}                                # strip "csum,"
   case $body in *,0,0\{*\}) ;; *) return 1 ;; esac  # top level must be a left/right split "WxH,0,0{...}"
   root=${body%%\{*}; W=${root%%x*}
   inner=${body#*\{}; inner=${inner%\}}
-  # depth-0 comma split into pieces, then regroup into whole column cells (leaf = 4 pieces "WxH,X,Y,id";
-  # group/stack = 3 pieces, the Y piece carrying an attached [..]/{..}). Identical to even-columns.
+  # split into column cells — same parse as tmux-even-columns.sh
   local -a pieces=() cells=(); local d=0 tok="" i ch
   for ((i = 0; i < ${#inner}; i++)); do
     ch=${inner:i:1}
@@ -89,7 +73,7 @@ _reclaim_layout() {
     fi
   done
   local ncols=${#cells[@]}; ((ncols >= 2)) || return 1
-  # classify columns: width, sidebar?, reject a nested left/right split (would need inner scaling)
+  # widths + sidebar flag; reject a nested left/right split
   local -a cw=() issb=(); local idx c rest id sumr=0 nreal=0 sbfound=0
   for idx in "${!cells[@]}"; do
     c=${cells[idx]}
@@ -104,7 +88,7 @@ _reclaim_layout() {
   ((sbfound == 1 && nreal >= 2 && sumr > 0)) || return 1
   local avail=$((W - (nreal - 1)))                 # width for nreal columns after nreal-1 separators
   ((avail >= nreal)) || return 1                   # too narrow for a clean tile → punt
-  # proportional floor targets, then hand the rounding leftover out one col at a time, left-to-right
+  # proportional floors, rounding leftover handed out left to right
   local -a tgt=(); local acc=0
   for idx in "${!cells[@]}"; do
     ((${issb[idx]} == 1)) && continue
@@ -117,7 +101,7 @@ _reclaim_layout() {
     ((${issb[idx]} == 1)) && continue
     tgt[idx]=$((${tgt[idx]} + 1)); leftover=$((leftover - 1))
   done
-  # rebuild reals-only, re-chaining X from 0; shift every cell in a column (stacks share width+X) via sed
+  # rebuild without the sidebar, re-chaining X from 0
   local -a newcols=(); local cursor=0 w0 x0 xn nc
   for idx in "${!cells[@]}"; do
     ((${issb[idx]} == 1)) && continue
@@ -129,19 +113,19 @@ _reclaim_layout() {
   printf '%s,%s\n' "$(_csum "$new_body")" "$new_body"
 }
 
-# _stash_ensure: create the hidden stash session (a `sleep` placeholder window keeps it alive while empty).
+# The stash session; a `sleep` window keeps it alive while empty.
 _stash_ensure() {
   tmux has-session -t "=$STASH" 2>/dev/null ||
     tmux new-session -d -s "$STASH" -n hold 'exec sleep 2147483647' 2>/dev/null
 }
 
-# _stashed <repo>: the parked sidebar pane for <repo>, if any.
+# _stashed <repo> → parked pane id, if any
 _stashed() {
   tmux list-panes -s -t "=$STASH" -F '#{@sidebar_repo}	#{pane_id}' 2>/dev/null |
     awk -F'\t' -v r="$1" '$1 == r { print $2; exit }'
 }
 
-# _park_prep <pane>: make room for parking <pane> — kill any parked lazygit on the same repo (one per repo).
+# _park_prep <pane>: kill any other parked lazygit on the same repo (one per repo)
 _park_prep() {
   local repo old
   _stash_ensure
@@ -152,7 +136,7 @@ _park_prep() {
   return 0
 }
 
-# _parked <pane>: stamp a just-parked pane, then evict the oldest-parked beyond STASH_MAX.
+# _parked <pane>: stamp it, then evict the oldest beyond STASH_MAX
 _parked() {
   tmux set-option -p -t "$1" @stashed_at "$(date +%s)" 2>/dev/null
   tmux list-panes -s -t "=$STASH" -F '#{@sidebar}	#{@stashed_at}	#{pane_id}' 2>/dev/null |
@@ -162,15 +146,14 @@ _parked() {
   return 0
 }
 
-# _close <pane> [park]: remove sidebar pane $1 — park it in the stash (`park`) or kill it — then apply the
-# width-neutral layout. Both commands go in ONE tmux invocation so it still completes when the caller is the
-# sidebar pane itself (killing it kills this script). Any other $2 (a pre-stash pane's gen) means kill.
+# _close <pane> [park]: park or kill the sidebar, then apply the reclaimed layout — in ONE tmux call, since
+# killing the pane may kill this script (`close` runs inside it).
 _close() {
   local pane=$1 win layout newl
   local -a rm=(kill-pane -t "$pane")
   if [ "${2:-}" = park ]; then _park_prep "$pane"; rm=(break-pane -d -s "$pane" -t "=$STASH:"); fi
   read -r win layout < <(tmux display-message -p -t "$pane" '#{window_id} #{window_layout}' 2>/dev/null) || return 0
-  # tmux ≥3.8 reports JSON — convert to classic first (floating panes → unsupported → plain remove)
+  # tmux ≥3.8 reports JSON → classic (floating panes → plain remove)
   layout=$("$(dirname "$0")/tmux-layout-classic.sh" "$layout") || layout=""
   newl=$(_reclaim_layout "$layout" "${pane#%}") || newl=""
   if [ -n "$newl" ]; then
@@ -182,9 +165,8 @@ _close() {
   return 0
 }
 
-# _nested_repo <dir>: among git repos ≤3 levels below <dir>, the one with the highest zoxide score — zoxide
-# lists highest-first, and a visit anywhere inside a repo counts for that repo (climb to its .git, but not
-# above <dir>). If none are in zoxide yet, the one whose .git changed most recently. Prints nothing if none.
+# _nested_repo <dir>: repo ≤3 levels below with the top zoxide score (a visit inside a repo counts for
+# it), else the newest .git, else nothing.
 _nested_repo() {
   local base=${1%/} d r rel
   if command -v zoxide >/dev/null; then
@@ -202,7 +184,7 @@ _nested_repo() {
   ((${#gits[@]})) && { r=$(ls -1td -- "${gits[@]}" | head -1); printf '%s\n' "${r%/.git}"; }
 }
 
-# _resolve <path> <pane>: the repo to show (see header), or nothing.
+# _resolve <path> <pane>: the repo to show (see header)
 _resolve() {
   local dir=${1:-$HOME} pane=${2:-} r
   r=$( { tmux display-message -p -t "$pane" '#{@nvim_repo}'; tmux list-panes -t "$pane" -F '#{@nvim_repo}'; } 2>/dev/null \
@@ -212,11 +194,8 @@ _resolve() {
   _nested_repo "$dir"
 }
 
-# _cmd: the sidebar pane command. `lg` (60-functions.zsh) picks the right GH token per remote host.
-# When lazygit quits, the pane closes itself through `close` so the width is reclaimed. `zsh -fic` sources
-# only 60-functions.zsh for `lg` (-f: no rc files — the full `-il` startup cost ~150ms), while -i keeps
-# job control, so lazygit runs as the pane's foreground process (#{pane_current_command} = lazygit, which
-# keeps `runall`, matching zsh panes, from typing into it).
+# _cmd: the pane command. `lg` (60-functions.zsh) sets the per-host GH token; `close` on quit reclaims the
+# width. zsh -f skips rc files (~150ms); -i keeps job control so pane_current_command = lazygit (runall skips it).
 _cmd() {
   local inner fns
   fns="$(cd "$(dirname "$0")/.." && pwd)/.config/zsh/60-functions.zsh"
@@ -224,7 +203,7 @@ _cmd() {
   printf 'exec zsh -fic %q' "$inner"
 }
 
-# _spawn <repo>: cold-start a lazygit for <repo> in a new stash window; prints its pane id.
+# _spawn <repo>: cold-start a lazygit in the stash; prints its pane id
 _spawn() {
   local p
   _stash_ensure
@@ -238,8 +217,7 @@ _tag() {
   tmux set-option -p -t "$1" @sidebar 1 \; set-option -p -t "$1" @sidebar_repo "$2" 2>/dev/null
 }
 
-# _open <path> <pane>: full-height left column on the resolved repo, focused — the parked lazygit if there
-# is one, else a fresh split.
+# _open <path> <pane>: join the parked lazygit for the repo, else split a new one
 _open() {
   local repo sb cols
   repo=$(_resolve "$@")
@@ -264,10 +242,8 @@ _toggle() {
   if [ -n "$existing" ]; then _close "$existing" park; else _open "$@"; fi
 }
 
-# _follow <nvim-pane>: if that window has a sidebar on a different repo than the pane's @nvim_repo, swap in
-# that repo's lazygit (parked, else cold-started in the stash) and park the old one. swap-pane keeps the
-# cell, its width, and (-d) focus where it is. With no sidebar open, pre-warm: park a lazygit for the repo
-# (or re-stamp the parked one, so the repos nvim is on are the last evicted).
+# _follow <nvim-pane>: open sidebar on another repo → swap in @nvim_repo's lazygit (swap-pane -d keeps
+# cell, width, focus) and park the old one. No sidebar → pre-warm (or re-stamp) a parked one.
 _follow() {
   local np=$1 repo row sb cur new
   repo=$(tmux display-message -p -t "$np" '#{@nvim_repo}' 2>/dev/null)
@@ -287,11 +263,9 @@ _follow() {
   return 0
 }
 
-# _edit <file> [line]: lazygit's edit (`k`) — open <file> in an nvim pane of lazygit's own window (its @nvim_server,
-# published by nvim's lua/config/tmux_lazygit.lua) and focus that pane. Parking/swapping keeps a pane's id,
-# so $TMUX_PANE's window is wherever the sidebar is now. Several nvims: the one on <file>'s repo, then the
-# last-active pane. No reachable nvim → a new nvim pane, full-height on the window's right edge (focused); it
-# publishes @nvim_server, so later edits reuse it. os.editInTerminal is off, so lazygit never suspends for this.
+# _edit <file> [line]: lazygit's edit (`k`, via lazygit-tmux-edit.yml) → open in an nvim pane of
+# $TMUX_PANE's window (by @nvim_server; prefer <file>'s repo, then the last-active pane) and focus it.
+# No reachable nvim → a new full-height nvim pane on the right edge.
 _edit() {
   local file=$1 line=${2:-0} repo np="" srv="" q="'"
   [[ $file == /* ]] || file=$PWD/$file
@@ -307,9 +281,8 @@ _edit() {
   tmux split-window -h -f -t "${TMUX_PANE:-}" -c "${repo:-$(dirname "$file")}" "${cmd[@]}"
 }
 
-# _fix_width: snap every sidebar back to its window's _width. Runs on window-layout-changed, which its own
-# resize-pane re-fires, so: only resize a sidebar whose width differs (ends the chain), and coalesce bursts
-# behind a mkdir lock + short debounce so two passes never overlap. Same scheme as the agent sidebar.
+# _fix_width: snap every sidebar to its _width. Its resize re-fires window-layout-changed, so only resize
+# on a mismatch (ends the loop) and coalesce bursts behind a mkdir lock + debounce.
 _fix_width() {
   local lock="/tmp/lazygit-sidebar-fixwidth-${UID:-0}.lock"
   mkdir "$lock" 2>/dev/null || return 0
@@ -325,9 +298,7 @@ _fix_width() {
   ) &
 }
 
-# _reap: close window $1 when the sidebar is its SOLE surviving pane, so exiting your last real pane closes
-# the tab instead of leaving a lone sidebar — by parking the sidebar (moving it out closes the window). Acts
-# iff exactly 1 pane and it's a sidebar outside the stash — never touches a window holding a real pane.
+# _reap <win>: if the sidebar is the window's only pane, park it (which closes the window).
 _reap() {
   local win="${1:-}" pane
   [ -n "$win" ] || return 0
@@ -340,7 +311,7 @@ _reap() {
   return 0
 }
 
-# _gc: kill the stash once it's the only session left, so parked lazygits never keep the server alive alone.
+# _gc: kill the stash once it's the only session left (else it keeps the server alive)
 _gc() {
   tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -qvx "$STASH" ||
     tmux kill-session -t "=$STASH" 2>/dev/null

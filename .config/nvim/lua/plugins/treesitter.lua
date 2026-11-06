@@ -8,8 +8,7 @@ return {
 		branch = "main",
 		lazy = false,
 		config = function()
-			-- main branch installs parser+queries to ~/.local/share/nvim/site/{parser,queries}/.
-			-- Gated by env.IS_SSH because Linux dev box has no internet (parsers vendored separately).
+			-- installs into stdpath("data")/site; parsers are vendored on the offline dev box
 			if not env.IS_SSH then
 				pcall(function()
 					require("nvim-treesitter").install({
@@ -32,9 +31,7 @@ return {
 		"nvim-treesitter/nvim-treesitter-textobjects",
 		branch = "main",
 		config = function()
-			-- main branch's setup() only takes { select = { lookahead, ... } } — it has
-			-- no keymaps/enable fields (those are silently dropped). Bind manually via
-			-- select_textobject in visual + operator-pending modes.
+			-- main branch's setup() silently ignores keymaps/enable, so bind by hand
 			require("nvim-treesitter-textobjects").setup({ select = { lookahead = true } })
 			local sel = require("nvim-treesitter-textobjects.select").select_textobject
 			local objs = {
@@ -43,15 +40,14 @@ return {
 				["ac"] = "@class.outer",
 				["ic"] = "@class.inner",
 			}
-			-- `i` moves right (colemak i ↔ l swap, config/keymaps.lua), so inner objects use
-			-- `l` (dlf / vlc) — and no x/o-mode map may start with `i`, or every `i` there
-			-- would wait out timeoutlen
+			-- inner objects use `l` (dlf / vlc): `i` is a motion (keymaps.lua) and an x/o map
+			-- starting with `i` would make every `i` wait out timeoutlen
 			for lhs, obj in pairs(objs) do
 				vim.keymap.set({ "x", "o" }, (lhs:gsub("^i", "l")), function()
 					sel(obj, "textobjects")
 				end, { desc = "textobject " .. obj })
 			end
-			-- scope capture is @local.scope in group "locals" on the main branch
+			-- main branch: scope is @local.scope in group "locals"
 			vim.keymap.set({ "x", "o" }, "as", function()
 				sel("@local.scope", "locals")
 			end, { desc = "textobject scope" })
@@ -64,10 +60,8 @@ return {
 		end,
 	},
 
-	-- markdown-preview: live browser preview (real HTML tables wrap per-column).
-	-- enabled off on the headless Linux dev box (no browser, no internet for the build).
-	-- build downloads the prebuilt server binary (no node/yarn toolchain needed). lazy runs
-	-- build before the plugin is sourced, so force-load first or mkdp#util#install is E117.
+	-- markdown-preview: live browser preview (off on the headless dev box).
+	-- build fetches the prebuilt server; lazy builds before sourcing, so force-load or E117.
 	{
 		"iamcco/markdown-preview.nvim",
 		enabled = not env.IS_SSH,
@@ -79,10 +73,8 @@ return {
 		end,
 		config = function()
 			vim.g.mkdp_theme = "dark"
-			-- Widen the preview: mkdp hard-caps #page-ctn at 900px (app/_static/page.css).
-			-- g:mkdp_markdown_css *replaces* the bundled markdown.css, so regenerate it as
-			-- (bundled css + width override) on load — keeps GitHub typography current across
-			-- plugin updates without vendoring a CSS copy into the repo.
+			-- g:mkdp_markdown_css *replaces* the bundled css, so write bundled + overrides to
+			-- cache on load: full width (page.css caps #page-ctn at 900px) + rose-pine
 			local base = vim.fn.stdpath("data") .. "/lazy/markdown-preview.nvim/app/_static/markdown.css"
 			local out = vim.fn.stdpath("cache") .. "/mkdp-markdown.css"
 			local css = ""
@@ -92,11 +84,8 @@ return {
 				fh:close()
 			end
 			css = css .. "\n#page-ctn{max-width:none!important;padding:8px 5%!important;}\n"
-			-- rose-pine (THEME.md): recolor prose chrome to match glow.yazi (rose-pine.json)
-			-- 1:1 — h1 dark-on-iris label, iris/foam/rose/gold/pine headings (h5/h6 unbold, no
-			-- underlines), gold bold / rose italic / muted strikethrough, iris bold links, love
-			-- inline-code on overlay, muted hr + blockquote. fenced-code syntax keeps mkdp's
-			-- default highlight.js theme (same "not matched" split as the glow row in THEME.md).
+			-- rose-pine prose colors matching glow.yazi's rose-pine.json (THEME.md); code
+			-- blocks keep mkdp's highlight.js theme
 			css = css .. [[
 :root,.markdown-body{--color-canvas-default:#191724;--color-canvas-subtle:#1f1d2e;--color-fg-default:#e0def4;--color-fg-muted:#908caa;--color-fg-subtle:#6e6a86;--color-border-default:#26233a;--color-border-muted:#403d52;--color-accent-fg:#ceacf6;--color-neutral-muted:#26233a;}
 body{background:#191724;}

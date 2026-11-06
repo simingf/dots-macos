@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# fzf session switcher in a centered tmux popup.
-# Height = session count + 5 (prompt + info + 2 borders + 1 pad), clamped by tmux to fit.
-# `_*` sessions are hidden (e.g. tmux-lazygit.sh's `_lazygit` stash).
+# fzf session switcher popup (prefix s). Height = sessions + 5 (prompt, info, borders, pad).
+# `_*` sessions are hidden (tmux-lazygit.sh's `_lazygit` stash).
 set -euo pipefail
 
 count=$(tmux list-sessions -F '#{session_name}' | grep -vc '^_' || true)

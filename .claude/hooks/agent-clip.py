@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-"""agent-clip.py — Stop hook: copy every user-facing block of this turn's reply to the clipboard.
+"""agent-clip.py — Stop hook: copy each user-facing block of this turn's reply to the clipboard.
 
-User-facing = in the turn's reply text, top to bottom:
-  - fenced blocks, any language (commands, drafts, snippets; one clip per block, list indent removed,
-    `$ ` prompts stripped from shell blocks)
-  - `>` blockquotes (drafts / quoted wording; one clip per quote, `> ` removed)
-  - `! cmd` lines / inline code spans (the "type `! cmd` in the prompt" form, copied verbatim)
-Skipped: anything the agent ran itself (equal to a Bash tool call's command this turn).
-
-Each block is a separate `pbcopy` with a CLIP_GAP pause so clipboard history (Alfred) records
-them all, last block = current clipboard. pbcopy on the Linux box forwards to the Mac via OSC 52.
-Runs detached (the hook returns immediately); never fails the hook.
+Blocks, top to bottom: fenced blocks (list indent removed, `$ ` stripped in shell blocks),
+`>` blockquotes (`> ` removed), and `! cmd` lines/spans. Skips commands the agent ran via Bash.
+One pbcopy per block, CLIP_GAP apart, so clipboard history keeps each (linux pbcopy → OSC 52).
+Runs detached; never fails the hook.
 """
 import json
 import os
@@ -28,8 +22,8 @@ BANG = re.compile(r"(?:^|`)(! [^`\n]+)", re.M)
 
 
 def is_prompt(r):
-    """A real user prompt: not a tool_result / meta message. Messages sent mid-turn are
-    `queued_command` attachments, not user rows, so they never split a turn."""
+    """A real user prompt (not tool_result / meta). Mid-turn messages are `queued_command`
+    attachments, so they never split a turn."""
     if r.get("type") != "user" or r.get("isMeta") or r.get("isSidechain"):
         return False
     c = (r.get("message") or {}).get("content")

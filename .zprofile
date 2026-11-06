@@ -5,18 +5,18 @@ if [[ -f "/opt/homebrew/bin/brew" ]]; then
     export NONINTERACTIVE=1
 fi
 
-# Environment (shared interactive env -- EDITOR, LS_COLORS, GH_HOST, NVM_DIR,
-# ~/.local/bin + skills-cli PATH, DOTFILES_DIR -- lives in .config/zsh/00-env.zsh)
+# Mac-only login env; shared interactive env lives in .config/zsh/00-env.zsh
 export RIPGREP_CONFIG_PATH=~/.config/ripgrep/rg.conf
 export ANI_CLI_PLAYER="$HOME/dots-macos/scripts/iina-cli-activate.sh"
 unset GH_TOKEN
 
 # PATH
 export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
-export PATH="$HOME/.mosaic:$PATH"  # mosaic CLI (Roblox SRE-platform; binary from artifactory, Mac-only work tool)
+export PATH="$HOME/.mosaic:$PATH"  # mosaic CLI (work)
 path+=/Library/TeX/texbin
-path+=/Applications/Docker.app/Contents/Resources/bin  # Docker Desktop CLI (docker + credential/kube helpers); appended so it can't shadow brew
-path+=$HOME/.docker/bin  # Docker CLI plugins dir (compose/buildx etc.); appended so it can't shadow brew
+# Docker CLI + plugins: appended so they can't shadow brew
+path+=/Applications/Docker.app/Contents/Resources/bin
+path+=$HOME/.docker/bin
 
 # Rust (Homebrew's rustup doesn't create ~/.cargo/bin proxies)
 if command -v rustup &>/dev/null; then

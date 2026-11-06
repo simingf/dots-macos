@@ -1,19 +1,16 @@
-# Set the directory we want to store zinit and plugins
+# zinit (auto-cloned on first run)
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-
-# Download Zinit, if it's not there yet
 if [[ ! -d "$ZINIT_HOME" ]]; then
     mkdir -p "$(dirname "$ZINIT_HOME")"
     git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 fi
 source "${ZINIT_HOME}/zinit.zsh"
 
-# Extra completion dirs — on fpath before compinit (run via atinit in the turbo block).
+# Extra completion dirs; must be on fpath before compinit (atinit below).
 fpath=($HOME/.docker/completions $HOME/.zfunc $fpath)
 
-# Turbo (deferred) plugin loading — sourced ~after the first prompt (`wait lucid`) so
-# startup stays fast. Single sequential block; order honors fzf-tab's rule:
-# completions (fpath) → compinit (atinit) → fzf-tab → autosuggestions → highlighting last.
+# Deferred (turbo) loading. Order is fzf-tab's rule:
+# completions → compinit → fzf-tab → autosuggestions → syntax-highlighting last.
 zinit wait lucid for \
     blockf \
         zsh-users/zsh-completions \
@@ -23,7 +20,7 @@ zinit wait lucid for \
         zsh-users/zsh-autosuggestions \
     zsh-users/zsh-syntax-highlighting
 
-# snippets (deferred too)
+# OMZ snippets (deferred)
 zinit wait lucid for \
     OMZP::sudo \
     OMZP::command-not-found

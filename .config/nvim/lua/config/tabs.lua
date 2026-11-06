@@ -1,11 +1,8 @@
--- Tabpage helpers shared by the tab keys, tab names and pickers (plugins/ui.lua), the
--- explorer (plugins/navigation.lua), LSP jumps (plugins/lsp.lua) and TmuxLazygitEdit
--- (config/tmux_lazygit.lua). Tabs are
--- tabpages, like tmux windows.
+-- Tabpages as tmux windows, splits as tmux panes. Used by the tab keys/pickers (ui.lua),
+-- explorer (navigation.lua), LSP jumps (lsp.lua) and TmuxLazygitEdit (tmux_lazygit.lua).
 local M = {}
 
--- new tabpage, like tmux ‹pfx›c; carries the explorer sidebar over (unfocused) when
--- this tab has one — the explorer is a split, so a plain tabnew starts without it
+-- new tab, like tmux ‹pfx›c; reopens the explorer (unfocused) if this tab has one
 function M.new()
 	local had_tree = Snacks.picker.get({ source = "explorer" })[1] ~= nil
 	vim.cmd("tabnew")
@@ -18,8 +15,8 @@ local function normal(w)
 	return vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "" and vim.api.nvim_win_get_config(w).relative == ""
 end
 
--- the tab's file window: its focused window when that's a normal one, else the last
--- one it focused (`#`), else its first — never the explorer or a float. nil if none.
+-- the tab's file window: focused if normal, else last focused (`#`), else first; never
+-- the explorer or a float. nil if none.
 function M.file_win(tab)
 	tab = tab or vim.api.nvim_get_current_tabpage()
 	local cur = vim.api.nvim_tabpage_get_win(tab)
@@ -38,18 +35,15 @@ function M.file_win(tab)
 	end
 end
 
--- a split with nothing worth keeping: a fresh unnamed buffer (every new split starts
--- as one, see config/keymaps.lua) or the dir kk opened as a tree
+-- nothing worth keeping: a fresh unnamed buffer (new splits) or the dir kk opened
 local function empty(w)
 	local buf = vim.api.nvim_win_get_buf(w)
 	local name = vim.api.nvim_buf_get_name(buf)
 	return (name == "" and not vim.bo[buf].modified) or vim.fn.isdirectory(name) == 1
 end
 
--- open a file tmux-style: jump to the split already showing it (any tab), else fill
--- this tab's first empty split (layout order), else open it in a new tab (with the
--- tree, see M.new). Used by the explorer's open (plugins/navigation.lua) and
--- TmuxLazygitEdit.
+-- open tmux-style: jump to the split showing it (any tab), else fill this tab's first
+-- empty split, else a new tab
 function M.open(file)
 	local path = vim.fn.fnamemodify(file, ":p")
 	for _, w in ipairs(vim.api.nvim_list_wins()) do
@@ -73,8 +67,7 @@ function M.open(file)
 	vim.cmd("edit " .. vim.fn.fnameescape(path))
 end
 
--- M.open, then put the cursor at pos ({ line, col }, 1-based line, 0-based col) when
--- given — for pickers (grep hits, diagnostics) and LSP jumps (config/lsp.lua)
+-- M.open, then cursor to pos ({ 1-based line, 0-based col }) for pickers / LSP jumps
 function M.jump(file, pos)
 	M.open(file)
 	if pos and pos[1] > 0 then
@@ -84,9 +77,8 @@ function M.jump(file, pos)
 	end
 end
 
--- swap the current split's file with the previous (-1) / next (+1) file split, wrapping,
--- and follow it — like tmux ‹pfx›[ / ‹pfx›] (swap-pane). Only file splits take part,
--- so the explorer stays docked on the left.
+-- swap buffers with the prev (-1) / next (+1) file split and follow, like tmux ‹pfx›[ ]
+-- (file splits only, so the explorer stays docked)
 function M.swap(delta)
 	local wins = vim.tbl_filter(normal, vim.api.nvim_tabpage_list_wins(0))
 	local cur = vim.api.nvim_get_current_win()
@@ -106,8 +98,7 @@ function M.swap(delta)
 	vim.api.nvim_set_current_win(other)
 end
 
--- move the current split into its own new tab, like tmux ‹pfx›! (break-pane); the
--- new tab gets the tree when this one has it (see M.new)
+-- move the split to a new tab (with the tree if this tab has one), like tmux ‹pfx›!
 function M.break_out()
 	local wins = vim.tbl_filter(normal, vim.api.nvim_tabpage_list_wins(0))
 	if #wins < 2 or not normal(0) then
@@ -121,10 +112,8 @@ function M.break_out()
 	end
 end
 
--- closing a split/tab closes its files too, like killing a tmux pane: delete each of
--- bufs that's now shown nowhere, so the buffer list (<leader>w) is what's on screen —
--- unsaved ones included, once settle_unsaved has saved or discarded them. Closed files
--- remain in recent files (<leader>tr).
+-- closing a split/tab closes its files (like killing a tmux pane): delete bufs now shown
+-- nowhere, so the buffer list (<leader>w) matches the screen. Recent files keep them.
 local function drop_unshown(bufs)
 	for _, b in ipairs(bufs) do
 		if
@@ -138,9 +127,8 @@ local function drop_unshown(bufs)
 	end
 end
 
--- before closing wins: for each unsaved file in them that no other window shows, ask
--- Save / Don't Save / Cancel (like `:confirm quit`). Don't Save discards it, so
--- drop_unshown can close it. false = cancelled (or the save failed): don't close.
+-- ask Save / Don't Save / Cancel for each unsaved file only shown in wins.
+-- false = cancelled or save failed: don't close.
 local function settle_unsaved(wins)
 	local closing = {}
 	for _, w in ipairs(wins) do
@@ -182,9 +170,8 @@ local function settle_unsaved(wins)
 	return true
 end
 
--- close a tabpage (default: the current one), like tmux ‹pfx›k. The last tab can't
--- close, so it drops its buffer via Snacks instead — that keeps the window layout
--- (plain `bdelete` collapses the edit window, letting the explorer fill the screen).
+-- close a tab (default current), like tmux ‹pfx›k. The last tab drops its buffer via
+-- Snacks instead (plain bdelete would let the explorer fill the screen).
 function M.close(tab)
 	tab = tab or vim.api.nvim_get_current_tabpage()
 	if #vim.api.nvim_list_tabpages() > 1 then
@@ -196,15 +183,14 @@ function M.close(tab)
 		vim.cmd("tabclose " .. vim.api.nvim_tabpage_get_number(tab))
 		drop_unshown(bufs)
 	else
-		-- ask with the same dialog first, so Snacks then finds nothing unsaved
+		-- our dialog first, so Snacks finds nothing unsaved
 		if settle_unsaved({ vim.api.nvim_get_current_win() }) then
 			Snacks.bufdelete()
 		end
 	end
 end
 
--- close the current split, like tmux ‹pfx›x; the tab's last file split closes the
--- tab, as tmux closes a window with its last pane
+-- close the split, like tmux ‹pfx›x; the last file split closes the tab
 function M.close_split()
 	local win = vim.api.nvim_get_current_win()
 	local buf = vim.api.nvim_win_get_buf(win)

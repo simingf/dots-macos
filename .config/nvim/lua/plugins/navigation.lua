@@ -1,36 +1,18 @@
 return {
 
-	-- snacks.explorer: docked file-tree sidebar (replaces neo-tree). Configured as
-	-- an extra spec on snacks.nvim — lazy deep-merges it with the main snacks spec
-	-- in ui.lua. Behaviors ported 1:1 from the old neo-tree setup:
-	-- • replace_netrw: `nvim <dir>` hijacks netrw and opens the tree focused
-	--   (snacks wires this on first BufEnter). `nvim <file>` shows it as an
-	--   unfocused sidebar via the VimEnter autocmd in opts below. no args → lazy.
-	-- • watch (source default) auto-refreshes on out-of-band disk changes
-	--   (agents, git, mv) — the old use_libuv_file_watcher equivalent.
-	-- • hidden+ignored show dotfiles/gitignored dimmed; `H`/`I` toggle at runtime.
-	-- • Colemak-DH: `i` (right) opens/expands, `m` (left) collapses; `n`/`e` fall
-	--   through to the global down/up remaps for list navigation.
-	-- Sidebar sits on the left; width narrowed to 24 (the sidebar preset defaults
-	-- to width 40 with a matching min_width that would clamp a smaller width, so
-	-- both are overridden below).
+	-- snacks.explorer: docked file tree on the left (fragment merged with ui.lua's snacks spec).
+	-- `nvim <dir>` opens it focused (replace_netrw), `nvim <file>` unfocused (VimEnter
+	-- below), no args: not at all. Dotfiles/gitignored shown dimmed (H/I toggle).
+	-- Colemak: i opens/expands, m collapses, n/e move.
 	{
 		"folke/snacks.nvim",
-		-- opts is a *function*, and our startup autocmds are armed here rather than in
-		-- `init`. snacks is split across fragments (ui.lua, here) and lazy
-		-- keeps only ONE `init`/`config` per plugin (last fragment wins — ui.lua's),
-		-- so an `init` here silently never runs. opts-functions instead CHAIN across
-		-- fragments and run when the plugin loads; snacks is lazy=false, so that
-		-- happens during startup, before VimEnter fires — early enough to register it.
+		-- autocmds live in an opts *function*: lazy keeps one init/config per plugin (ui.lua's
+		-- wins), but opts functions chain, and run at startup (lazy=false) before VimEnter
 		opts = function(_, opts)
 			local grp = vim.api.nvim_create_augroup("snacks_explorer", { clear = true })
 
-			-- Force-refresh the explorer's git status. snacks watches `.git/index` via a
-			-- libuv fs_event, but macOS FSEvents drops git's index.lock→index rename, so an
-			-- out-of-band commit/push (another pane, an agent) leaves the tree's git icons
-			-- stale. The built-in `u`/explorer_update only re-stats the tree — git status sits
-			-- behind a 15-min TTL cache (CACHE_TTL in explorer/git.lua), so it won't re-run.
-			-- This invalidates that cache, then re-renders. Bound to `R` and FocusGained below.
+			-- force-refresh git icons (`R`, FocusGained): macOS FSEvents misses git's
+			-- index.lock→index rename, and `u` doesn't bust explorer/git.lua's 15-min CACHE_TTL
 			local function refresh_git()
 				local p = Snacks.picker and Snacks.picker.get({ source = "explorer" })[1]
 				if not p or p.closed then
@@ -40,10 +22,7 @@ return {
 				require("snacks.explorer.actions").update(p, { refresh = true })
 			end
 
-			-- `nvim <file>`: show the explorer as an unfocused sidebar (focus stays on
-			-- the file). dir args are handled by replace_netrw; no args stay lazy.
-			-- `focus = false` opens the picker without it grabbing focus (honored in
-			-- picker:show) — cleaner than opening focused then racing to refocus.
+			-- `nvim <file>`: open the tree unfocused (dirs are replace_netrw's)
 			vim.api.nvim_create_autocmd("VimEnter", {
 				group = grp,
 				once = true,
@@ -59,15 +38,8 @@ return {
 				end,
 			})
 
-			-- widen the explorer to 40 cols while any of its windows is focused, back to 24
-			-- otherwise. the visible list is a float sized to a hidden root split, so we
-			-- resize the ROOT (setting the float does nothing to the column) and let the
-			-- float follow; snacks resolves splits to the live root width on refresh, so it
-			-- persists. keyed to explorer *membership* (input/list/preview, mirroring snacks'
-			-- own is_picker_win check) rather than the list window alone — pressing `/`
-			-- (toggle_focus) moves focus list→input, which a list-only guard would read as
-			-- "left the explorer" and shrink mid-search. one persistent WinEnter autocmd that
-			-- self-locates the picker, so it spans close/reopen; width set on root.
+			-- 40 cols while any explorer window (input/list/preview, so `/` doesn't shrink it) is
+			-- focused, else 24. Resize the root split: the list float just follows it.
 			vim.api.nvim_create_autocmd("WinEnter", {
 				group = grp,
 				callback = function()
@@ -91,21 +63,15 @@ return {
 				end,
 			})
 
-			-- auto-refresh git icons when the nvim pane regains focus, e.g. after
-			-- committing in another tmux pane or via an agent (requires terminal
-			-- focus reporting, which tmux forwards).
+			-- e.g. after a commit in another tmux pane (needs tmux focus-events)
 			vim.api.nvim_create_autocmd("FocusGained", {
 				group = grp,
 				callback = refresh_git,
 			})
 
-			-- `:q` on the last file window would otherwise leave only the docked
-			-- explorer (a real root split + its floats), so nvim stays open with focus
-			-- parked on the sidebar instead of quitting. On QuitPre, if closing the
-			-- current window leaves the explorer as the only thing standing, close the
-			-- explorer too so nvim exits — the canonical nvim-tree pattern. Windows are
-			-- closed synchronously here (picker:close() defers teardown via
-			-- vim.schedule, which races the quit and leaves the split behind).
+			-- `:q` on the last file window: close the explorer too so nvim exits instead of
+			-- parking on the sidebar. Close windows directly: picker:close() defers via
+			-- vim.schedule, which races the quit.
 			vim.api.nvim_create_autocmd("QuitPre", {
 				group = grp,
 				callback = function()
@@ -113,7 +79,7 @@ return {
 					if not p or p.closed then
 						return
 					end
-					-- window ids owned by the explorer: the docked root split + its floats.
+					-- explorer windows: root split + floats
 					local ex = {}
 					local root = p.layout and p.layout.root and p.layout.root.win
 					if root and vim.api.nvim_win_is_valid(root) then
@@ -124,12 +90,11 @@ return {
 							ex[w.win.win] = true
 						end
 					end
-					-- quitting from inside the sidebar isn't the case we fix; let snacks handle it.
+					-- quitting from the sidebar itself: snacks' business
 					if ex[vim.api.nvim_get_current_win()] then
 						return
 					end
-					-- count non-floating windows in this tab that aren't the explorer. the
-					-- window being quit is still open and counted, so <= 1 means it's the last.
+					-- non-float, non-explorer windows; the one being quit still counts
 					local real = 0
 					for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
 						if vim.api.nvim_win_get_config(win).relative == "" and not ex[win] then
@@ -151,15 +116,11 @@ return {
 						explorer = {
 							hidden = true, -- show dotfiles (dimmed)
 							ignored = true, -- show gitignored (dimmed)
-							-- surface a `w` title flag when wrap is on, matching the built-in
-							-- h/i flags. deep-merges with the default toggles table; the flag
-							-- lights up while the picker opt `wrap` is true (set by `W` below).
+							-- `w` title flag while wrap is on (`W` below), like the h/i flags
 							toggles = { wrap = "w" },
 							layout = { layout = { width = 24, min_width = 24 } },
-							-- open a file in its own tab, tmux-style (jump to the tab already
-							-- showing it; see config/tabs.lua). Dirs and search hits fall through
-							-- to the stock confirm (toggle / reveal). A separate name since the
-							-- explorer's setup force-overrides any user `confirm` action.
+							-- files open tmux-style (tabs.open); dirs / search hits use stock confirm.
+							-- Own name: the explorer force-overrides a user `confirm`.
 							actions = {
 								tab_open = function(picker, item, action)
 									if item and not item.dir and not picker.input.filter.meta.searching then
@@ -170,10 +131,7 @@ return {
 								end,
 							},
 							win = {
-								-- `<Esc>` in the search box (opened with `/`) returns focus to the tree
-								-- instead of closing the picker (snacks' default `cancel`), so `/` then
-								-- `<Esc>` is an in/out pair for filtering. From the tree, `<Esc>` still
-								-- closes. Both modes so one press works whether typing (insert) or normal.
+								-- <Esc> in the `/` search box returns to the tree instead of closing
 								input = {
 									keys = {
 										["<Esc>"] = { "toggle_focus", mode = { "i", "n" } },
@@ -181,27 +139,18 @@ return {
 								},
 								list = {
 									keys = {
-										-- `<Esc>` in the tree is a no-op instead of closing the sidebar;
-										-- `q` still closes it.
+										-- <Esc> doesn't close the tree (`q` does)
 										["<Esc>"] = false,
 										["i"] = "tab_open", -- Colemak right: open file / expand dir
 										["l"] = "tab_open",
 										["<CR>"] = "tab_open",
 										["<2-LeftMouse>"] = "tab_open",
 										["m"] = "explorer_close", -- Colemak left: collapse dir
-										-- `R`: force-refresh tree + git status (see refresh_git above). The
-										-- built-in `u` only re-stats the tree; this also busts the git cache.
 										["R"] = refresh_git,
-										-- `M`: move marked (<Tab>) files into the dir under the cursor
-										-- (falls back to rename the current item if none marked). Rebound
-										-- off lowercase `m` since that's taken by collapse above.
+										-- move marked files here (else rename); `m` is collapse
 										["M"] = "explorer_move",
-										-- `y`: copy the path(s) — item under the cursor, or all <Tab>-marked
-										-- items newline-joined — to the system clipboard, to paste into another
-										-- pane/app (e.g. claude). Absolute (with $HOME shortened to ~) so they
-										-- resolve when claude runs in a different repo. The built-in explorer_yank
-										-- writes to `vim.v.register or "+"`, which on a bare `y` is the unnamed
-										-- register `"` and never reaches the OS clipboard — force `+` here.
+										-- copy ~-paths of the item / marked items to the clipboard (stock
+										-- explorer_yank uses the unnamed register on a bare `y`)
 										["y"] = function()
 											local p = Snacks.picker.get({ source = "explorer" })[1]
 											if not p then
@@ -215,9 +164,7 @@ return {
 											vim.fn.setreg("+", table.concat(files, "\n"), "l")
 											Snacks.notify.info("Yanked " .. #files .. " path(s) to clipboard")
 										end,
-										-- `o`: open the file under the cursor and preview it in a browser. Markdown
-										-- → markdown-preview (rose-pine themed); html/svg → live-preview. Both reload on
-										-- save; directories are skipped. Routing shared with <leader>p (config.preview).
+										-- open + browser preview (config/preview.lua); dirs skipped
 										["o"] = function()
 											local p = Snacks.picker.get({ source = "explorer" })[1]
 											if not p then
@@ -230,11 +177,7 @@ return {
 											p:action("tab_open") -- open in its tab, not the sidebar
 											require("config.preview").current()
 										end,
-										-- `W`: toggle line wrap for the tree (off by default), matching
-										-- the H/I toggle style. Tree indent is real leading text + the
-										-- list has breakindent, so wrapped names indent-align. Also flips
-										-- the picker opt `wrap` and redraws the title so the `w` flag
-										-- (registered in `toggles` above) appears/clears like h/i.
+										-- toggle wrap; opts.wrap + update_titles drive the `w` flag
 										["W"] = function(self)
 											local wrap = not vim.wo[self.win].wrap
 											vim.wo[self.win].wrap = wrap
@@ -256,11 +199,8 @@ return {
 			{
 				"<leader>o",
 				function()
-					-- focus toggle: in the tree → jump back to the previous window;
-					-- otherwise reveal the current file in the tree (opening if closed)
-					-- and focus it. reveal() only re-targets an already-open tree
-					-- without grabbing focus, so focus explicitly (re-fetch in case
-					-- reveal just opened it).
+					-- in the tree: back to the previous window; else reveal the file and focus
+					-- the tree (reveal() doesn't focus an already-open one)
 					local p = Snacks.picker.get({ source = "explorer" })[1]
 					if p and p:is_focused() then
 						vim.cmd("wincmd p")
@@ -268,8 +208,7 @@ return {
 						Snacks.explorer.reveal()
 						p = Snacks.picker.get({ source = "explorer" })[1]
 						if p then
-							-- the tree, not its search box: a tree opened with focus = false
-							-- (config/tabs.lua, VimEnter above) would default to the input
+							-- the list: a tree opened with focus = false would focus the input
 							p:focus("list")
 						end
 					end
@@ -279,9 +218,8 @@ return {
 		},
 	},
 
-	-- yazi.nvim: launch yazi as a file picker; selecting a file `:edit`s it.
-	-- Skipped where yazi isn't installed (e.g. Windows) — `cond` keeps the plugin
-	-- in lazy-lock.json so siblings stay byte-identical, but blocks setup at startup.
+	-- yazi.nvim: yazi as a file picker. `cond` (not `enabled`) keeps it in lazy-lock.json
+	-- where yazi is missing.
 	{
 		"mikavilpas/yazi.nvim",
 		version = "*",
@@ -295,20 +233,15 @@ return {
 		},
 		opts = {
 			open_for_directories = false,
-			-- picking a dir (<CR> on it) would `:edit` it, which snacks' replace_netrw
-			-- handler treats as "toggle the explorer" — closing an open tree. The hook
-			-- below cds into it instead; files open as usual.
+			-- `:edit <dir>` would toggle the explorer (replace_netrw); the hook cds instead
 			open_file_function = function(chosen)
 				if vim.fn.isdirectory(chosen) == 0 then
 					require("yazi.openers").open_file(chosen)
 				end
 			end,
 			hooks = {
-				-- however yazi closes, cd nvim to the picked dir, else the dir yazi was last
-				-- in; the explorer follows DirChanged, so the sidebar re-roots there too.
-				-- Exactly one cd: two back-to-back re-root the tree twice, and snacks lets
-				-- an aborted-before-it-started find of a small dir run to completion
-				-- into the same list — the tree shows the dir twice.
+				-- cd to the picked dir, else yazi's last dir (the tree follows DirChanged).
+				-- Exactly one cd: two in a row can list the dir twice in the tree (snacks race).
 				yazi_closed_successfully = function(chosen, _, state)
 					if chosen and vim.fn.isdirectory(chosen) == 1 then
 						vim.cmd.cd(chosen)
@@ -320,10 +253,8 @@ return {
 		},
 	},
 
-	-- live-preview.nvim: preview HTML/Markdown/AsciiDoc/SVG in a real browser with
-	-- auto-reload. Pure Lua (no Node/Python) so it stays byte-identical across
-	-- mac/linux/windows. Lazy-loaded on :LivePreview; the explorer `o` key (above)
-	-- starts it for the file under the cursor and edits reload the page on save.
+	-- live-preview.nvim: browser preview of html/svg/…, reloads on save. Pure Lua, so
+	-- it works on every host.
 	{
 		"brianhuster/live-preview.nvim",
 		cmd = "LivePreview",

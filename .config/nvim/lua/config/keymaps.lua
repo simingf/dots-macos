@@ -1,24 +1,19 @@
--- set the leader key
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
--- (<leader>v → <C-w> chain is registered as a which-key proxy in the plugin spec below
---  so the popup shows the full <C-w>* hint set; ctrl-w is hard to reach otherwise.)
--- Colemak-DH: hjkl ↔ mnei swap, and i ↔ l everywhere (normal / visual / operator-
--- pending): `i` moves right, `l` does whatever `i` did — insert in normal mode, the
--- inner-text-object prefix after an operator or in visual (dlw, cl", yl(, vlw;
--- treesitter dlf / vlc, see plugins/treesitter.lua).
+-- (<leader>v = <C-w> is a which-key proxy, see plugins/ui.lua)
+
+-- ── Colemak-DH motions ─────────────────────────────────────────────
+-- hjkl → mnei, and i ↔ l: `l` is insert / the inner-object prefix (dlw, cl", vlw)
 local _nxo = { "n", "x", "o" }
 vim.keymap.set(_nxo, "m", "h")
 vim.keymap.set(_nxo, "n", "j")
 vim.keymap.set(_nxo, "e", "k")
 vim.keymap.set(_nxo, "i", "l")
 vim.keymap.set(_nxo, "l", "i")
--- Prune keys that only cause accidents or never get used. nvim's own default maps
--- (set before this file runs) are deleted; built-in commands are <Nop>'d.
---   - syntax-node selection (an / in — `in` would also make every x/o `i` wait out
---     timeoutlen — plus [n ]n [N ]N)
---   - [ / ] list pairs for the arglist, tags, location list, quickfix and buffers
---     ([d ]d [D ]D diagnostics stay)
+
+-- ── pruned defaults (accident-prone / unused; see KEYBINDS.md) ─────
+-- nvim default maps are deleted, builtins <Nop>'d. `in` would make every x/o `i` wait
+-- out timeoutlen. [ ] pairs go except diagnostics ([d ]d).
 for _, mode in ipairs({ "x", "o" }) do
 	pcall(vim.keymap.del, mode, "an")
 	pcall(vim.keymap.del, mode, "in")
@@ -30,20 +25,17 @@ for _, c in ipairs({ "a", "A", "t", "T", "<C-T>", "l", "L", "<C-L>", "q", "Q", "
 	pcall(vim.keymap.del, "n", "[" .. c)
 	pcall(vim.keymap.del, "n", "]" .. c)
 end
---   - <C-a>/<C-x> (±1 the number under the cursor; <C-a> is "line start" in zsh),
---     <C-z> (suspend nvim), ZZ / ZQ (quit), gQ (Ex mode), & (repeat last :s)
+-- <C-a>/<C-x> increment, <C-z> suspend, ZZ/ZQ quit, gQ Ex mode, & repeat :s
 vim.keymap.set({ "n", "x" }, "<C-a>", "<Nop>")
 vim.keymap.set({ "n", "x" }, "<C-x>", "<Nop>")
 vim.keymap.set({ "n", "x" }, "<C-z>", "<Nop>")
 for _, lhs in ipairs({ "ZZ", "ZQ", "gQ", "&" }) do
 	vim.keymap.set("n", lhs, "<Nop>")
 end
--- insert <C-a> / <C-e>: line start / end like zsh (were: re-insert last text / copy the
--- char below)
+-- insert <C-a> / <C-e>: line start / end, like zsh
 vim.keymap.set("i", "<C-a>", "<Home>", { desc = "line start" })
 vim.keymap.set("i", "<C-e>", "<End>", { desc = "line end" })
--- matchit's extras (g% [% ]% a%) are defined by a runtime plugin that loads after
--- this file, so drop them once startup is done; plain % stays
+-- matchit's g% [% ]% a% load after this file, so drop them on VimEnter (% stays)
 vim.api.nvim_create_autocmd("VimEnter", {
 	once = true,
 	callback = function()
@@ -55,13 +47,13 @@ vim.api.nvim_create_autocmd("VimEnter", {
 		pcall(vim.keymap.del, "x", "a%")
 	end,
 })
+
+-- ── search ─────────────────────────────────────────────────────────
+-- j/J = next/prev match (n is a motion now); join lines → <leader>j (gJ still works)
 vim.keymap.set({ "n", "x" }, "j", "n")
--- symmetric search repeat: J = prev (else backward search stays on `N`, a different
--- physical row). Join-lines loses its `J` home → moved to <leader>j below (gJ still
--- joins without a space, since the g-prefix builtin ignores the top-level J map).
 vim.keymap.set({ "n", "x" }, "J", "N")
--- auto-clear search highlights: keep 'hlsearch' on only while the last normal-mode key
--- was a search key. on_key sees keys *after* mappings, so j/J/⌘F arrive as n/N//.
+-- 'hlsearch' only while the last normal key was a search key. on_key sees keys after
+-- mapping, so j/J/⌘F arrive as n/N//.
 vim.on_key(function(key)
 	if vim.fn.mode() == "n" then
 		local searching = vim.tbl_contains({ "n", "N", "*", "#", "/", "?" }, vim.fn.keytrans(key))
@@ -70,10 +62,11 @@ vim.on_key(function(key)
 		end
 	end
 end, vim.api.nvim_create_namespace("auto_hlsearch"))
-vim.keymap.set(_nxo, "k", "e")
--- `h`/`H` are claimed by arrow.nvim (buffer / global UI); use `:mark x` to set marks.
--- pane switching: <leader>{mnei} matches the colemak-swap movement keys. At nvim's edge
--- it moves on to the next tmux pane, like prefix m/n/e/i does (config/nav.lua, tmux-nav.sh).
+vim.keymap.set(_nxo, "k", "e") -- end of word (e is up)
+-- h/H belong to arrow.nvim; set marks with `:mark x`
+
+-- ── splits (mirror tmux pane keys) ─────────────────────────────────
+-- <leader>{mnei}: move between splits, past nvim's edge into the next tmux pane (nav.lua)
 for key, d in pairs({ m = { "h", "L", "left" }, n = { "j", "D", "down" }, e = { "k", "U", "up" }, i = { "l", "R", "right" } }) do
 	vim.keymap.set("n", "<leader>" .. key, function()
 		if not require("config.nav").move(d[1]) and vim.env.TMUX_PANE and vim.env.DOTFILES_DIR then
@@ -81,18 +74,15 @@ for key, d in pairs({ m = { "h", "L", "left" }, n = { "j", "D", "down" }, e = { 
 		end
 	end, { silent = true, desc = "win " .. d[3] })
 end
--- splits: match tmux (`\` = vertical divider, `-` = horizontal divider; shifted = before).
--- Each starts empty, like a fresh tmux pane; opening a file from the tree fills the
--- first empty split (config/tabs.lua).
+-- `\` / `-` split like tmux (shifted = before); new splits start empty and the tree
+-- fills the first empty one (tabs.lua)
 vim.keymap.set("n", "<leader>\\", "<cmd>vnew<cr>", { silent = true, desc = "vsplit" })
 vim.keymap.set("n", "<leader>-", "<cmd>new<cr>", { silent = true, desc = "hsplit" })
 vim.keymap.set("n", "<leader>|", "<cmd>leftabove vnew<cr>", { silent = true, desc = "vsplit left" })
 vim.keymap.set("n", "<leader>_", "<cmd>aboveleft new<cr>", { silent = true, desc = "hsplit above" })
--- rest of tmux's pane keys: resize (M/N/E/I, 5 cells, moves the border in that direction
--- like resize-pane), swap ([ ], file splits only), even out (0), last (P), close (x)
--- M/I then rebalance like tmux's (scripts/tmux-even-columns.sh keep mode): the resized window's
--- top-level column keeps its new width and the other columns split the rest evenly (the explorer
--- keeps its width, like tmux's sidebar). Any shape but a top-level left/right split is left as-is.
+-- resize M/N/E/I (5 cells, border moves that way), swap [ ], equalize 0, last P, close x.
+-- After M/I the resized column (and the explorer) keep their width and the other top-level
+-- columns share the rest evenly, like tmux-even-columns.sh keep mode.
 local function keep_column(win)
 	local layout = vim.fn.winlayout()
 	if layout[1] ~= "row" then
@@ -163,20 +153,20 @@ vim.keymap.set("n", "<leader>P", "<C-w>p", { desc = "last split" })
 vim.keymap.set("n", "<leader>x", function()
 	require("config.tabs").close_split()
 end, { desc = "close split" })
--- zoom the split to full size and back, like tmux ‹pfx›z
+-- zoom toggle, like tmux ‹pfx›z
 vim.keymap.set("n", "<leader>z", function()
 	Snacks.zen.zoom()
 end, { desc = "zoom split" })
--- join lines (J reclaimed for search-prev above)
 vim.keymap.set({ "n", "x" }, "<leader>j", "J", { desc = "join lines" })
--- prevent x or X from modifying the internal register
+
+-- ── registers ──────────────────────────────────────────────────────
+-- x / X don't clobber the unnamed register
 vim.keymap.set({ "n", "x" }, "x", '"_x')
 vim.keymap.set({ "n", "x" }, "X", '"_d')
--- yank and paste from clipboard
 vim.keymap.set({ "n", "x" }, "gy", '"+y', { desc = "yank to clipboard" })
 vim.keymap.set("n", "gp", '"+p', { desc = "paste from clipboard" })
--- ⌘ keys, matching zsh / Claude Code: tmux (scripts/tmux-cmdkey.sh) delivers ⌘A/C/X/Z/⇧Z/S
--- / ⌘←/→ as <D-…> keys (⌘V is the terminal's own paste).
+
+-- ── ⌘ keys (sent as <D-…> by scripts/tmux-cmdkey.sh; ⌘V is terminal paste) ──
 vim.keymap.set({ "n", "x" }, "<D-a>", "ggVG", { desc = "select all" })
 vim.keymap.set("i", "<D-a>", "<Esc>ggVG", { desc = "select all" })
 vim.keymap.set("x", "<D-c>", '"+y', { desc = "copy" })
@@ -186,8 +176,8 @@ vim.keymap.set("i", "<D-z>", "<C-o>u", { desc = "undo" })
 vim.keymap.set("n", "<D-S-z>", "<C-r>", { desc = "redo" })
 vim.keymap.set("i", "<D-S-z>", "<C-o><C-r>", { desc = "redo" })
 vim.keymap.set({ "n", "i", "x" }, "<D-s>", "<Cmd>write<CR>", { desc = "write buffer" })
--- ⌘⌫ deletes back to the first non-blank — in normal mode through the cursor char (what ⇧⌘← selects) —
--- and from the first non-blank it deletes the indent, like zsh's kill-bol
+-- ⌘⌫: delete back to the first non-blank (normal mode: through the cursor char); from
+-- there, the indent. Like zsh's kill-bol.
 local function delete_to_line_start(inclusive)
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	local line = vim.api.nvim_get_current_line()
@@ -204,8 +194,7 @@ vim.keymap.set("n", "<D-BS>", function() delete_to_line_start(true) end, { desc 
 vim.keymap.set("i", "<D-BS>", function() delete_to_line_start(false) end, { desc = "delete to line start" })
 vim.keymap.set("x", "<D-BS>", "d", { desc = "delete selection" })
 vim.keymap.set("x", "<BS>", "d", { desc = "delete selection" })
--- ⇧⌘⌫ clears the line(s) down to their indent and types there, like zsh / Claude Code clearing their input
--- (not cc: indentexpr would recompute the indent)
+-- ⇧⌘⌫: clear the line(s) to their indent and insert there (not cc: indentexpr re-indents)
 local function clear_lines()
 	local first, last = vim.fn.line("."), vim.fn.line("v")
 	if first > last then
@@ -242,9 +231,8 @@ vim.keymap.set("n", "<D-Right>", "$", { desc = "line end" })
 vim.keymap.set("x", "<D-Right>", "g_", { desc = "line end" }) -- $ would also select the newline
 vim.keymap.set("i", "<D-Left>", "<C-o>^", { desc = "line start" })
 vim.keymap.set("i", "<D-Right>", "<End>", { desc = "line end" })
--- ⇧←/→ and ⇧⌘←/→ select, like zsh's prompt: start visual from normal / insert, extend it in visual.
--- Never past the last char (visual lets the cursor onto the newline, which ⌫ would then join), and in
--- insert mode nothing to select at the line's start / end is a no-op.
+-- ⇧←/→, ⇧⌘←/→ select like zsh: start visual from n/i, extend in x. Never onto the newline
+-- (⌫ would join lines); a no-op in insert at the line's start / end.
 local function at_eol()
 	return vim.fn.col(".") >= vim.fn.col("$") - 1
 end
@@ -269,31 +257,24 @@ vim.keymap.set("x", "<D-S-Left>", "^", { desc = "select to line start" })
 vim.keymap.set("x", "<D-S-Right>", "g_", { desc = "select to line end" })
 map_expr("i", "<D-S-Left>", function() return at_bol() and "" or "<Left><C-o>v^" end, "select to line start")
 map_expr("i", "<D-S-Right>", function() return past_eol() and "" or "<C-o>vg_" end, "select to line end")
--- ⌥⌫ deletes a word, like zsh / Claude Code
 vim.keymap.set("i", "<M-BS>", "<C-w>", { desc = "delete word" })
--- a mouse drag copies on release, like a tmux selection in zsh / Claude Code, but stays
--- selected (gv) so ⌘X or an operator can still act on it
+-- mouse drag copies on release (like tmux), staying selected so ⌘X / operators still work
 vim.keymap.set("x", "<LeftRelease>", '"+ygv', { desc = "copy mouse selection" })
 
--- bind 0 to ^ and L to $ (H is taken by arrow.nvim)
+-- ── misc ───────────────────────────────────────────────────────────
+-- 0 = ^, L = $ (H is arrow.nvim)
 vim.keymap.set({ "n", "x", "o" }, "0", "^", { noremap = true, silent = true })
 vim.keymap.set({ "n", "x", "o" }, "L", "$", { noremap = true, silent = true })
--- format with conform (falls back to LSP if no formatter is configured for the filetype);
--- `=` like the builtin reindent operator (<leader>f is grep, like tmux ‹pfx›f)
+-- format (conform, LSP fallback); `=` like the reindent operator (<leader>f is grep)
 vim.keymap.set({ "n", "x" }, "<leader>=", function()
 	require("conform").format({ async = true, lsp_format = "fallback" })
 end, { desc = "format" })
--- browser preview of the current file: md → markdown-preview (themed), else → live-preview.
--- same routing as the snacks-explorer `o` key (see config.preview).
+-- browser preview (config/preview.lua)
 vim.keymap.set("n", "<leader>p", function()
 	require("config.preview").current()
 end, { desc = "browser preview" })
--- reload the config modules live (options/keymaps/autocmds) so edits to them take
--- effect without restarting nvim: drop them from the module cache and re-require.
--- Safe because each is idempotent on re-run (keymaps/options overwrite; autocmds
--- use clear=true augroups). Plugin *spec* changes aren't covered by this — lazy runs
--- a plugin's config once; use `:Lazy reload <plugin>` (e.g. snacks.nvim) for those.
--- <C-r> like tmux ‹pfx›C-r (reload config).
+-- re-run options/keymaps/autocmds (all idempotent), like tmux ‹pfx›C-r.
+-- Plugin specs aren't covered: use `:Lazy reload <plugin>`.
 vim.keymap.set("n", "<leader><C-r>", function()
 	for _, m in ipairs({ "config.options", "config.keymaps", "config.autocmds" }) do
 		package.loaded[m] = nil
@@ -301,11 +282,11 @@ vim.keymap.set("n", "<leader><C-r>", function()
 	end
 	vim.notify("reloaded config (options/keymaps/autocmds)", vim.log.levels.INFO)
 end, { desc = "reload nvim config" })
--- rename the current file (LSP-aware), like tmux ‹pfx›r renaming the window tab
+-- rename file (LSP-aware), like tmux ‹pfx›r
 vim.keymap.set("n", "<leader>r", function()
 	Snacks.rename.rename_file()
 end, { desc = "rename file" })
--- toggle format-on-save: :FormatDisable (buffer) or :FormatDisable! (global), :FormatEnable to re-enable
+-- format-on-save toggle: :FormatDisable[!] (buffer / global), :FormatEnable
 vim.api.nvim_create_user_command("FormatDisable", function(args)
 	if args.bang then
 		vim.g.disable_autoformat = true
@@ -318,9 +299,9 @@ vim.api.nvim_create_user_command("FormatEnable", function()
 	vim.g.disable_autoformat = false
 end, { desc = "Re-enable format-on-save" })
 
--- held right-⌥ (Karabiner, scripts/karabiner-hold-leaders.py) sends <leader> before every key, so
--- <leader>tt arrives as <leader>t<leader>t: map <leader>{prefix}<leader> back to the pending
--- <leader>{prefix} for every multi-key leader map's prefix. Single-key maps still chain (M M M).
+-- held right-⌥ (Karabiner) sends <leader> before every key, so <leader>tt arrives as
+-- <leader>t<leader>t: map <leader>{prefix}<leader> back to <leader>{prefix} for every
+-- multi-key leader map prefix.
 vim.api.nvim_create_autocmd("User", {
 	pattern = "VeryLazy",
 	once = true,

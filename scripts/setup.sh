@@ -10,7 +10,7 @@ step "Install Homebrew"
 if ! command -v brew >/dev/null 2>&1; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
-# Ensure brew is on PATH for the rest of this script even on a fresh install.
+# brew on PATH even right after a fresh install
 if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [ -x /usr/local/bin/brew ]; then
@@ -20,12 +20,11 @@ fi
 step "Sudo keepalive (for cask installs)"
 sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
-# Each brew process runs `sudo --reset-timestamp` before its first sudo (utils/sudo.sh),
-# wiping the cached creds above, so brew bundle re-prompts per cask. Mark the check
-# done (we just proved sudo works) so brew reuses the timestamp. Internal brew var.
+# brew runs `sudo --reset-timestamp` per process (re-prompting per cask) unless this
+# internal var says sudo was already checked.
 export HOMEBREW_SUDO_CHECKED=1
 
-# stow is needed before brew bundle runs; install it early.
+# stow runs before brew bundle
 brew install stow 2>/dev/null || true
 
 step "Disable press-and-hold (tilde key)"
@@ -55,9 +54,8 @@ step "Suppress login banner"
 touch ~/.hushlogin
 
 step "Dotfiles (stow)"
-# stow refuses to overwrite real (non-symlink) files. Remove any in $HOME that
-# would conflict — assumed to be Mac defaults on a fresh box.
-# Keep this exclude list in sync with .stow-local-ignore.
+# stow won't overwrite real files: remove conflicting ones in $HOME (assumed fresh-box
+# defaults). Keep the excludes in sync with .stow-local-ignore.
 find "$DOTS" -type f \
     -not -path "$DOTS/.git/*" \
     -not -path "$DOTS/scripts/*" \
@@ -72,16 +70,14 @@ find "$DOTS" -type f \
 | while IFS= read -r f; do
   target="$HOME/${f#$DOTS/}"
   [ -e "$target" ] || continue
-  # Skip if target already resolves into $DOTS (stow tree-folds parent dirs
-  # into symlinks, so a plain `-L` test on the leaf misses these).
+  # Already ours? (-L on the leaf misses stow's tree-folded parent dirs)
   real=$(realpath "$target" 2>/dev/null || true)
   case "$real" in "$DOTS"/*) continue;; esac
   echo "  rm $target"
   rm -f "$target"
 done
 
-# Pre-create dirs that should be file-level symlinked (so stow doesn't tree-fold
-# the whole dir, which would capture runtime state like OAuth tokens / sockets).
+# Pre-create dirs that hold runtime state (OAuth tokens) so stow links files, not the dir
 mkdir -p "$HOME/.config/spotify-player"
 
 step "Docker Artifactory config"
@@ -102,11 +98,8 @@ fi
 
 stow --dir="$DOTS" --target="$HOME" .
 
-# ~/.claude holds Claude Code runtime state (history, sessions, projects), so it
-# must be a real dir with file-level symlinks — never a whole-dir symlink (stow
-# would tree-fold it and write that state into the repo). Excluded from stow via
-# .stow-local-ignore; link the tracked config files explicitly, mirroring
-# dots-linux/setup.sh. Relative links, like stow's (BSD ln has no -r).
+# ~/.claude is runtime state, so it's stow-ignored: real dir + file-level relative links
+# (mirrors dots-linux/setup.sh; BSD ln has no -r).
 mkdir -p "$HOME/.claude/hooks" "$HOME/.claude/themes"
 for f in CLAUDE.md settings.json statusline-command.sh \
          hooks/agent-notify.sh hooks/agent-status.sh themes/rose-pine.json; do
@@ -116,8 +109,7 @@ for f in CLAUDE.md settings.json statusline-command.sh \
 done
 
 step "Homebrew bundle"
-# Trust third-party taps before installing, otherwise brew refuses to load
-# formulae from untrusted taps. Skip taps already present (avoids slow git fetch).
+# brew refuses formulae from untrusted taps; skip already-present taps (slow fetch)
 tapped=$(brew tap)
 sed -n 's/^tap "\([^"]*\)".*/\1/p' "$DOTS/Brewfile" | while IFS= read -r tap; do
   echo "$tapped" | grep -qx "$tap" && continue
@@ -126,22 +118,14 @@ sed -n 's/^tap "\([^"]*\)".*/\1/p' "$DOTS/Brewfile" | while IFS= read -r tap; do
 done
 brew bundle install --file="$DOTS/Brewfile"
 brew bundle cleanup --force --file="$DOTS/Brewfile"
-# Refresh PATH in case brew linked new keg-only formulae.
 eval "$(brew shellenv)"
 
 step "git-lfs install"
 git lfs install
 
 step "Git push PAT (login keychain)"
-# gh's user-to-server token authenticates the API (so `gh auth status` is ✓) but
-# git-write rejects it with 403, so pushes only worked right after a manual
-# `gh auth login`. .gitconfig points the GitHub hosts at the osxkeychain helper;
-# seed a long-lived PAT (classic 'repo' scope) per account into the login keychain
-# once — encrypted, no plaintext file, survives reboots. Later runs find the
-# stored PAT and skip. Three accounts: github.com personal (simingf) + Roblox cloud
-# (sfeng-roblox, used for github.com/Roblox/* via the includeIf in .gitconfig) +
-# enterprise (github.rbx.com / sfeng). Keyed per (host, username) so both
-# github.com accounts coexist in the keychain.
+# gh's token 403s on git-write, so .gitconfig uses osxkeychain: seed a classic 'repo'
+# PAT per (host, username) once. sfeng-roblox serves github.com/Roblox/* (includeIf).
 have_pat() {   # host user — this account's PAT already in keychain?
   printf 'protocol=https\nhost=%s\nusername=%s\n' "$1" "$2" | git credential-osxkeychain get 2>/dev/null | grep -q '^password='
 }
@@ -163,13 +147,9 @@ seed_pat github.com     sfeng-roblox
 seed_pat github.rbx.com sfeng
 
 step "gh API token (heal from keychain PAT)"
-# When gh's stored token for a host is rejected, reuse the keychain PAT seeded
-# above as gh's token, so gh (and the agents/skills that call it) works outside
-# declawd too. Guarded on `gh auth status` failing, so a working token is left
-# untouched. GH_TOKEN/GH_ENTERPRISE_TOKEN are unset because they mask the stored
-# token in status and make `gh auth login` refuse. github.com uses the Roblox
-# account (gh holds one active account per host). Needs a *classic* PAT with
-# 'repo' + 'read:org' — gh's login rejects tokens missing read:org.
+# Only if `gh auth status` fails: log gh in with the keychain PAT (needs classic
+# repo + read:org). GH_*TOKEN are unset since they mask the stored token and make
+# `gh auth login` refuse. gh has one account per host → Roblox one on github.com.
 heal_gh() {    # host user
   local ghenv=(env -u GH_TOKEN -u GH_ENTERPRISE_TOKEN)
   if "${ghenv[@]}" gh auth status -h "$1" >/dev/null 2>&1; then echo "  gh $1 ✓"; return; fi
@@ -188,7 +168,7 @@ heal_gh github.rbx.com sfeng
 
 step "Rust toolchain (rustup)"
 rustup default stable
-# Homebrew's rustup doesn't create ~/.cargo/bin proxies; add the toolchain bin directly.
+# Homebrew's rustup makes no ~/.cargo/bin proxies
 export PATH="$(rustup which cargo | xargs dirname):$PATH"
 
 step "cargo-update (cargo) — lets topgrade upgrade cargo-installed bins"
@@ -213,23 +193,11 @@ if command -v npm >/dev/null 2>&1 && ! command -v mmdc >/dev/null 2>&1; then
 fi
 
 step "Default file handlers (Launch Services plist)"
-# We patch ~/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist
-# directly instead of shelling out to `duti`, for two reasons:
-#
-# 1. `duti` only writes LSHandlerRoleEditor, but macOS resolves defaults using
-#    LSHandlerRoleAll first. If a competing app (e.g. Cursor) declares itself
-#    as RoleAll, duti's RoleEditor write is silently ignored and the competitor
-#    keeps winning. We write RoleAll directly.
-#
-# 2. Many extensions (.toml/.lua/.conf/.go/.tsx/.jsx/.ini/.env) have no stable
-#    public UTI, so macOS synthesizes a dynamic one like `dyn.ah62d4rv4ge80s52`.
-#    `duti` guesses a *different* dynamic UTI than what real files get tagged
-#    with, so the setting silently misses. We probe the real UTI with `mdls`
-#    on a throwaway tempfile.
-#
-# One case we can't fix here: Cursor's Info.plist declares `LSHandlerRank: Owner`
-# for .json, which outranks any user preference. `.json` keeps opening in Cursor
-# unless we edit and re-sign Cursor's bundle — not worth it for one extension.
+# Patch the LaunchServices plist directly instead of running `duti`:
+# - duti writes only RoleEditor; macOS checks RoleAll first, so a RoleAll app (Cursor) wins.
+# - extensions without a public UTI get a dyn.* one, and duti guesses the wrong one;
+#   probe the real UTI with `mdls` on a temp file instead.
+# Unfixable: Cursor claims .json with LSHandlerRank Owner, which beats user prefs.
 python3 - "$DOTS/scripts/duti.conf" <<'PY'
 import plistlib, subprocess, sys, tempfile, os
 from pathlib import Path
@@ -281,7 +249,7 @@ with open(plist, "wb") as f:
 print(f"  patched {len(exts)} extensions and {len(urls)} URL schemes")
 PY
 
-# Reload cfprefsd + Launch Services so changes take effect without a relogin
+# Reload so it applies without a relogin
 killall cfprefsd 2>/dev/null || true
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
 if [ -x "$LSREGISTER" ]; then
@@ -289,8 +257,7 @@ if [ -x "$LSREGISTER" ]; then
 fi
 
 step "Ghostty terminfo (xterm-ghostty)"
-# tmux sets TERM=xterm-ghostty inside panes; without this, ncurses/tput/clear
-# fail with "terminals database is inaccessible" and zsh double-echoes input.
+# Else TERM=xterm-ghostty in tmux panes breaks ncurses/clear and zsh double-echoes
 ghostty_ti="/Applications/Ghostty.app/Contents/Resources/terminfo/78/xterm-ghostty"
 if [ -f "$ghostty_ti" ]; then
   mkdir -p "$HOME/.terminfo/78"
@@ -298,9 +265,7 @@ if [ -f "$ghostty_ti" ]; then
 fi
 
 step "kitten on PATH (for icat image previews)"
-# kitty cask ships the `kitten` binary inside the app bundle; symlink it onto PATH so the
-# `icat` alias (kitten icat) works under ghostty. Ghostty stays the terminal — kitten just
-# renders the kitty graphics protocol into it.
+# `kitten` lives in kitty.app; the `icat` alias uses it under ghostty (kitty graphics protocol)
 kitten_bin="/Applications/kitty.app/Contents/MacOS/kitten"
 if [ -x "$kitten_bin" ]; then
   ln -sf "$kitten_bin" "$HOME/.local/bin/kitten"

@@ -1,31 +1,22 @@
-# Disable DEC mode 2031 (color-scheme change notifications) on every prompt.
-# Inner apps (claude code, nvim, etc.) enable it and may not clean up; ghostty
-# then re-emits \e[?997;Ps n on tmux session-switch, which leaks "997;1n" into
-# shell input via tmux's CSI parser.
+# --- Terminal-mode resets (every prompt) ---
+# Apps that exit/crash without cleanup leave these on; their reports then leak
+# into the prompt as text.
 autoload -Uz add-zsh-hook
+# DEC 2031 (color-scheme reports): ghostty re-emits on session switch → stray 997;1n
 _disable_dec_2031() { printf '\e[?2031l'; }
 add-zsh-hook precmd _disable_dec_2031
 
-# Disable mouse-tracking modes on every prompt. Inner apps (vim, htop, remote
-# tmux over ssh) enable 1000/1002/1003/1006/1015; if they crash or the ssh
-# session dies before sending the matching disable, tmux keeps forwarding click
-# bytes to the pane and they land as text in the next shell prompt.
+# Mouse tracking (vim, htop, remote tmux over a dead ssh): tmux keeps forwarding clicks
 _disable_mouse_tracking() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l'; }
 add-zsh-hook precmd _disable_mouse_tracking
 
-# Keybindings.
-# Model: the emacs base (bindkey -e) supplies the load-bearing primitives
-# (self-insert, backspace, Enter, Ctrl-A/E, Ctrl-U/K/W, ...). We only layer
-# discretionary overrides on top — never clear the keymap: an empty ZLE keymap
-# can't even type a letter. Plugins bind their own keys at 10-plugins (before
-# this file); those are listed under "plugin-owned" below for reference, not
-# re-bound here. To drop a default: bindkey -r '<seq>' (targeted, not a clear).
+# --- Keybindings ---
+# Layer overrides on the emacs base; never clear the keymap (an empty one can't
+# even self-insert) — drop single keys with `bindkey -r`.
 bindkey -e
 
-# history recall — ↑/↓ prefix-match (text left of cursor filters; empty = all),
-# keeping the cursor in place and stepping within a multiline buffer before
-# falling through to history. Ctrl-P/N were a redundant second prefix-search →
-# unbound in favor of ↑/↓ (re-add here if muscle memory wins).
+# ↑/↓: prefix-match history (text left of cursor), stepping through multiline
+# buffers first. C-p/C-n unbound as redundant.
 bindkey -r '^p' '^n'
 autoload -U up-line-or-beginning-search down-line-or-beginning-search
 zle -N up-line-or-beginning-search
@@ -35,13 +26,10 @@ bindkey '^[OA' up-line-or-beginning-search    # ↑  application cursor mode
 bindkey '^[[B' down-line-or-beginning-search  # ↓  normal
 bindkey '^[OB' down-line-or-beginning-search  # ↓  application
 
-# mouse click-to-move — tmux's MouseUp1Pane bind (.tmux.conf) leaves the click's
-# offset from the cursor in the pane option @click ("dy dx width cursor_x"), then
-# sends \e[9000~. The buffer is laid out the way zle draws it — rows wrap at the
-# pane width, a newline starts a row at column 0, row 0 starts after the prompt —
-# so multi-line buffers (pastes, recalled history) map clicks to the right char.
-# A click past either end of a buffer row clamps to that row; rows outside the
-# buffer (old output, the prompt's upper lines) are ignored. Assumes single-width chars.
+# Click-to-move: tmux's MouseUp1Pane stores the click offset in pane option
+# @click ("dy dx width cursor_x") and sends \e[9000~. Lays the buffer out as zle
+# draws it (wrap at width, newline → column 0) so multi-line buffers work; clicks
+# past a row's end clamp, rows outside the buffer are ignored. Single-width chars only.
 _click_move() {
     [[ -n $TMUX_PANE ]] || return
     local dy dx w cx reply
@@ -76,13 +64,10 @@ _click_move() {
 zle -N _click_move
 bindkey '^[[9000~' _click_move
 
-# GUI-style selection + ⌘ keys. ghostty sends ⌘A/C/X/Z, ⇧⌘Z, ⌘←/→, ⇧⌘⌫, ⌘⌫ as
-# private \e[90NN~ sequences (tmux forwards them to zsh panes via
-# scripts/tmux-cmdkey.sh; the rest are nvim / tmux-only); ⇧←/→ extend a
-# selection. While a selection is up, typing / pasting replaces it and ⌫ deletes it; any other key just drops it. Copies go to the clipboard via
-# OSC 52 (tmux set-clipboard forwards it, over ssh too). One function per widget:
-# plugins that wrap widgets (autosuggestions, syntax-highlighting) rename them,
-# so $WIDGET can't be used to dispatch.
+# GUI-style selection + ⌘ keys: ghostty sends ⌘ keys as \e[90NN~, forwarded by
+# scripts/tmux-cmdkey.sh (see KEYBINDS.md). With a selection up, typing/paste/⌫
+# replace it; any other key drops it. Copies go out via OSC 52 (works over ssh).
+# One function per widget: wrapping plugins rename widgets, so $WIDGET can't dispatch.
 _sel_osc52()     { printf '\e]52;c;%s\a' "$(print -rn -- "${BUFFER[MARK+1,CURSOR]}${BUFFER[CURSOR+1,MARK]}" | base64 | tr -d '\n')" > /dev/tty }
 _select_all()    { MARK=0; CURSOR=$#BUFFER; REGION_ACTIVE=1 }
 _select_left()   { (( REGION_ACTIVE )) || { MARK=$CURSOR; REGION_ACTIVE=1 }; zle .backward-char }
@@ -129,7 +114,7 @@ bindkey '^[[9016~' select-bol      # ⇧⌘←
 bindkey '^[[9017~' select-eol      # ⇧⌘→
 bindkey '^[^?' sel-backward-kill-word  # ⌥⌫
 
-# plugin-owned keys (bound by plugins/tools at 10-plugins & 80-tools, not here):
+# Plugin-owned keys (bound in 10-plugins / 80-tools; reference only):
 #   Tab            fzf-completion       (fzf-tab)              completion dropdown
 #   → / End / C-E  autosuggest-accept   (zsh-autosuggestions)  accept whole suggestion
 #   Alt-F          forward-word         (zsh-autosuggestions)  accept one word
@@ -138,21 +123,22 @@ bindkey '^[^?' sel-backward-kill-word  # ⌥⌫
 #   Alt-C          fzf-cd-widget        (fzf)                  cd into a subdir
 #   Esc Esc        sudo-command-line    (OMZP::sudo)           prepend sudo (prev cmd if empty)
 
-# Completion styling
+# --- Completion ---
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --tree --level=2 --color=always --icons=always --group-directories-first $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'eza --tree --level=2 --color=always --icons=always --group-directories-first $realpath'
 
-# clear screen + ls in one atomic write (no fork for clear, no flash gap)
+# --- clear + ls (empty Enter, cd) ---
+# One atomic write: no flash between clear and ls.
 _clear_ls() {
     local out
     out=$(eza --color=always --icons=always --hyperlink 2>/dev/null)
     printf '\e[H\e[2J\e[3J%s\n' "$out"
 }
 
-# Execute on Enter: empty enter → schedule clear+ls for next prompt
+# Empty Enter → clear+ls at the next prompt.
 _pending_clear_ls=0
 accept-line() {
     [[ -z $BUFFER ]] && _pending_clear_ls=1
@@ -167,19 +153,15 @@ _run_pending_clear_ls() {
 }
 add-zsh-hook precmd _run_pending_clear_ls
 
-# cd hook: clear+ls on every directory change
-# Guard on interactive: Claude Code's Bash tool sources a snapshot that strips
-# _-prefixed funcs (drops _clear_ls) but keeps chpwd, then cd's non-interactively
-# → "command not found: _clear_ls". The guard is baked into the captured body.
-# _suppress_chpwd: set by gotopr while it bounces through dirs. Initialized here so
-# the guard never reads an unset global (and to keep it off until gotopr sets it).
+# clear+ls on cd. Interactive guard: Claude Code's Bash snapshot keeps chpwd but
+# drops _-prefixed funcs. _suppress_chpwd is set by gotopr while it bounces dirs.
 typeset -g _suppress_chpwd=0
 chpwd() {
     [[ -o interactive ]] || return
     ((_suppress_chpwd)) || _clear_ls
 }
 
-# Guard on a real, reachable tmux server (probed once) — $TMUX can be set with a
-# dead/absent server — used by the tmux session helpers (tn/ta/dotslg).
+# --- tmux ---
+# Reachable tmux server ($TMUX can outlive it), probed once; used by tn/ta/*lg.
 _REAL_TMUX=
 [[ -n "$TMUX" ]] && tmux info &>/dev/null && _REAL_TMUX=1

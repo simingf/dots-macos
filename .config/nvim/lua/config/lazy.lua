@@ -1,4 +1,4 @@
--- setup code from documentation --
+-- bootstrap (from lazy.nvim docs)
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
 	vim.fn.system({
@@ -11,12 +11,9 @@ if not vim.uv.fs_stat(lazypath) then
 	})
 end
 vim.opt.rtp:prepend(lazypath)
--- setup code from documentation --
 
--- On the dev box (SSH) plugins are vendored read-only into a repo-tracked dir,
--- so lazy must never clone or update: disable install-missing + the update
--- checker, otherwise a stray :Lazy sync re-fetches/regenerates plugin files
--- straight into the git tree and dirties the repo. Local macOS is the sole writer.
+-- over SSH (dev box) plugins are vendored into a git-tracked dir: never install or
+-- check for updates there, or lazy dirties the repo. The Mac is the sole writer.
 local env = require("config.env")
 
 require("lazy").setup({

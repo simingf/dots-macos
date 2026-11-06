@@ -36,9 +36,7 @@ set nohlsearch
 set tabstop=4
 set shiftwidth=4
 set expandtab
-" lualine-style: the statusline already shows mode, but vim has no lualine,
-" so leave showmode on to see mode in the command line. If you prefer a clean
-" look, switch to `set noshowmode`.
+" show mode in the command line (no lualine here)
 set showmode
 " true-color support
 set termguicolors

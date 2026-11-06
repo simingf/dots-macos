@@ -14,7 +14,7 @@ selection-foreground = #191724
 font-family = JetBrainsMono Nerd Font Mono
 font-size = 14
 
-# Padding (your window_padding_width 15 20 15)
+# Padding (matches kitty)
 window-padding-x = 20
 window-padding-y = 15
 
@@ -22,18 +22,12 @@ window-padding-y = 15
 macos-option-as-alt = left
 macos-titlebar-style = hidden
 
-# Mouse selection — always route drag-selection through tmux so the highlight
-# clears and copies on release (tmux's copy-pipe-and-cancel). mouse-shift-capture
-# = true stops Shift from bypassing tmux's mouse grab, so shift-drag no longer
-# triggers ghostty's own selection (which stays highlighted and, by default, only
-# writes the selection buffer — the "highlighted but not copied" case). URLs still
-# open with ⌘-click on macOS (a separate modifier, unaffected by this).
-# copy-on-select is the fallback for surfaces where tmux isn't grabbing the mouse
-# (a raw ghostty window): those selections at least reach the real clipboard.
+# Mouse: shift-drag goes to tmux too (copies + clears on release); ⌘-click still opens URLs.
+# copy-on-select covers raw ghostty windows with no tmux grabbing the mouse.
 mouse-shift-capture = true
 copy-on-select = clipboard
 
-# Keybinds — clear all defaults, keep only these
+# Keybinds — clear defaults. ⌘ keys send \e[90NN~ for tmux-cmdkey.sh (see KEYBINDS.md)
 keybind = clear
 keybind = cmd+n=new_window
 keybind = cmd+w=close_surface

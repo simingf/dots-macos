@@ -1,7 +1,5 @@
-# Shared git config: pull/push defaults + rose-pine colors (iris-forward).
-# Byte-identical across dots-macos / dots-linux / dots-windows; each platform's
-# global config pulls it in via [include]. Global ignores live next to it in
-# ~/.config/git/ignore (git's default excludesfile -- no config needed).
+# Shared git config (byte-identical on all 3 platforms, pulled in via [include]):
+# pull/push defaults + rose-pine colors. Global ignores: ~/.config/git/ignore.
 [pull]
 	rebase = false
 [push]

@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# tmux-layout-classic.sh <layout>: print a #{window_layout} in the classic "csum,WxH,X,Y{..}" form that
-# tmux-even-columns.sh and tmux-lazygit.sh's _reclaim_layout parse. tmux ≥3.8 reports layouts as JSON
-# ({"V":2,"L":{"t":"h|v|p","w","h","x","y","c":[..],"I":"%N"}}) but select-layout still accepts the
-# classic form, so callers convert on read and keep rewriting classic strings. A classic input (older
-# tmux) passes through unchanged. Exits 1 on what the classic form can't express — floating panes ("z")
-# or anything unparseable — so callers treat it as an unsupported shape and leave the window alone.
+# tmux-layout-classic.sh <layout> — print #{window_layout} in classic "csum,WxH,X,Y{..}" form.
+# tmux ≥3.8 reports JSON ({"V":2,"L":{"t":"h|v|p",…,"c":[..],"I":"%N"}}) but select-layout still takes
+# classic. Classic input passes through. Exit 1 on floating panes ("z") or junk → callers leave it alone.
 set -uo pipefail
 
 l=${1:-}

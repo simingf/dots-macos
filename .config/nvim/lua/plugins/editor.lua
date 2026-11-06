@@ -1,6 +1,6 @@
 return {
 
-	-- flash
+	-- flash: s / S jump
 	{
 		"folke/flash.nvim",
 		event = "VeryLazy",
@@ -32,7 +32,7 @@ return {
 		},
 	},
 
-	-- arrow: bookmark files and locations in files
+	-- arrow: file bookmarks (H) and in-file marks (h)
 	{
 		"otavioschwanck/arrow.nvim",
 		dependencies = {
@@ -45,8 +45,7 @@ return {
 		},
 	},
 
-	-- yanky: clipboard history (replaces neoclip). <leader>ty uses snacks picker via vim.ui.select.
-	-- Must load early (VeryLazy) so TextYankPost hooks are registered at startup.
+	-- yanky: yank history (<leader>ty). VeryLazy so its TextYankPost hook catches every yank.
 	{
 		"gbprod/yanky.nvim",
 		event = "VeryLazy",
@@ -61,7 +60,7 @@ return {
 		},
 	},
 
-	-- automatic closing brackets (blink.cmp-aware, LazyVim default)
+	-- auto-close brackets
 	{
 		"echasnovski/mini.pairs",
 		event = "InsertEnter",
@@ -83,11 +82,11 @@ return {
 		},
 	},
 
-	-- recorder: easier macros (uses vim.notify, which snacks.notifier handles)
+	-- recorder: macros in slots a/b/c
 	{
 		"chrisgrieser/nvim-recorder",
 		keys = {
-			-- these must match the keys in the mapping config below
+			-- must match `mapping` below
 			{ "q", desc = " Start Recording" },
 			{ "Q", desc = " Play Recording" },
 			{ "<C-q>", desc = " Switch Recording Slot" },
@@ -103,12 +102,11 @@ return {
 					editMacro = "cq",
 					deleteAllMacros = "dq",
 				},
-				-- three slots (registers a/b/c), cycled with <C-q>; all cleared on startup
+				-- cleared on startup
 				slots = { "a", "b", "c" },
 				clear = true,
 			})
-			-- setup() always maps yank-macro (yq) and add-breakpoint (##) too; drop them —
-			-- ## also shadowed `#` (backward word search)
+			-- setup() always maps yq and ## too; drop them (## shadows `#`)
 			for _, lhs in ipairs({ "yq", "##" }) do
 				pcall(vim.keymap.del, "n", lhs)
 			end

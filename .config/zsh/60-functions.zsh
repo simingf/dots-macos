@@ -1,7 +1,6 @@
-# Shared functions (mac + linux). Platform-only functions (incl. `claude`, which
-# kk and mux-tmux.zsh call) live in 70-platform.zsh.
+# Shared functions (mac + linux). Platform-only ones (incl. `claude`) live in 70-platform.zsh.
 
-# yazi wrapper — quitting with `q` lands the shell in yazi's last cwd
+# yazi: quitting with `q` lands the shell in yazi's last cwd
 y() {
     local cwd tmp="$(mktemp -t yazi-cwd.XXXXXX)"
     yazi "$@" --cwd-file="$tmp"
@@ -14,10 +13,11 @@ y() {
 # nvim
 v() { nvim "${@:-.}"; }
 
-# lazygit
+# --- lazygit ---
+# lg: lazygit with the per-host GH token. In tmux, overlays lazygit-tmux-edit.yml
+# so edit (`k`) opens in this window's nvim.
 lg() {
     local remote_host
-    # in tmux, layer scripts/lazygit-tmux-edit.yml on the main config: edit (`k`) opens files in this window's nvim
     if [[ -n $TMUX && -z $LG_CONFIG_FILE ]]; then
         local base=~/.config/lazygit/config.yml
         [[ -f ~/Library/Application\ Support/lazygit/config.yml ]] && base=~/Library/Application\ Support/lazygit/config.yml
@@ -37,7 +37,7 @@ lg() {
     fi
 }
 
-# Lazygit on the meta repos: roblox-notes left, skills right.
+# metalg: lazygit on the meta repos (roblox-notes | skills).
 metalg() {
     if [[ -z "$_REAL_TMUX" ]]; then
         echo "Not in a tmux session" >&2
@@ -56,8 +56,7 @@ metalg() {
     "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
 }
 
-# Lazygit, one column per dots repo cloned on this host (all three on the
-# Mac; dots-macos + dots-linux on the dev box).
+# dotslg: lazygit, one column per dots repo cloned on this host.
 dotslg() {
     if [[ -z "$_REAL_TMUX" ]]; then
         echo "Not in a tmux session" >&2
@@ -84,8 +83,8 @@ dotslg() {
     "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
 }
 
-# Lazygit, one column per repo in ~/git/roblox/active. Main clones only:
-# a worktree's .git is a file, so the `.git(/)` dir glob skips it.
+# activelg: lazygit, one column per repo in ~/git/roblox/active. `.git(/)` skips
+# worktrees (their .git is a file).
 activelg() {
     if [[ -z "$_REAL_TMUX" ]]; then
         echo "Not in a tmux session" >&2
@@ -112,12 +111,12 @@ activelg() {
     "$DOTFILES_DIR/scripts/tmux-even-columns.sh"
 }
 
-# sl update
+# --- sapling ---
+# sup: pull, rebase the stack on master, whitespace-format touched files, submit.
 sup() {
     echo "➡️ pulling..." && sl pull || return 1
 
-    # Reconcile orphans from prior mid-stack amends or interrupted ops.
-    # No-op on a clean stack; recovery action when restack has work to do.
+    # Reconcile orphans from mid-stack amends / interrupted ops (no-op when clean).
     echo "➡️ restacking orphans..." && sl restack || true
 
     echo "➡️ rebasing on newest master..."
@@ -135,16 +134,9 @@ sup() {
         fi
     fi
 
-    # Scope: files modified or added between master and the working copy.
-    #   `sl status --rev master` (long form is required — `-r` means --removed
-    #   in `sl status`). Don't use `sl files -r 'master::.'`: that lists every
-    #   file *tracked at* each rev in the revset, i.e. the whole repo.
-    # Tool: `dotnet format whitespace` rather than full `dotnet format`. Full
-    #   mode runs analyzer fixers via Roslyn's "Fix All in Solution", which
-    #   ignores --include and writes across unincluded files. Whitespace mode
-    #   applies only .editorconfig whitespace rules (BOMs, line endings,
-    #   indentation, trailing whitespace) and respects --include strictly —
-    #   matches the bot's observed behavior.
+    # Scope: files changed since master. `--rev` long form: in `sl status`, `-r` = --removed.
+    # `format whitespace`, not full `dotnet format`: analyzer fixers ignore --include
+    # and touch the whole solution.
     echo "➡️ formatting stack-touched files (.editorconfig whitespace)..."
     local stack_files
     stack_files=$(sl status -m -a -n --rev master 2>/dev/null)
@@ -159,12 +151,10 @@ sup() {
         echo "➡️ format diff:"
         sl diff --stat
         echo "➡️ absorbing format changes..."
-        # Filter absorb's per-chunk preview; keep only the summary lines.
+        # Keep only absorb's summary lines.
         sl absorb -a 2>&1 | grep -vE '^[+-][^+-]|^@@|^---|^\+\+\+'
-        # Discard any chunks absorb couldn't attribute (changes to lines the
-        # user didn't author) so they don't sit in the WC across runs. The
-        # bot may still pick those up and commit them on the PR — that's
-        # unavoidable without breaking absorb's blame-correctness.
+        # Drop chunks absorb can't attribute (lines you didn't author) so they
+        # don't linger in the working copy.
         if [[ -n "$(sl status -m)" ]]; then
             echo "➡️ discarding unabsorbable format debris..."
             sl revert --all
@@ -174,16 +164,14 @@ sup() {
     echo "➡️ submitting prs..." && sl pr submit --stack --draft --config github.max-prs-to-create=-1
 }
 
-# Walk through each conflicted file in $EDITOR — :wq advances to next.
-# Loops until rebase is fully complete: `sl continue` may pause again at a
-# subsequent commit's conflict, in which case we re-collect and re-edit.
+# _sup_resolve: edit each conflicted file in $EDITOR (:wq → next), repeating until
+# the rebase completes (`sl continue` may pause at a later commit's conflicts).
 _sup_resolve() {
     while true; do
         local files
         files=$(sl resolve --list 2>/dev/null | awk '$1 == "U" {print $2}')
         if [[ -z "$files" ]]; then
-            # No unresolved files. Rebase may still be paused (e.g., we just
-            # marked the last one resolved); call continue to finish it.
+            # Rebase may still be paused after the last resolve.
             sl continue 2>/dev/null || true
             break
         fi
@@ -203,8 +191,6 @@ _sup_resolve() {
         done <<<"$files"
 
         echo "➡️ continuing rebase..."
-        # `sl continue` may pause again at the next commit's conflicts; the
-        # outer loop will detect and handle the new unresolved set.
         sl continue || true
     done
 
@@ -212,10 +198,8 @@ _sup_resolve() {
     return 0
 }
 
-# kk: base fallback — launch claude with flags + prompt (opening files needs a split
-# layout, so existing-path args are dropped here). Overridden by
-# ~/.config/zsh/mux-tmux.zsh with the full pane layout when sourced inside a
-# tmux session (see 95-session.zsh).
+# --- misc ---
+# kk fallback: claude with flags + prompt (path args dropped). Overridden by mux-tmux.zsh.
 kk() {
     emulate -L zsh
     local a
@@ -227,7 +211,7 @@ kk() {
     claude "${cflags[@]}" "${cprompt[@]}"
 }
 
-# Implementation lives in the skills repo (scripts/pull_repos.sh; portable, worktree-aware).
+# pullrepos / lsrepos: wrap the skills repo's scripts/pull_repos.sh.
 pullrepos() {
     local script=~/git/roblox/meta/skills/scripts/pull_repos.sh
     if [[ -x "$script" ]]; then
@@ -239,7 +223,7 @@ pullrepos() {
 }
 lsrepos() { pullrepos --local "$@"; }
 
-# goto PR (https://github.rbx.com/Roblox/creator-cu/pull/267/files)
+# gotopr <pr-url>: clone/fetch into ~/git/pr-reviews and check out the PR.
 gotopr() {
     local url="$1"
     [[ -z "$url" ]] && {
@@ -253,8 +237,7 @@ gotopr() {
 
     echo "➡️ PR #$pr in $host/$org/$repo"
 
-    # suppress the chpwd clear+ls while we bounce through dirs; the `always` block
-    # resets it even on error/interrupt/return, so it can't leak for the session.
+    # Mute chpwd's clear+ls; `always` resets it even on error/interrupt.
     _suppress_chpwd=1
     {
         mkdir -p ~/git/pr-reviews
@@ -275,7 +258,7 @@ gotopr() {
     } always { _suppress_chpwd=0 }
 }
 
-# python
+# p: python3, but refuse to open a REPL.
 p() {
     if (( $# == 0 )); then
         echo "python: no file given" >&2
@@ -284,11 +267,8 @@ p() {
     python3 "$@"
 }
 
-# copy the last command — its prompt line + output — to the clipboard: walks the
-# pane's scrollback back from the line that ran this to the previous prompt
-# (oh-my-posh's transient `❯ `, or the fallback `zsh|`). tmux-only: the shell
-# can't read the terminal itself. pbcopy on linux is dots-linux/bin/pbcopy
-# (OSC 52 → Mac).
+# cpterm: copy the previous command + its output (scrollback back to the last
+# `❯ ` / `zsh|` prompt). tmux-only: needs capture-pane.
 cpterm() {
     if [[ -z $TMUX ]]; then
         echo "Not in a tmux session" >&2

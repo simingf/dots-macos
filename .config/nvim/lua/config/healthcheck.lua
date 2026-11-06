@@ -1,18 +1,12 @@
--- Startup health check for this config's fragile dependencies — the spots that reach
--- into plugin *internals* or *vendored upstream files* instead of a documented API, and
--- would otherwise fail SILENTLY after a plugin update (guarded to no-op, not error). See
--- FRAGILE.md. Runs once on `User VeryLazy` and only warns when an assumption has broken;
--- `:ConfigHealth` prints the full report (healthy checks included) on demand.
---
--- Scope note: this validates load-bearing *module/API* assumptions (functions & fields
--- that exist at startup). It cannot check picker *instance* fields like `p.list.win.win`
--- or `p.layout.root.win` (those need a live open picker) — those stay "fails silently".
+-- Checks the spots that reach into plugin internals / vendored files (FRAGILE.md), which
+-- would otherwise fail silently after an update. Warns once after VeryLazy if one broke;
+-- `:ConfigHealth` shows the full report.
+-- Only startup-visible module/API assumptions; live picker fields (p.list.win.win) can't be.
 local env = require("config.env")
 
 local M = {}
 
--- snacks exposes its modules as callable *tables* (a `__call` metamethod), not bare
--- functions — so `Snacks.explorer(...)` / `Snacks.bufdelete(...)` are tables. Accept either.
+-- snacks modules are callable tables (__call), not functions
 local function callable(v)
 	if type(v) == "function" then
 		return true
@@ -21,8 +15,7 @@ local function callable(v)
 	return type(mt) == "table" and mt.__call ~= nil
 end
 
--- Each check returns nil when healthy, or a short string describing what broke.
--- pcall-wrapped by run(), so a check may index freely.
+-- each check returns nil when healthy, else what broke (pcall'd, so index freely)
 local checks = {
 	{
 		name = "snacks explorer API (navigation.lua)",
@@ -130,12 +123,11 @@ local checks = {
 	},
 }
 
--- report_ok=true → notify healthy + broken (for :ConfigHealth); false → warn only if broken.
+-- report_ok: list healthy checks too (:ConfigHealth); else warn only if broken
 function M.run(report_ok)
 	local broken, lines = {}, {}
 	for _, c in ipairs(checks) do
 		local ok, res = pcall(c.fn)
-		-- healthy → ok=true, res=nil; broken → ok=true, res=string; threw → ok=false.
 		local msg = (not ok) and ("check errored: " .. tostring(res)) or res
 		if msg then
 			broken[#broken + 1] = ("• %s — %s"):format(c.name, msg)
@@ -160,8 +152,7 @@ vim.api.nvim_create_user_command("ConfigHealth", function()
 	M.run(true)
 end, { desc = "report config fragile-dependency health" })
 
--- run after everything has loaded; grouped clear=true so a re-require doesn't stack it.
--- deferred past VeryLazy so plugins that load on VeryLazy are up before their checks run.
+-- deferred past VeryLazy so VeryLazy-loaded plugins are up first
 vim.api.nvim_create_autocmd("User", {
 	pattern = "VeryLazy",
 	group = vim.api.nvim_create_augroup("config-healthcheck", { clear = true }),

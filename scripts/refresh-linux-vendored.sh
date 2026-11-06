@@ -1,18 +1,7 @@
 #!/usr/bin/env bash
-# Refresh vendored zsh plugins and nvim lazy.nvim plugins in ~/dots-linux.
-#
-# Run on macOS after the local plugin trees are up to date:
-#   nvim --headless +"Lazy! sync" +qa
-#   zsh -ic 'zinit update --all'
-#
-# `--delete` prunes plugins removed from the source tree.
-# `--exclude='.git'` strips nested git dirs so the dev box repo tracks files,
-# not submodules.
-#
-# Finishes by auto-committing the refreshed vendor/ tree with SKIP=gitleaks:
-# it's all third-party plugin/binary bytes that trip Roblox's gitleaks
-# pre-commit hook with false positives (git SHAs read as tokens, example IPs,
-# doc emails). Scoped to vendor/ so your own config commits are still scanned.
+# Vendor the Mac's zsh/nvim plugin trees + linux binaries into ~/dots-linux/vendor/,
+# then commit vendor/ with SKIP=gitleaks. Normally run by refresh-linux.sh, which
+# updates the plugin trees first.
 
 set -Eeuo pipefail
 trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
@@ -21,6 +10,7 @@ trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
 DOTS_LINUX="${HOME}/dots-linux"
 [ -d "$DOTS_LINUX" ] || { echo "dots-linux not found at $DOTS_LINUX" >&2; exit 1; }
 
+# --delete prunes removed plugins; no nested .git so files are tracked, not submodules
 RSYNC=(rsync -a --delete --exclude='.git')
 
 echo "==> zsh plugins"
@@ -64,9 +54,7 @@ cp "$TMPDIR/yazi-x86_64-unknown-linux-musl/yazi" "$DOTS_LINUX/vendor/bin/yazi"
 cp "$TMPDIR/yazi-x86_64-unknown-linux-musl/ya"   "$DOTS_LINUX/vendor/bin/ya"
 echo "  yazi, ya ✓"
 
-# fzf ships no musl asset; linux_amd64 is a static (CGO-disabled) Go binary that
-# runs on glibc and musl alike. Vendored so the box beats Debian's apt fzf 0.44
-# (too old for the agent sidebar panel's flags).
+# fzf: no musl asset, but linux_amd64 is static Go. Debian's apt fzf 0.44 is too old.
 gh release download --repo junegunn/fzf \
   --pattern 'fzf-*-linux_amd64.tar.gz' \
   --dir "$TMPDIR" --clobber >/dev/null
@@ -74,8 +62,7 @@ tar -xzf "$TMPDIR"/fzf-*-linux_amd64.tar.gz -C "$TMPDIR" fzf
 cp "$TMPDIR/fzf" "$DOTS_LINUX/vendor/bin/fzf"
 echo "  fzf ✓"
 
-# glow: markdown renderer for yazi's *.md previewer (glow.yazi plugin). Without it
-# the plugin falls back to raw syntax-highlighted markdown.
+# glow: yazi's *.md previewer (glow.yazi)
 gh release download --repo charmbracelet/glow \
   --pattern 'glow_*_Linux_x86_64.tar.gz' \
   --dir "$TMPDIR" --clobber >/dev/null
@@ -85,30 +72,24 @@ glow=$(find "$TMPDIR" -type f -name glow | head -1)
 cp "$glow" "$DOTS_LINUX/vendor/bin/glow"
 echo "  glow ✓"
 
-# oh-my-posh: prompt engine driving zsh's rose-pine zen theme
-# (.config/ohmyposh/zen.toml). Single static Go binary — no archive to extract.
+# oh-my-posh: zsh prompt (zen.toml); bare static binary
 gh release download --repo JanDeDobbeleer/oh-my-posh \
   --pattern 'posh-linux-amd64' \
   --dir "$TMPDIR" --clobber >/dev/null
 cp "$TMPDIR/posh-linux-amd64" "$DOTS_LINUX/vendor/bin/oh-my-posh"
 echo "  oh-my-posh ✓"
 
-# tmux: the box's Debian tmux is 3.4, which lacks the pane-title-changed and
-# window-layout-changed hooks the agent status dots + lazygit sidebar rely on (tmux silently ignores
-# unknown set-hook names, so the sidebar just goes stale). mjakob-gh publishes a
-# fully-static musl build (own libevent + ncurses), so it runs standalone and
-# shadows /usr/bin/tmux via ~/.local/bin. Single gzipped binary — no archive.
+# tmux: Debian's 3.4 lacks the pane-title-changed / window-layout-changed hooks
+# (silently ignored). Fully-static build; shadows /usr/bin/tmux via ~/.local/bin.
 gh release download --repo mjakob-gh/build-static-tmux \
   --pattern 'tmux.linux-amd64.stripped.gz' \
   --dir "$TMPDIR" --clobber >/dev/null
 gunzip -c "$TMPDIR/tmux.linux-amd64.stripped.gz" > "$DOTS_LINUX/vendor/bin/tmux"
 echo "  tmux ✓"
 
-# rsvg-convert: SVG → PNG for the new-diagram skill. Not in the box image, and
-# apt installs land outside ~ so they vanish every restart. No static build exists,
-# so take Ubuntu's binary straight from its .deb: librsvg2-bin ships only this one
-# file, and every lib it links (librsvg2-2, cairo, pango, …) is already in the image
-# (Ubuntu 24.04, noble). Bump RSVG_DEB if the image moves to a newer release.
+# rsvg-convert (new-diagram skill): apt installs vanish on restart and there's no
+# static build, so take the binary from Ubuntu's .deb — its libs are already in the
+# image (24.04 noble). Bump RSVG_DEB with the image's release.
 RSVG_DEB=librsvg2-bin_2.58.0+dfsg-1ubuntu0.1_amd64.deb
 curl -fsSL -o "$TMPDIR/$RSVG_DEB" "http://archive.ubuntu.com/ubuntu/pool/universe/libr/librsvg/$RSVG_DEB"
 (cd "$TMPDIR" && ar x "$RSVG_DEB" data.tar.zst)
@@ -120,11 +101,9 @@ fi
 cp "$TMPDIR/usr/bin/rsvg-convert" "$DOTS_LINUX/vendor/bin/rsvg-convert"
 echo "  rsvg-convert ✓"
 
-# ImageMagick: snacks.nvim's image metadata/convert steps (and downscaling big PNGs, see
-# ui.lua). Same .deb route as rsvg-convert: Ubuntu's IM6 plus liblqr, the one lib it links
-# that the image lacks. It loads coders/config from compiled-in /usr and /etc paths, so it
-# lives under vendor/imagemagick/ and dots-linux bin/magick points it there via MAGICK_*
-# env vars. Bump IM_VER / LQR_VER with the image's Ubuntu release.
+# ImageMagick (snacks.nvim images): same .deb route, IM6 + liblqr (the one missing
+# lib). Its compiled-in /usr,/etc paths are redirected by dots-linux bin/magick via
+# MAGICK_* env vars. Bump IM_VER / LQR_VER with the image's release.
 IM_VER=6.9.12.98+dfsg1-5.2build2 LQR_VER=0.4.2-2.1build2
 IM="$DOTS_LINUX/vendor/imagemagick"
 UBU=http://archive.ubuntu.com/ubuntu/pool/universe
@@ -150,11 +129,8 @@ echo "  imagemagick ✓"
 
 chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert} "$IM/bin"/*
 
-# Commit the refreshed vendor/ tree. SKIP=gitleaks bypasses the infosec
-# pre-commit hook (see header) — sanctioned here because the tree is entirely
-# third-party bytes with no real secrets. Pathspec-scoped to vendor/ so any
-# staged config changes are left for you to commit normally (still scanned).
-# Push stays manual.
+# SKIP=gitleaks: vendor/ is all third-party bytes (SHAs, example IPs trip false
+# positives). Pathspec-scoped so config commits are still scanned. No push here.
 echo "==> committing vendor/"
 git -C "$DOTS_LINUX" add -A vendor/
 if git -C "$DOTS_LINUX" diff --cached --quiet -- vendor/; then

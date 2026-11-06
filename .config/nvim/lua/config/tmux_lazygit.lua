@@ -1,11 +1,8 @@
--- Publish the git repo nvim is "looking at" to tmux, for the prefix g lazygit sidebar
--- (scripts/tmux-lazygit.sh): `toggle` opens on it, `follow` restarts an open sidebar on
--- it when it changes. "Looking at" = the explorer item under the cursor while the
--- snacks explorer list is focused (so moving through the tree across repos switches),
--- else the current file buffer's repo. Stored as the @nvim_repo option on this nvim's
--- tmux pane. Also publishes this nvim's RPC socket as @nvim_server, so lazygit's edit (`k`) in
--- the same window opens files here (tmux-lazygit.sh edit → TmuxLazygitEdit below). No-op
--- outside tmux (so the byte-identical copy is inert on windows).
+-- tmux glue for the prefix g lazygit sidebar (scripts/tmux-lazygit.sh), via pane options:
+--   @nvim_repo   repo nvim is looking at (explorer row while the tree is focused, else the
+--                file's repo); `follow` switches the sidebar to it
+--   @nvim_server this nvim's RPC socket, so lazygit's edit (`k`) opens here
+-- Also the RPC entry points tmux scripts call. No-op outside tmux.
 local pane = vim.env.TMUX_PANE
 if not (vim.env.TMUX and pane) then
 	return
@@ -13,8 +10,8 @@ end
 
 vim.system({ "tmux", "set-option", "-p", "-t", pane, "@nvim_server", vim.v.servername })
 
--- called over RPC by tmux-lazygit.sh edit: open file (at line, if > 0) in a normal window —
--- not the explorer or a float — out of insert mode. Scheduled so the RPC returns at once.
+-- tmux-lazygit.sh edit: open file (at line if > 0) in a normal window, out of insert mode.
+-- Scheduled so the RPC returns at once.
 function _G.TmuxLazygitEdit(file, line)
 	vim.schedule(function()
 		vim.cmd.stopinsert()
@@ -27,10 +24,8 @@ function _G.TmuxLazygitEdit(file, line)
 	return 0
 end
 
--- called over RPC by tmux-nav.sh for prefix m/n/e/i (see config/nav.lua): TmuxNav moves
--- one split toward dir (h/j/k/l) and returns 1 if nvim handled it, 0 at nvim's edge (tmux
--- moves to the next pane instead); TmuxNavEnter lands on the entry-edge split when tmux
--- moves into this pane.
+-- tmux-nav.sh (prefix m/n/e/i, see nav.lua): TmuxNav returns 1 if nvim moved, 0 at its
+-- edge; TmuxNavEnter picks the entry-edge split when tmux moves into this pane.
 function _G.TmuxNav(dir)
 	return require("config.nav").move(dir) and 1 or 0
 end
@@ -48,8 +43,7 @@ local function repo_of(dir)
 	return found and vim.fs.dirname(found) or nil
 end
 
--- the dir nvim is looking at right now, or nil to leave the published repo as is
--- (help/terminal/scratch buffers, explorer rows outside any repo)
+-- the dir nvim is looking at, or nil to keep the published repo (help/terminal/scratch)
 local function current_dir()
 	if vim.bo.filetype == "snacks_picker_list" then
 		local p = Snacks.picker and Snacks.picker.get({ source = "explorer" })[1]
@@ -74,8 +68,7 @@ local function publish()
 		return
 	end
 	last = repo
-	-- one tmux call: set the option, then let the script restart this window's sidebar
-	-- if its repo differs ($DOTFILES_DIR is expanded from tmux's own global env)
+	-- one tmux call: set the option, then `follow` ($DOTFILES_DIR from tmux's global env)
 	vim.system({
 		"tmux", "set-option", "-p", "-t", pane, "@nvim_repo", repo, ";",
 		"run-shell", "-b", "$DOTFILES_DIR/scripts/tmux-lazygit.sh follow " .. pane,
@@ -95,7 +88,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "CursorMoved" }, {
 		timer:start(250, 0, vim.schedule_wrap(publish))
 	end,
 })
--- a stale @nvim_repo would keep steering prefix g after nvim quits (and @nvim_server, lazygit's edit (`k`))
+-- unset on quit, or stale options keep steering prefix g / lazygit's edit
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	group = grp,
 	callback = function()

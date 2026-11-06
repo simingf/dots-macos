@@ -1,27 +1,10 @@
 #!/usr/bin/env bash
-# One-shot "refresh Linux vendored plugins" — fully hands-off. Runs on macOS.
-#
-#   1. Update the Mac's own plugin trees (nvim lazy.nvim + zinit) — the source —
-#      and herdr's Claude detection rules (tmux-agent-state.py update-rules; its
-#      offline test must pass, else the refresh stops before anything is committed).
-#   2. Re-vendor them (+ binaries) into dots-linux; refresh-linux-vendored.sh
-#      commits vendor/ itself with SKIP=gitleaks (all third-party bytes trip the
-#      infosec gitleaks pre-commit hook with false positives).
-#   3. Propagate config (lazy-lock.json, etc.) into dots-linux via sync-dotfiles.
-#   4. Commit + push both repos.
-#
-# Why the commit story is safe:
-#  - vendor/ is committed in step 2 with SKIP=gitleaks (third-party FPs).
-#  - Config commits here are scanned normally — lazy-lock's 40-hex SHAs don't
-#    trip the rules (the token rule keys on the `revision = '…'` lua context, not
-#    JSON), and a real hand-authored secret still hard-blocks.
-#  - `git push` is never scanned: the infosec wrapper only gates `git commit`
-#    (fast-paths everything else), so pushing the vendor commit is fine.
-#
-# Commits are pathspec-scoped to the refresh's footprint (nvim lazy-lock, agent
-# detection rules) so this
-# never sweeps unrelated pending work into a refresh commit. Anything else left
-# dirty is printed at the end for you to handle.
+# One-shot "refresh Linux vendored plugins" (Mac only; see CLAUDE.md "Sync workflow"):
+#   1. update the Mac's nvim lazy + zinit trees and herdr's Claude rules (test must pass)
+#   2. re-vendor into dots-linux (refresh-linux-vendored.sh commits vendor/, SKIP=gitleaks)
+#   3. sync-dotfiles.py --apply linux
+#   4. commit (gitleaks-scanned, pathspec-scoped to the refresh) + push both repos
+#      (push is never scanned)
 
 set -Eeuo pipefail
 trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
@@ -30,10 +13,8 @@ trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
 DOTS_MACOS="${HOME}/dots-macos"
 DOTS_LINUX="${HOME}/dots-linux"
 
-# Force pagers off: zinit prints each plugin's git-log changelog, and git pipes
-# `git log` through less on a TTY — which hangs the script waiting for `q`. The
-# top-level export covers every step; the inline copy on the zinit line survives
-# a zshrc that resets PAGER inside the interactive `zsh -ic`.
+# No pagers: zinit's git-log changelogs would hang in less. The inline copy on the
+# zinit line survives a zshrc that resets PAGER inside `zsh -ic`.
 export GIT_PAGER=cat PAGER=cat
 
 echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit) + agent detection rules"
@@ -54,8 +35,7 @@ echo "==> [3/4] propagating config to dots-linux"
 "$DOTS_MACOS/scripts/sync-dotfiles.py" --apply linux
 
 echo "==> [4/4] commit + push"
-# Stage+commit the given pathspec (scanned) if it changed, then push everything
-# unpushed (incl. the SKIP'd vendor commit from step 2). push is never scanned.
+# Commit the pathspec if changed, then push everything (incl. step 2's vendor commit)
 commit_push() {
   local repo="$1" msg="$2"; shift 2
   git -C "$repo" add -- "$@"
@@ -68,8 +48,7 @@ commit_push() {
   git -C "$repo" push
   local leftover
   leftover=$(git -C "$repo" status --short)
-  # `if`, not `&& printf`: a bare `[ -n "$leftover" ] && …` as the last statement
-  # returns 1 when the tree is clean, which under `set -e` aborts the whole script.
+  # `if`, not `&&`: as the last statement it'd return 1 on a clean tree → set -e abort
   if [ -n "$leftover" ]; then
     printf '  %s: left uncommitted (handle manually):\n%s\n' "$(basename "$repo")" "$leftover"
   fi

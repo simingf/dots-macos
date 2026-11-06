@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# fzf window picker (current session) in a centered tmux popup.
-# Action: 'switch' (default) jumps to the picked window; 'join' moves the current pane into the picked window.
-# Current window sorts to the bottom with a (current) marker; others ordered by recent activity.
-# Height = window count + 5 (prompt + info + 2 borders + 1 pad), clamped by tmux to fit.
+# tmux-fzf-windows.sh [switch|join] — current-session window picker popup (prefix w / @).
+#   switch (default): go to the window; join: move the current pane into it.
+# Most recent first, current window last. Height = windows + 5.
 set -euo pipefail
 
 action="${1:-switch}"

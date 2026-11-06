@@ -2,9 +2,8 @@ local env = require("config.env")
 
 return {
 
-	-- blink.cmp: autocomplete (fast Rust-based replacement for nvim-cmp)
-	-- Keymaps: <C-Space> complete, <CR> accept, <Tab>/<S-Tab> nav or snippet jump,
-	--         <C-e> hide, <C-p>/<C-n> prev/next.
+	-- blink.cmp: autocomplete (Rust fuzzy, Lua over SSH).
+	-- <C-Space> complete, <CR> accept, <Tab>/<S-Tab> snippet jump, <C-e> hide, <C-p>/<C-n> prev/next
 	{
 		"saghen/blink.cmp",
 		dependencies = { "rafamadriz/friendly-snippets" },
@@ -38,8 +37,7 @@ return {
 		opts_extend = { "sources.default" },
 	},
 
-	-- lazydev: auto-configures lua_ls workspace library when editing nvim config.
-	-- Only activates on lua buffers. Feeds completions into blink.cmp via the source above.
+	-- lazydev: lua_ls workspace library for nvim config (feeds blink via the source above)
 	{
 		"folke/lazydev.nvim",
 		ft = "lua",
@@ -51,7 +49,7 @@ return {
 		},
 	},
 
-	-- conform: formatter dispatcher (<leader>f and format-on-save)
+	-- conform: formatters (<leader>= and format-on-save; :FormatDisable to pause)
 	{
 		"stevearc/conform.nvim",
 		event = { "BufWritePre" },

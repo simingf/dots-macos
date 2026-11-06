@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
-# Prompt for a name inside a `display-popup`, then rename the current window/session or create a
-# new session (bound to `prefix r` / `prefix R` / `prefix C`). Run in a popup because command-prompt
-# draws on the top status line and gets jammed among the window tabs.
+# tmux-rename.sh window|session|new — read a name in a popup (prefix r / R / C), then rename or create.
+# A popup, since command-prompt gets jammed among the top-status tabs.
 #
-# The name is read one byte at a time in raw mode so Escape cancels at ANY point: a bare Esc is our
-# cancel, while Esc followed by more bytes is an arrow/bracketed-paste sequence we consume and ignore.
-# Backspace and Ctrl-U (clear line) work; pasted text arrives as plain chars and is appended. The
-# bare-Esc-vs-sequence timing uses stty MIN/TIME, and bytes are read with `dd` — NOT bash `read -n`,
-# which sets its own termios and ignores MIN/TIME (so a bare Esc would block forever). stty is a no-op
-# and dd reads from the pipe when stdin isn't a tty (tests).
-# Usage: tmux-rename.sh window|session|new
+# Raw byte-at-a-time read so Esc cancels anywhere: a bare Esc cancels, Esc + more bytes (arrows, paste
+# markers) is ignored. Bytes come via dd, not `read -n` (it sets its own termios, ignoring MIN/TIME, so a
+# bare Esc would hang). Without a tty (tests) stty is skipped and dd reads the pipe.
 set -uo pipefail
 
 mode=${1:-}
@@ -24,9 +19,9 @@ trap restore EXIT
 [ -n "$_stty" ] && stty -echo -icanon min 1 time 0 2>/dev/null   # raw: block for one byte, no echo
 raw_peek()  { [ -n "$_stty" ] && stty min 0 time 1 2>/dev/null; return 0; }   # next read returns after ≤0.1s
 raw_block() { [ -n "$_stty" ] && stty min 1 time 0 2>/dev/null; return 0; }   # next read blocks for one byte
-getch()     { dd bs=1 count=1 2>/dev/null; }   # one byte, honoring the tty MIN/TIME (bash `read -n` sets its own termios and ignores them → bare Esc hangs)
+getch()     { dd bs=1 count=1 2>/dev/null; }   # one byte, honoring MIN/TIME
 
-printf '\033[38;2;206;172;246mNew name: \033[0m'   # iris label; reset so typed text is default (white)
+printf '\033[38;2;206;172;246mNew name: \033[0m'   # iris label
 
 name=""
 while :; do
@@ -42,7 +37,7 @@ while :; do
             [ -z "$seq" ] && { restore; exit 0; }                    # nothing followed → bare Esc → cancel
             ;;                                                        # else arrow/paste marker → ignore
         $'\177'|$'\b') [ -n "$name" ] && { name=${name%?}; printf '\b \b'; } ;;   # Backspace
-        $'\025') while [ -n "$name" ]; do name=${name%?}; printf '\b \b'; done ;; # Ctrl-U → clear line (Cmd-Delete via ghostty keybind → \x15)
+        $'\025') while [ -n "$name" ]; do name=${name%?}; printf '\b \b'; done ;; # Ctrl-U → clear line
         *) name=$name$key; printf '%s' "$key" ;;                     # printable / pasted char
     esac
 done
@@ -52,19 +47,13 @@ restore
 case "$mode" in
     window)
         tmux rename-window -- "$name"
-        # Keep the Claude session's name aligned with the window: push /rename into any agent pane in
-        # this window. Fire-and-forget; no-op when the window has no agent pane.
+        # keep Claude's session name in step: /rename every agent pane in this window
         win=$(tmux display-message -p '#{session_name}:#{window_index}')
         "$(dirname "$0")/tmux-agents.sh" agent-panes "$win" \
             | while IFS= read -r p; do tmux send-keys -t "$p" "/rename $name" Enter; done
         ;;
     session) tmux rename-session -- "$name" ;;
-    # 'new' must create+switch AFTER the popup closes: running new-session/switch-client from INSIDE the
-    # display-popup manipulates the client's session while the overlay is still up — that breaks -E's
-    # auto-close and leaves the popup as a bare interactive shell (dismissable only by typing `exit`).
-    # Defer via `run-shell -bC -d 0.2`: the tmux SERVER runs it (as native tmux commands) 0.2s later — past
-    # this script's exit / popup teardown. Server-parented, so unlike a self-detached `nohup … &` child it
-    # can't be reaped when the popup pty closes (that race would silently drop the create+switch, so pressing
-    # Enter did nothing). -C needs no `tmux` on PATH; -A reuses an existing session; double-quotes keep spaces.
+    # Create+switch only after the popup closes (switching from inside breaks -E's auto-close). The server
+    # runs it 0.2s later, so the popup pty closing can't kill it like a `nohup … &` child. -A reuses a session.
     new)     tmux run-shell -bC -d 0.2 "new-session -d -A -s \"$name\" ; switch-client -t \"$name\"" ;;
 esac

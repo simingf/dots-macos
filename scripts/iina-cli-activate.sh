@@ -1,5 +1,4 @@
 #!/bin/sh
-# iina-cli always exec's IINA as a subprocess that inherits the shell's controlling
-# tty — macOS then refuses to grant menu-bar focus. Launch via `open` instead so IINA
-# goes through launchd; IINA parses the same --mpv-* / --no-stdin flags directly.
+# iina-cli exec's IINA from the shell's (non-GUI) session → no menu bar / focus.
+# `open` launches it via launchd; IINA takes the same --mpv-* / --no-stdin flags.
 exec /usr/bin/open -na IINA --args "$@"

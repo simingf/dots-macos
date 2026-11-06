@@ -102,9 +102,7 @@ IDENTICAL: dict[str, list[tuple[str, str]]] = {
     ],
 }
 
-# (mac-reldir, target-reldir) — whole directory trees kept byte-identical,
-# mirrored recursively so new/renamed/deleted files propagate without listing
-# each one. Used for the nvim lua/ config tree (grows as plugins are added).
+# (mac-reldir, target-reldir) — mirrored recursively, so added/removed files propagate
 IDENTICAL_DIRS: dict[str, list[tuple[str, str]]] = {
     "linux": [(".config/nvim/lua", ".config/nvim/lua")],
     "windows": [(".config/nvim/lua", "AppData/Local/nvim/lua")],

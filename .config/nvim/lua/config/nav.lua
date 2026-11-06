@@ -1,8 +1,6 @@
--- Split navigation shared by <leader>m/n/e/i (config/keymaps.lua) and tmux's prefix
--- m/n/e/i (scripts/tmux-nav.sh → TmuxNav / TmuxNavEnter in config/tmux_lazygit.lua), so
--- nvim splits and tmux panes move as one layout. The explorer counts as one split — its
--- docked box, not the floats drawn over it (wincmd from those floats jumps past the tree).
--- dir is h/j/k/l.
+-- Split navigation for <leader>m/n/e/i and tmux prefix m/n/e/i (tmux-nav.sh → TmuxNav in
+-- tmux_lazygit.lua), so nvim splits and tmux panes move as one layout. dir is h/j/k/l.
+-- The explorer counts as its docked box: wincmd from its floats jumps past the tree.
 local M = {}
 
 local function explorer()
@@ -37,14 +35,12 @@ local function focus(w)
 	end
 end
 
--- a <leader>z zoom is on: it fills nvim and hides the other splits (and closes if focus
--- moves to one), so the zoomed split counts as all of nvim — every direction is the edge
+-- a <leader>z zoom counts as all of nvim: every direction is the edge
 local function zoomed()
 	return Snacks.zen.win and Snacks.zen.win:valid()
 end
 
--- move one split toward dir. true = moved inside nvim; false = at nvim's edge (always,
--- while zoomed — tmux moves on to the next pane, and the zoom stays on).
+-- move one split toward dir. true = moved; false = at nvim's edge (always while zoomed)
 function M.move(dir)
 	if zoomed() then
 		return false
@@ -60,8 +56,7 @@ function M.move(dir)
 	return true
 end
 
--- arriving from another tmux pane while moving toward dir: land on the split at the
--- edge it entered through (moving right → the leftmost split, i.e. the tree)
+-- arriving from another tmux pane toward dir: land on the entry-edge split (right → tree)
 function M.enter(dir)
 	if zoomed() then
 		return -- coming back to a zoomed nvim: stay in the zoom

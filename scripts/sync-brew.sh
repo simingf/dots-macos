@@ -8,17 +8,15 @@ trap 'rm -f "$TMPFILE" "$OLD"' EXIT
 
 brew bundle dump --force --tap --formula --cask --no-restart --file="$TMPFILE"
 
-# Preserve the hand-maintained "Intentionally NOT casks" block (apps we
-# deliberately don't let brew own — dump can't know about them).
+# Keep the hand-maintained "Intentionally NOT casks" block
 NOTCASKS=""
 if [[ -f "$BREWFILE" ]]; then
   NOTCASKS=$(awk '/^# ---- Intentionally NOT casks/{p=1} p' "$BREWFILE")
 fi
 
-# Keep an entry's existing Brewfile line verbatim when dump still lists it, so
-# hand-added options dump can't know about (start_service:, trusted:) survive.
-# Dump decides which entries exist; the old file only supplies their wording.
-# (Snapshot first: the `> "$BREWFILE"` below truncates it before section runs.)
+# Dump decides which entries exist; the old file supplies their wording, so
+# hand-added options (start_service:, trusted:) survive. Snapshot first: the
+# `> "$BREWFILE"` below truncates it before section runs.
 [[ -f "$BREWFILE" ]] && cp "$BREWFILE" "$OLD"
 section() {
   awk -v kind="$1" '

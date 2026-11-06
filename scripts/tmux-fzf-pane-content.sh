@@ -1,22 +1,14 @@
 #!/usr/bin/env bash
-# prefix f: fuzzy-search scrollback CONTENT across ALL panes (server-wide), preview the hit
-# in context (with the query highlighted), then switch to the matching pane. Runs as the
-# body of a `display-popup -E` (see `bind f` in .tmux.conf), so width/height/title are set
-# there. Each pane's last 5000 lines of history are snapshotted to a temp dir; the fzf
-# preview shows a window of lines around the match (▶ marks it) and colors the query terms
-# in iris (#ceacf6, the pane active-border color) to match fzf's match highlight on the left.
-# fzf runs in --exact mode
-# so both sides highlight the same contiguous substrings. We do NOT drop the target pane into
-# copy-mode — that traps
-# keystrokes/paste in the pane until you press q.
+# prefix f (inside `display-popup -E`): fuzzy-search the last 5000 lines of every pane (skipping `_*`
+# sessions), preview the hit in context, then switch to that pane. fzf --exact so the preview's iris
+# highlight matches fzf's. The target is NOT put in copy-mode (that traps keys until q).
 set -euo pipefail
 
 us=$(printf '\037')                       # field delimiter unlikely to appear in pane output
 
 # --- preview sub-invocation: `… --preview <pane_id> <lineno> <query…>` (called by fzf) ---
-# Renders lines around <lineno> from the snapshot, marking the hit line and reverse-video
-# highlighting each whitespace-separated query term (literal, case-insensitive). $snapdir is
-# inherited from the parent via export.
+# ±8 lines around <lineno>, hit line marked ▶, each query term (literal, case-insensitive) in iris.
+# $snapdir is exported by the parent.
 if [ "${1:-}" = "--preview" ]; then
     pid=$2; ln=$3; shift 3; query="$*"
     snap="$snapdir/${pid#%}"

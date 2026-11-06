@@ -1,28 +1,12 @@
 #!/usr/bin/env bash
-# tmux-even-columns.sh — `prefix 0`: equalize the widths of the current window's
-# top-level columns, with two differences from `select-layout even-horizontal`:
-#   1. the agent sidebar keeps its current width (it's not made an equal column).
-#   2. vertically stacked panes stay stacked — a column split top/bottom keeps its
-#      stack instead of being flattened into separate full-height equal columns.
-#
-# It rewrites the tmux layout string directly: split the top-level {..} (left/right)
-# group into columns, keep the sidebar column's width, split the remaining width
-# evenly across the other columns, re-chain the X offsets, and shift every cell
-# inside each column (all cells in a vertical stack share the column's width + X, so
-# a stack just moves/resizes as a unit — heights and Y are untouched).
-#
-# Falls back to `even-horizontal` for shapes it can't safely rewrite: a top level
-# that isn't a left/right split (single pane, or an all-vertical stack → nothing to
-# equalize, left as-is), or a column containing a nested left/right split (its inner
-# widths would need proportional scaling — punt to tmux rather than risk a bad tile).
-#
-# Keep mode — run right after a manual resize so the other columns share the change
-# evenly instead of the one neighbour absorbing all of it:
-#   pane <pane_id>  the column holding this pane also keeps its width (prefix M / I)
-#   border <x>      the column just left of the vertical border at x keeps its width
-#                   (mouse border-drag release; a horizontal border → no-op)
-# In keep mode an unsupported shape is left untouched instead of even-horizontal'd —
-# that would throw away the resize that was just made.
+# tmux-even-columns.sh [pane <id> | border <x>] — equalize top-level column widths by rewriting the
+# layout string. Unlike even-horizontal: the @sidebar column keeps its width and vertical stacks stay
+# stacked (a stack moves/resizes as a unit).
+#   (no args)       prefix 0. Top level not a left/right split → no-op; a column with a nested
+#                   left/right split → even-horizontal.
+#   pane <id>       after prefix M/I: that pane's column also keeps its width
+#   border <x>      after a border drag: the column left of the border at x keeps its width
+# Keep modes never fall back to even-horizontal (it would undo the resize).
 set -euo pipefail
 
 mode=${1:-} arg=${2:-}
@@ -46,8 +30,7 @@ csum() {
 layout=$("$(dirname "$0")/tmux-layout-classic.sh" "$(tmux display-message -p '#{window_layout}')") || exit 0
 body=${layout#*,} # strip "csum,"
 
-# top level must be "WxH,0,0{...}" (left/right split). A single pane or a top-level
-# vertical stack ("...[...]") has nothing to equalize by width → leave as-is.
+# top level must be "WxH,0,0{...}" (left/right split)
 case $body in
 *,0,0\{*\}) ;;
 *) exit 0 ;;
@@ -58,14 +41,12 @@ W=${root%%x*}              # window width
 inner=${body#*\{}          # drop root + opening brace
 inner=${inner%\}}          # drop closing brace
 
-# sidebar pane's numeric id for THIS window (layout uses the number, not "%N"). Empty
-# when the window has no sidebar — then every column is equalized (plain even widths).
+# @sidebar pane's number (layout drops the "%"), or empty
 sidebar_id=$(tmux list-panes -t "$win" -F '#{@sidebar} #{pane_id}' 2>/dev/null |
 	awk '$1==1 {print $2}' | head -1 | tr -d '%')
 
-# Split the top-level group into column cells. First a depth-0 comma split into pieces,
-# then regroup: every cell begins "WxH,X,Y" (WxH is the only token containing 'x'); a
-# leaf adds ",id" (4 pieces), a group attaches "[...]"/"{...}" to the Y piece (3 pieces).
+# Depth-0 comma split, then regroup into cells: each starts "WxH,X,Y"; a leaf adds ",id" (4 pieces),
+# a group has "[..]"/"{..}" attached to Y (3 pieces).
 pieces=()
 d=0 tok=""
 for ((i = 0; i < ${#inner}; i++)); do
@@ -79,7 +60,6 @@ for ((i = 0; i < ${#inner}; i++)); do
 done
 pieces+=("$tok")
 
-# Regroup pieces into whole column cells.
 cells=()
 i=0
 n=${#pieces[@]}
@@ -108,14 +88,13 @@ for idx in "${!cells[@]}"; do
 	w0[idx]=${c%%x*}
 	rest=${c#*,}
 	x0[idx]=${rest%%,*}
-	# keep-mode target: the column at keep_x, or the one whose right separator (x0+w0) is
-	# within 1 cell of the released border
+	# keep target: the column at keep_x, or whose right edge is within 1 of the border
 	if [[ $mode == pane ]] && ((x0[idx] == keep_x)); then keep_idx=$idx; fi
 	if [[ $mode == border ]]; then
 		dist=$((arg - x0[idx] - w0[idx]))
 		((dist >= -1 && dist <= 1)) && keep_idx=$idx
 	fi
-	# sidebar iff this leaf's pane id equals sidebar_id (sidebar is always a leaf column)
+	# the sidebar is always a leaf column
 	if [[ -n $sidebar_id && $c != *'['* ]]; then
 		id=${c##*,}
 		if [[ $id == "$sidebar_id" ]]; then
@@ -133,13 +112,13 @@ fi
 
 ((nonsb >= 1)) || exit 0 # only the sidebar → nothing to do
 
-# Equal split of the width left after the sidebar and the (ncols-1) 1-col separators.
+# width left after kept columns and the (ncols-1) separators
 avail=$((W - (ncols - 1) - sb_w))
 ((avail >= nonsb)) || fallback # too narrow for a clean tile → let tmux handle minima
 base=$((avail / nonsb))
 rem=$((avail - base * nonsb)) # spread the remainder across the first `rem` non-sidebar cols
 
-# Rewrite each column: keep the sidebar's width, give others base(+1), re-chain X.
+# kept columns keep their width, others get base(+1); re-chain X
 newcols=()
 cursor=0
 for idx in "${!cells[@]}"; do
@@ -151,8 +130,7 @@ for idx in "${!cells[@]}"; do
 		((rem > 0)) && { wn=$((base + 1)); rem=$((rem - 1)); }
 	fi
 	xn=$cursor
-	# Every cell in this column shares w0/x0 (a vertical stack has one width + X, varying
-	# only in height/Y). Remap "<w0>x<h>,<x0>," → "<wn>x<h>,<xn>," at each cell boundary.
+	# every cell in the column shares w0/x0: remap "<w0>x<h>,<x0>," → "<wn>x<h>,<xn>,"
 	nc=$(sed -E "s/([,{[]|^)${w0[idx]}x([0-9]+),${x0[idx]},/\1${wn}x\2,${xn},/g" <<<"$c")
 	newcols+=("$nc")
 	cursor=$((xn + wn + 1))

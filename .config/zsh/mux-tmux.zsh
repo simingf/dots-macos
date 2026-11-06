@@ -1,26 +1,17 @@
-# tmux session module — sourced by .zshrc when inside a real tmux ($TMUX set).
-# Defines the tmux `kk` layout plus the tmux session helpers. Relies on
-# claude() / _REAL_TMUX from the numbered modules (sourced before this one). Byte-identical across mac & linux — no host-specific paths
-# (claude/nvim/lazygit resolve per-platform from .zshrc).
+# tmux module (sourced by 95-session.zsh): kk layout + session helpers.
+# Uses claude() / _REAL_TMUX from the numbered modules. Byte-identical: no host paths.
 
-# _kk_stay <cmd>: wrap <cmd> so its pane falls back to a login-interactive shell when <cmd> exits,
-# rather than the pane closing (which lets the remaining panes re-tile over the gap). tmux runs pane
-# commands via `sh -c`, which won't hand <cmd> the foreground tty when another command follows it (the
-# tool then dies instantly); `exec zsh -il -c` (interactive login → job control) does. The inner
-# `exec zsh -il` is the fallback shell, spawned in the same pane once <cmd> exits.
+# _kk_stay <cmd>: pane command that drops to a shell when <cmd> exits (instead of closing
+# the pane). `zsh -il -c`, not tmux's `sh -c`: sh won't give <cmd> the foreground tty
+# when another command follows it.
 _kk_stay() {
     local inner="$1; exec zsh -il"
     print -r -- "exec zsh -il -c ${(q)inner}"
 }
 
-# kk: tmux split into two full-height columns: nvim 50% | claude 50% (claude = the origin pane, rightmost).
-# Lazygit is no longer part of the layout — toggle it as a left sidebar with prefix g (tmux-lazygit.sh).
-# Args starting with - are claude flags; args that are existing paths open in nvim (default: the git root,
-# or $PWD outside a repo, as a dir tree); any other arg is sent to claude as a prompt (like `claude PROMPT`).
-# Both panes fall back to a shell when their tool exits: nvim via _kk_stay (above), and claude runs in the
-# interactive origin pane so its prompt simply returns — so quitting either tool leaves its pane as a shell
-# instead of collapsing the layout. -d keeps focus on the origin pane, where claude runs last.
-# Outside tmux → claude.
+# kk: nvim 50% | claude 50% (claude in the origin pane). Args: -flags → claude; existing
+# paths → nvim (default: git root or $PWD); anything else → claude prompt.
+# Quitting either tool leaves a shell. Outside tmux → just claude.
 kk() {
     emulate -L zsh
     local a
@@ -40,22 +31,19 @@ kk() {
     fi
     (( ${#files} )) || files=("$paneroot") # no files → open the root as a dir tree
     local nvim_cmd="nvim ${(j: :)${(q@)files}}" # (q@) quotes each file, (j) joins
-    # nvim 50% just left of the origin pane (claude); _kk_stay drops it to a shell when nvim quits (see above).
+    # nvim to the left; -d keeps focus here, where claude runs.
     tmux split-window -h -b -d -t "$TMUX_PANE" -l 50% -c "$paneroot" "$(_kk_stay "$nvim_cmd")" || return
-    # Name the Claude session after the tmux window so cross-session messaging (ListAgents) shows a
-    # meaningful handle; skip if the caller already passed their own --name/-n.
+    # Name the session after the tmux window, unless --name/-n was passed.
     local -a nameflag=(--name "$(tmux display-message -p -t "$TMUX_PANE" '#{window_name}')")
     local f
     for f in "${cflags[@]}"; do
         [[ "$f" == --name || "$f" == --name=* || "$f" == -n ]] && { nameflag=(); break; }
     done
-    (cd "$paneroot" && claude "${nameflag[@]}" "${cflags[@]}" "${cprompt[@]}") # claude in the origin pane (rightmost); -d kept focus here
+    (cd "$paneroot" && claude "${nameflag[@]}" "${cflags[@]}" "${cprompt[@]}")
 }
 
-# kkactive: one background window per roblox-notes active project, each running `kk /get-notes <project>`
-# from ~/git/roblox (so nvim's tree shows the active/, context/ and meta/ repos). Skips projects that
-# already have a window of that name in this session, so re-runs only open what's missing. The keys go
-# to the new pane's interactive shell, where kk is defined.
+# kkactive: a background window per active roblox-notes project running
+# `kk /get-notes <project>` from ~/git/roblox; skips existing windows of that name.
 kkactive() {
     emulate -L zsh
     local root=~/git/roblox/meta/roblox-notes/active-workstreams d name pane

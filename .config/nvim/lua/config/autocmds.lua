@@ -1,10 +1,7 @@
--- title: show the file name (tail) in the terminal/window title. `%t` is the
--- statusline-format tail, updated automatically — no autocmd needed, and it can't
--- misfire on a filename containing `%`.
+-- window title = file name (`%t` updates itself and is safe for names containing `%`)
 vim.opt.title = true
 vim.o.titlestring = "%t"
 
--- highlight when yanking (copying) text
 vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking (copying) text",
 	group = vim.api.nvim_create_augroup("highlight-yank", { clear = true }),
@@ -13,16 +10,13 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 		hl.on_yank()
 	end,
 })
--- auto-reload buffers when the file changes on disk (e.g. edits from an agent
--- or git). autoread reloads only on events, so poke :checktime on focus/idle to
--- force the mtime check. Unmodified buffers reload in place; if you have unsaved
--- changes nvim warns instead of clobbering them. Idle refresh is gated by
--- 'updatetime' (default 4000ms) via CursorHold.
+
+-- reload files changed on disk (agent/git edits): autoread only acts on events, so
+-- poke :checktime on focus/idle (CursorHold = 'updatetime'). Unsaved changes warn instead.
 vim.opt.autoread = true
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
 	desc = "reload buffer if the underlying file changed on disk",
-	-- grouped with clear=true so re-sourcing this module (e.g. <leader>r) replaces
-	-- the handler instead of stacking a duplicate checktime on every reload.
+	-- clear=true: re-sourcing (<leader>r) replaces the handler instead of stacking it
 	group = vim.api.nvim_create_augroup("checktime-on-change", { clear = true }),
 	callback = function()
 		if vim.fn.mode() ~= "c" then
@@ -30,10 +24,10 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
 		end
 	end,
 })
--- no swap file for directory buffers. snacks' replace_netrw renames the dir buffer
--- to "" on startup, which creates its swap file — named after the cwd — right then;
--- several nvims started on the same dir at once (kkactive) race for that one name
--- and the losers fail with E303. Registered before lazy, so it runs ahead of snacks.
+
+-- no swapfile for directory buffers: snacks' replace_netrw creates one named after the
+-- cwd, so nvims started on the same dir at once (kkactive) race for it -> E303.
+-- Registered before lazy so it runs ahead of snacks.
 vim.api.nvim_create_autocmd("BufEnter", {
 	desc = "disable swapfile for directory buffers",
 	group = vim.api.nvim_create_augroup("dir-noswapfile", { clear = true }),
@@ -43,9 +37,9 @@ vim.api.nvim_create_autocmd("BufEnter", {
 		end
 	end,
 })
--- wipe empty unnamed buffers once nothing shows them. Every tabnew (<leader>c), the
--- last-tab close and replace_netrw leave a blank [No Name] buffer behind; listed and
--- hidden, they pile up as "[Scratch]" entries in the buffer picker (<leader>w).
+
+-- wipe hidden blank [No Name] buffers (left by tabnew, last-tab close, replace_netrw)
+-- so they don't pile up as "[Scratch]" in the buffer picker (<leader>w)
 vim.api.nvim_create_autocmd("BufHidden", {
 	desc = "wipe hidden empty unnamed buffers",
 	group = vim.api.nvim_create_augroup("wipe-empty-noname", { clear = true }),

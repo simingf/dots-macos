@@ -1,5 +1,5 @@
-# Shared tool setup (mac + linux). Plugins themselves load in 10-plugins.zsh
-# (per-platform); their theme vars below are read whenever they load.
+# Shared tool setup (mac + linux). Plugin theme vars here are read whenever
+# 10-plugins.zsh loads them.
 
 # nvm (lazy-loaded)
 _nvm_load() {
@@ -17,15 +17,11 @@ pnpm() { _nvm_load && pnpm "$@"; }
 # fzf — rose-pine, iris-forward (pointer/prompt/marker/border = iris #ceacf6)
 export FZF_DEFAULT_OPTS="--color=fg:#908caa,bg:-1,hl:#ceacf6,fg+:#e0def4,bg+:#26233a,hl+:#ceacf6,border:#ceacf6,header:#908caa,info:#6e6a86,spinner:#f6c177,pointer:#ceacf6,marker:#ceacf6,prompt:#ceacf6,gutter:-1"
 
-# Preview panes for Ctrl-T / Alt-C so they match the fzf-tab completion UI
-# (colors/frame inherited from FZF_DEFAULT_OPTS above). eza for dirs, cat for
-# files (bat not installed); ctrl-/ toggles the preview. Ctrl-R gets no preview
-# — the history row already shows the full command on the line itself.
+# C-t / M-c previews match fzf-tab (cat: no bat installed); ctrl-/ toggles.
 export FZF_CTRL_T_OPTS="--preview 'if [ -d {} ]; then eza --tree --level=2 --color=always --icons=always --group-directories-first {}; else cat {} 2>/dev/null | head -n 200; fi' --preview-window=right:60% --bind 'ctrl-/:toggle-preview'"
 export FZF_ALT_C_OPTS="--preview 'eza --tree --level=2 --color=always --icons=always --group-directories-first {}' --preview-window=right:60% --bind 'ctrl-/:toggle-preview'"
 
-# Shell integrations (guarded so a missing tool doesn't error on every startup).
-# linux uses the vendored fzf (new enough for --zsh; Debian's 0.44 isn't).
+# Shell integrations (linux needs the vendored fzf: Debian's lacks --zsh).
 command -v fzf >/dev/null && source <(fzf --zsh)
 command -v zoxide >/dev/null && eval "$(zoxide init --cmd cd zsh)"
 command -v direnv >/dev/null && eval "$(direnv hook zsh)"
