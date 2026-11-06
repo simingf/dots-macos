@@ -1,14 +1,6 @@
 -- standalone PNGs larger than this (px, long side) are scaled down to it by magick (snacks config)
 local PNG_MAX = 4096
 
--- tab keys mirror tmux's window keys (`,` `.` prev/next, `<` `>` move), repeatable
-local tab_keys = require("config.repeat").group({
-	[","] = "tabprevious",
-	["."] = "tabnext",
-	["<"] = "silent! tabmove -1",
-	[">"] = "silent! tabmove +1",
-})
-
 local tabs = require("config.tabs")
 
 return {
@@ -174,7 +166,7 @@ return {
 	-- bufferline: vim tabpages as clickable tabs across the top — like tmux windows, each
 	-- tab keeps its own split layout (a tab is named after its focused window's file).
 	-- Mouse clicks select tabs (mouse = "a"); keys mirror tmux's window keys — <leader>,/.
-	-- prev/next and <leader></> move (repeatable, see config/repeat.lua), <leader>1-9 jump,
+	-- prev/next and <leader></> move, <leader>1-9 jump,
 	-- <leader><Tab>/W last, <leader>c new, <leader>k close; <leader>bp jumps by letter.
 	-- offsets shifts the bar right of the explorer sidebar so they don't overlap;
 	-- rose-pine themes the highlights automatically.
@@ -277,10 +269,10 @@ return {
 			require("bufferline").setup(opts)
 		end,
 		keys = vim.list_extend({
-			{ "<leader>,", tab_keys[","], desc = "prev tab" },
-			{ "<leader>.", tab_keys["."], desc = "next tab" },
-			{ "<leader><", tab_keys["<"], desc = "move tab left" },
-			{ "<leader>>", tab_keys[">"], desc = "move tab right" },
+			{ "<leader>,", "<cmd>tabprevious<cr>", desc = "prev tab" },
+			{ "<leader>.", "<cmd>tabnext<cr>", desc = "next tab" },
+			{ "<leader><", "<cmd>silent! tabmove -1<cr>", desc = "move tab left" },
+			{ "<leader>>", "<cmd>silent! tabmove +1<cr>", desc = "move tab right" },
 			{ "<leader><Tab>", "<cmd>tabnext #<cr>", desc = "last tab" },
 			{ "<leader>W", "<cmd>tabnext #<cr>", desc = "last tab" },
 			{ "<leader>c", tabs.new, desc = "new tab" },

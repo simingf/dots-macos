@@ -96,16 +96,15 @@ local function resize(dir)
 	local grow = (dir == "i" or dir == "n") == (vim.fn.winnr(far) ~= vim.fn.winnr())
 	vim.cmd((vert and "vertical " or "") .. "resize " .. (grow and "+5" or "-5"))
 end
-local win_keys = require("config.repeat").group({
-	M = function() resize("m") end,
-	N = function() resize("n") end,
-	E = function() resize("e") end,
-	I = function() resize("i") end,
-	["["] = function() require("config.tabs").swap(-1) end,
-	["]"] = function() require("config.tabs").swap(1) end,
-})
-for k, desc in pairs({ M = "resize left", N = "resize down", E = "resize up", I = "resize right", ["["] = "swap split backward", ["]"] = "swap split forward" }) do
-	vim.keymap.set("n", "<leader>" .. k, win_keys[k], { desc = desc })
+for k, m in pairs({
+	M = { function() resize("m") end, "resize left" },
+	N = { function() resize("n") end, "resize down" },
+	E = { function() resize("e") end, "resize up" },
+	I = { function() resize("i") end, "resize right" },
+	["["] = { function() require("config.tabs").swap(-1) end, "swap split backward" },
+	["]"] = { function() require("config.tabs").swap(1) end, "swap split forward" },
+}) do
+	vim.keymap.set("n", "<leader>" .. k, m[1], { desc = m[2] })
 end
 vim.keymap.set("n", "<leader>0", "<C-w>=", { desc = "equalize splits" })
 vim.keymap.set("n", "<leader>P", "<C-w>p", { desc = "last split" })

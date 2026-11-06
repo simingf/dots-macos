@@ -23,8 +23,9 @@ consistently in **both nvim and tmux copy-mode**:
 - **`k`** → word-end motion (took over from `e`).
 - **`l`** → insert, and the inner-text-object prefix (took over from `i`; nvim only).
 
-Modifier prefix per system: **nvim** `<leader>` = Space · **tmux** prefix = `C-Space` (emitted by
-a right-cmd tap via Karabiner) · **AeroSpace** = `alt`.
+Modifier prefix per system: **nvim** `<leader>` = Space · **tmux** prefix = `C-Space`. In ghostty,
+hold right-opt / right-cmd and Karabiner sends Space / `C-Space` before every key pressed — chainable,
+release in any order (`scripts/karabiner-hold-leaders.py`), so nothing is `-r`-repeatable and tmux `repeat-time` is 0 · **AeroSpace** = `alt`.
 
 ### Directional matrix (the same four keys, per context)
 
@@ -60,10 +61,10 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `*` / `#` | search the word under the cursor forward / backward | n |
 | `k` | word-end (→ `e`) | n, x, o |
 | `<leader>m` `<leader>n` `<leader>e` `<leader>i` | focus window left / down / up / right; at nvim's edge, the next tmux pane | n |
-| `<leader>M` `<leader>N` `<leader>E` `<leader>I` | resize: move the border left / down / up / right 5 cells (repeatable²) | n |
+| `<leader>M` `<leader>N` `<leader>E` `<leader>I` | resize: move the border left / down / up / right 5 cells | n |
 | `<leader>\` / `<leader>-` | new empty split right / below (a tree open fills the first empty split) | n |
 | `<leader>\|` / `<leader>_` | new empty split left / above | n |
-| `<leader>[` / `<leader>]` | swap the file with the previous / next file window, following it; the tree stays put (repeatable²) | n |
+| `<leader>[` / `<leader>]` | swap the file with the previous / next file window, following it; the tree stays put | n |
 | `<leader>0` · `<leader>P` · `<leader>x` | equalize windows · last window · close window and its file if shown nowhere else (unsaved → Save / Don't Save / Cancel; a tab's last window closes the tab) | n |
 | `<leader>z` · `<leader>!` | zoom window (toggle) · move window into its own tab (snacks.zen / `<C-w>T`) | n |
 | `<leader>r` | rename current file (LSP-aware, snacks.rename) | n |
@@ -81,10 +82,6 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 windows (bufferline shows tabpages, so each tab keeps its own splits). Unmatched tmux keys: sessions (`s S C R K BTab`), `a`, `g` and `@` are tmux-level (they
 work in an nvim pane as-is); `p` (pane numbers) has no nvim twin, so `<leader>p` stays preview;
 `y` stays yazi.
-
-² Repeatable like tmux `bind -r` (`…/lua/config/repeat.lua`): within 300ms of the leader map (tmux `repeat-time` matches), a
-bare tap of a key in the same group repeats it — `,` `.` `<` `>` (tabs) · `M` `N` `E` `I` `[` `]`
-(windows). Any other key ends the chain and keeps its normal meaning.
 
 Also `:FormatDisable[!]` / `:FormatEnable` toggle format-on-save (buffer / global).
 
@@ -106,8 +103,8 @@ All under `.config/nvim/lua/plugins/`.
 |---|---|---|---|
 | `<leader><leader>` | buffer-local keymap hints | which-key | `ui.lua` |
 | `<leader>v` · `<leader>d` · `<leader>t` · `<leader>b` | groups: windows (`<C-w>` proxy) · trouble · pickers · buffer | which-key | `ui.lua` |
-| `<leader>,` / `<leader>.` | prev / next tab (repeatable²) | — | `ui.lua` |
-| `<leader><` / `<leader>>` | move tab left / right (repeatable²) | — | `ui.lua` |
+| `<leader>,` / `<leader>.` | prev / next tab | — | `ui.lua` |
+| `<leader><` / `<leader>>` | move tab left / right | — | `ui.lua` |
 | `<leader>1`…`<leader>9` | go to tab N | — | `ui.lua` |
 | `<leader><Tab>` / `<leader>W` | last tab | — | `ui.lua` |
 | `<leader>c` | new tab | — | `ui.lua` |
