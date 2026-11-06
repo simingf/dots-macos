@@ -73,38 +73,16 @@ return {
 		end,
 	},
 
-	-- v2 installs missing servers and vim.lsp.enable()s each (automatic_enable)
+	-- v2: installs missing servers and vim.lsp.enable()s them
 	{
 		"mason-org/mason-lspconfig.nvim",
 		enabled = not env.IS_SSH,
 		dependencies = { "mason-org/mason.nvim", "neovim/nvim-lspconfig" },
-		-- roslyn_ls is roslyn.nvim's to start, not mason-lspconfig's
-		opts = { ensure_installed = servers, automatic_enable = { exclude = { "roslyn_ls" } } },
-	},
-
-	-- mason-tool-installer: formatters for conform (+ roslyn)
-	{
-		"WhoIsSethDaniel/mason-tool-installer.nvim",
-		enabled = not env.IS_SSH,
-		dependencies = { "mason-org/mason.nvim" },
+		-- also installs the C# server (roslyn_ls) where there's dotnet, but only enables `servers`:
+		-- roslyn.nvim starts C# itself
 		opts = {
-			ensure_installed = env.HAS_DOTNET and {
-				"goimports",
-				"gofumpt",
-				"ruff",
-				"stylua",
-				"shfmt",
-				"clang-format",
-				"csharpier",
-				"roslyn-language-server", -- for roslyn.nvim
-			} or {
-				"goimports",
-				"gofumpt",
-				"ruff",
-				"stylua",
-				"shfmt",
-				"clang-format",
-			},
+			ensure_installed = env.HAS_DOTNET and vim.list_extend({ "roslyn_ls" }, servers) or servers,
+			automatic_enable = servers,
 		},
 	},
 

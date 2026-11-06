@@ -48,30 +48,4 @@ return {
 			},
 		},
 	},
-
-	-- conform: formatters (<leader>= and format-on-save; :FormatDisable to pause)
-	{
-		"stevearc/conform.nvim",
-		event = { "BufWritePre" },
-		cmd = { "ConformInfo" },
-		opts = {
-			formatters_by_ft = {
-				go = { "goimports", "gofumpt" },
-				python = { "ruff_organize_imports", "ruff_format" },
-				lua = { "stylua" },
-				sh = { "shfmt" },
-				bash = { "shfmt" },
-				zsh = { "shfmt" },
-				cpp = { "clang_format" },
-				c = { "clang_format" },
-				cs = { "csharpier" },
-			},
-			format_on_save = function(bufnr)
-				if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
-					return
-				end
-				return { timeout_ms = 500, lsp_format = "fallback" }
-			end,
-		},
-	},
 }

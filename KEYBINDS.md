@@ -77,7 +77,6 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 | `0` / `L` | line start (`^`) / line end (`$`) | n, x, o |
 | `x` / `X` | delete char / line to black-hole register | n, x |
 | `gy` / `gp` | yank to / paste from system clipboard | n,x / n |
-| `<leader>=` | format buffer (conform → LSP fallback) | n, x |
 | `<C-a>` / `<C-e>` | line start / end, like zsh | i |
 
 **Opening a file** — from the tree, a file picker (`<leader>w` `f` `tf` `tg` `tr` `td`), `gd`/`gD`, lazygit's edit or `/get-notes` — jumps to the window already showing it (any tab), else fills the tab's first empty window (new splits start empty), else opens a new tab with the tree (`…/lua/config/tabs.lua`). In pickers, `<C-v>` / `<C-s>` / `<C-t>` still split / tab explicitly.
@@ -86,8 +85,6 @@ AeroSpace **move-window** stays on `alt-arrows` (layout-neutral, so no letter to
 windows (bufferline shows tabpages, so each tab keeps its own splits). Unmatched tmux keys: sessions
 (`s S C R K BTab`), `a`, `g` and `@` are tmux-level (they work in an nvim pane as-is); `p` (pane
 numbers) has no nvim twin, so `<leader>p` stays preview; `y` stays yazi.
-
-Also `:FormatDisable[!]` / `:FormatEnable` toggle format-on-save (buffer / global).
 
 **Search highlights auto-clear:** `hlsearch` is on only while the last normal-mode key was a search
 key (`/` `?` ⌘F `j` `J` `*` `#`); any other key turns it off (`vim.on_key` in `keymaps.lua`).

@@ -265,10 +265,6 @@ vim.keymap.set("x", "<LeftRelease>", '"+ygv', { desc = "copy mouse selection" })
 -- 0 = ^, L = $ (H is arrow.nvim)
 vim.keymap.set({ "n", "x", "o" }, "0", "^", { noremap = true, silent = true })
 vim.keymap.set({ "n", "x", "o" }, "L", "$", { noremap = true, silent = true })
--- format (conform, LSP fallback); `=` like the reindent operator (<leader>f is grep)
-vim.keymap.set({ "n", "x" }, "<leader>=", function()
-	require("conform").format({ async = true, lsp_format = "fallback" })
-end, { desc = "format" })
 -- browser preview (config/preview.lua)
 vim.keymap.set("n", "<leader>p", function()
 	require("config.preview").current()
@@ -286,18 +282,6 @@ end, { desc = "reload nvim config" })
 vim.keymap.set("n", "<leader>r", function()
 	Snacks.rename.rename_file()
 end, { desc = "rename file" })
--- format-on-save toggle: :FormatDisable[!] (buffer / global), :FormatEnable
-vim.api.nvim_create_user_command("FormatDisable", function(args)
-	if args.bang then
-		vim.g.disable_autoformat = true
-	else
-		vim.b.disable_autoformat = true
-	end
-end, { desc = "Disable format-on-save", bang = true })
-vim.api.nvim_create_user_command("FormatEnable", function()
-	vim.b.disable_autoformat = false
-	vim.g.disable_autoformat = false
-end, { desc = "Re-enable format-on-save" })
 
 -- held right-⌥ (Karabiner) sends <leader> before every key, so <leader>tt arrives as
 -- <leader>t<leader>t: map <leader>{prefix}<leader> back to <leader>{prefix} for every
