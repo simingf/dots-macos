@@ -114,7 +114,6 @@ All under `.config/nvim/lua/plugins/`.
 | `<leader>f` | grep open buffers | snacks.picker | `ui.lua` |
 | `<leader>tt` | fuzzy find in buffer | snacks.picker | `ui.lua` |
 | `<leader>tg` | live grep | snacks.picker | `ui.lua` |
-| `<leader>tb` | buffers | snacks.picker | `ui.lua` |
 | `<leader>tf` | find files | snacks.picker | `ui.lua` |
 | `<leader>tr` | recent files | snacks.picker | `ui.lua` |
 | `<leader>td` | diagnostics | snacks.picker | `ui.lua` |
@@ -123,7 +122,7 @@ All under `.config/nvim/lua/plugins/`.
 | `s` / `S` | flash jump / treesitter jump | flash | `editor.lua` |
 | `H` / `h` | bookmark: global / buffer leader | arrow.nvim | `editor.lua` |
 | `q` `Q` `<C-q>` `cq` `dq` | macro: rec · play · switch slot (3: a/b/c) · edit · delete-all | recorder | `editor.lua` |
-| `<leader>\`` | reveal / leave file tree | snacks.explorer | `navigation.lua` |
+| `<leader>o` | reveal / leave file tree | snacks.explorer | `navigation.lua` |
 | `<leader>y` / `<leader>Y` | yazi @ current file / cwd | yazi.nvim | `navigation.lua` |
 | `<leader>p` | markdown preview toggle | markdown-preview | `treesitter.lua` |
 | `af`/`lf` · `ac`/`lc` · `as` | text-objects: function · class · scope (inner = `l`, see ¹) | ts-textobjects | `treesitter.lua` (x, o) |

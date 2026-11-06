@@ -512,13 +512,6 @@ return {
 				end,
 				desc = "live grep",
 			},
-			{
-				"<leader>tb",
-				function()
-					Snacks.picker.buffers()
-				end,
-				desc = "buffers",
-			},
 			-- tmux ‹pfx›w (fzf window switch) / ‹pfx›f (grep scrollback across panes)
 			{
 				"<leader>w",

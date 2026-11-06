@@ -23,7 +23,7 @@ deep into snacks' private picker structure: `Snacks.picker.get({source="explorer
 `p.list.win.win`, `p.list.win:valid()`, **`p.layout.root.win`**, `p.input`/`p.preview`,
 `p:current()`, `p:action("confirm")`, `p:selected()`, `Snacks.picker.util.path()`,
 `p.list:set_selected()`, `p:update_titles()`, `p.opts.wrap`, plus `p:is_focused()` in the
-`<leader>`` reveal. The width toggle specifically exploits *how snacks derives the visible
+`<leader>o` reveal. The width toggle specifically exploits *how snacks derives the visible
 float from a hidden root split* — pure implementation detail.
 - **Failure mode:** silent no-op — the `if not p … return` guards swallow it, so the
   explorer still works but `o` / `y` / `W` / the width-expand quietly stop.

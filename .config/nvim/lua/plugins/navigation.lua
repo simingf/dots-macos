@@ -254,7 +254,7 @@ return {
 		end,
 		keys = {
 			{
-				"<leader>`",
+				"<leader>o",
 				function()
 					-- focus toggle: in the tree → jump back to the previous window;
 					-- otherwise reveal the current file in the tree (opening if closed)
