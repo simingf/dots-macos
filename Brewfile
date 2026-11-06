@@ -10,9 +10,6 @@ tap "felixkratz/formulae", trusted: true
 tap "haimgel/tools", trusted: true
 tap "hashicorp/tap", trusted: true
 tap "jandedobbeleer/oh-my-posh", trusted: true
-tap "jesseduffield/lazygit", trusted: true
-tap "lizardbyte/homebrew", trusted: true
-tap "microsoft/git", trusted: true
 tap "nikitabobko/tap", trusted: true
 
 # ---- Formulae ----
