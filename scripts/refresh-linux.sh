@@ -45,7 +45,8 @@ commit_push() {
     git -C "$repo" commit -q -m "$msg" -- "$@"
     echo "  $(basename "$repo"): committed config"
   fi
-  git -C "$repo" push
+  # drop GHE's known large-file warning (vendored gopls ~29MB > the 25MB recommendation; hard cap is 100MB)
+  git -C "$repo" push 2> >(grep -v -E 'remote: warning: (Please visit https://roblox\.atlassian|File vendor/.* is .* recommended maximum|GH001: Large files detected)' >&2)
   local leftover
   leftover=$(git -C "$repo" status --short)
   # `if`, not `&&`: as the last statement it'd return 1 on a clean tree → set -e abort

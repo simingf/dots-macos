@@ -149,11 +149,16 @@ tar -xzf "$TMPDIR/lua-language-server-$LUALS_VER-linux-x64.tar.gz" -C "$LSP/lua-
 echo "  lua-language-server $LUALS_VER ✓"
 
 GOPLS_VER=$(mason_ver gopls)
-GOPATH="$TMPDIR/go" GOMODCACHE="$TMPDIR/go/mod" GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-  go install -trimpath -ldflags='-s -w' "golang.org/x/tools/gopls@$GOPLS_VER"
-cp "$TMPDIR/go/bin/linux_amd64/gopls" "$DOTS_LINUX/vendor/bin/gopls"
-chmod -R u+w "$TMPDIR/go"   # module cache is read-only; let the EXIT trap delete it
-echo "  gopls $GOPLS_VER ✓"
+# skip the rebuild when the vendored binary is already this version (go reads a linux binary's build info)
+if [[ $(go version -m "$DOTS_LINUX/vendor/bin/gopls" 2>/dev/null | awk '$1 == "mod" { print $3 }') == "$GOPLS_VER" ]]; then
+  echo "  gopls $GOPLS_VER (unchanged) ✓"
+else
+  # GOPATH only for the cross-compiled output; modules come from the Mac's persistent cache
+  GOPATH="$TMPDIR/go" GOMODCACHE="$(go env GOMODCACHE)" GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+    go install -trimpath -ldflags='-s -w' "golang.org/x/tools/gopls@$GOPLS_VER"
+  cp "$TMPDIR/go/bin/linux_amd64/gopls" "$DOTS_LINUX/vendor/bin/gopls"
+  echo "  gopls $GOPLS_VER ✓"
+fi
 
 # roslyn: mason's version (registry, since the Mac has no dotnet → nothing installed), linux-x64 nupkg.
 # Needs .NET ≥10 on the box. Locales / pdbs / doc xml / the .NET Framework build host are dropped.
