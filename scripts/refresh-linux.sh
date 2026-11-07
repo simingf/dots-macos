@@ -19,6 +19,9 @@ export GIT_PAGER=cat PAGER=cat
 echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit) + agent detection rules"
 # zinit runs alongside lazy (independent trees): parallel jobs, sourcing zinit alone instead of a full
 # `zsh -ic` startup; its output is replayed after lazy's so the two don't interleave.
+ZPLUG=~/.local/share/zinit/plugins
+zheads() { for d in "$ZPLUG"/[!_]*/; do printf '%s %s\n' "$(basename "$d")" "$(git -C "$d" rev-parse --short HEAD)"; done | LC_ALL=C sort; }
+zbefore=$(zheads)
 zlog=$(mktemp)
 zsh -c 'source ~/.local/share/zinit/zinit.git/zinit.zsh && GIT_PAGER=cat PAGER=cat zinit update --parallel' >"$zlog" 2>&1 &
 zpid=$!
@@ -29,6 +32,10 @@ nvim --headless +"Lazy! sync" +'lua local P, bad = require("lazy.core.plugin"), 
 zst=0; wait "$zpid" || zst=$?
 cat "$zlog"; rm -f "$zlog"
 [ "$zst" -eq 0 ] || { echo "zinit update failed (exit $zst)" >&2; exit 1; }
+# --parallel doesn't list plugins, so report each one's HEAD change
+join <(echo "$zbefore") <(zheads) | while read -r name old new; do
+  [ "$old" = "$new" ] && echo "  ${name/---//}: up to date" || echo "  ${name/---//}: $old → $new"
+done
 # Assign first: a failure inside $(...) in echo's args wouldn't trip set -e.
 rules=$("$DOTS_MACOS/scripts/tmux-agent-state.py" update-rules)
 echo "    herdr Claude detection rules: $rules"
