@@ -13,16 +13,22 @@ trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
 DOTS_MACOS="${HOME}/dots-macos"
 DOTS_LINUX="${HOME}/dots-linux"
 
-# No pagers: zinit's git-log changelogs would hang in less. The inline copy on the
-# zinit line survives a zshrc that resets PAGER inside `zsh -ic`.
+# No pagers: zinit's git-log changelogs would hang in less.
 export GIT_PAGER=cat PAGER=cat
 
 echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit) + agent detection rules"
+# zinit runs alongside lazy (independent trees): parallel jobs, sourcing zinit alone instead of a full
+# `zsh -ic` startup; its output is replayed after lazy's so the two don't interleave.
+zlog=$(mktemp)
+zsh -c 'source ~/.local/share/zinit/zinit.git/zinit.zsh && GIT_PAGER=cat PAGER=cat zinit update --parallel' >"$zlog" 2>&1 &
+zpid=$!
 # nvim exits 0 even when a plugin's fetch/checkout fails — check lazy's task errors.
 nvim --headless +"Lazy! sync" +'lua local P, bad = require("lazy.core.plugin"), {}
   for n, p in pairs(require("lazy.core.config").plugins) do if P.has_errors(p) then bad[#bad + 1] = n end end
   if #bad > 0 then io.stderr:write("Lazy! sync failed: " .. table.concat(bad, ", ") .. "\n") vim.cmd("cquit 1") end' +qa
-zsh -ic 'GIT_PAGER=cat PAGER=cat zinit update --all'
+zst=0; wait "$zpid" || zst=$?
+cat "$zlog"; rm -f "$zlog"
+[ "$zst" -eq 0 ] || { echo "zinit update failed (exit $zst)" >&2; exit 1; }
 # Assign first: a failure inside $(...) in echo's args wouldn't trip set -e.
 rules=$("$DOTS_MACOS/scripts/tmux-agent-state.py" update-rules)
 echo "    herdr Claude detection rules: $rules"
