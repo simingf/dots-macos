@@ -64,7 +64,12 @@ function M.open(file)
 	else
 		M.new()
 	end
-	vim.cmd("edit " .. vim.fn.fnameescape(path))
+	-- the swap-file dialog still raises E325 from a Lua callback after you pick an option;
+	-- the choice was already applied, so only rethrow other errors
+	local ok, err = pcall(vim.cmd, "edit " .. vim.fn.fnameescape(path))
+	if not ok and not tostring(err):find("E325") then
+		error(err, 0)
+	end
 end
 
 -- M.open, then cursor to pos ({ 1-based line, 0-based col }) for pickers / LSP jumps
