@@ -13,16 +13,29 @@ trap 'echo "${0##*/}: FAILED (line $LINENO): $BASH_COMMAND" >&2' ERR
 DOTS_MACOS="${HOME}/dots-macos"
 DOTS_LINUX="${HOME}/dots-linux"
 
-# No pagers: zinit's git-log changelogs would hang in less. The inline copy on the
-# zinit line survives a zshrc that resets PAGER inside `zsh -ic`.
+# No pagers: zinit's git-log changelogs would hang in less.
 export GIT_PAGER=cat PAGER=cat
 
 echo "==> [1/4] updating Mac plugin trees (nvim lazy + zinit) + agent detection rules"
+# zinit runs alongside lazy (independent trees): parallel jobs, sourcing zinit alone instead of a full
+# `zsh -ic` startup; its output is replayed after lazy's so the two don't interleave.
+ZPLUG=~/.local/share/zinit/plugins
+zheads() { for d in "$ZPLUG"/[!_]*/; do printf '%s %s\n' "$(basename "$d")" "$(git -C "$d" rev-parse --short HEAD)"; done | LC_ALL=C sort; }
+zbefore=$(zheads)
+zlog=$(mktemp)
+zsh -c 'source ~/.local/share/zinit/zinit.git/zinit.zsh && GIT_PAGER=cat PAGER=cat zinit update --parallel' >"$zlog" 2>&1 &
+zpid=$!
 # nvim exits 0 even when a plugin's fetch/checkout fails — check lazy's task errors.
 nvim --headless +"Lazy! sync" +'lua local P, bad = require("lazy.core.plugin"), {}
   for n, p in pairs(require("lazy.core.config").plugins) do if P.has_errors(p) then bad[#bad + 1] = n end end
   if #bad > 0 then io.stderr:write("Lazy! sync failed: " .. table.concat(bad, ", ") .. "\n") vim.cmd("cquit 1") end' +qa
-zsh -ic 'GIT_PAGER=cat PAGER=cat zinit update --all'
+zst=0; wait "$zpid" || zst=$?
+cat "$zlog"; rm -f "$zlog"
+[ "$zst" -eq 0 ] || { echo "zinit update failed (exit $zst)" >&2; exit 1; }
+# --parallel doesn't list plugins, so report each one's HEAD change
+join <(echo "$zbefore") <(zheads) | while read -r name old new; do
+  [ "$old" = "$new" ] && echo "  ${name/---//}: up to date" || echo "  ${name/---//}: $old → $new"
+done
 # Assign first: a failure inside $(...) in echo's args wouldn't trip set -e.
 rules=$("$DOTS_MACOS/scripts/tmux-agent-state.py" update-rules)
 echo "    herdr Claude detection rules: $rules"
@@ -45,7 +58,8 @@ commit_push() {
     git -C "$repo" commit -q -m "$msg" -- "$@"
     echo "  $(basename "$repo"): committed config"
   fi
-  git -C "$repo" push
+  # drop GHE's known large-file warning (vendored gopls ~29MB > the 25MB recommendation; hard cap is 100MB)
+  git -C "$repo" push 2> >(grep -v -E 'remote: warning: (Please visit https://roblox\.atlassian|File vendor/.* is .* recommended maximum|GH001: Large files detected)' >&2)
   local leftover
   leftover=$(git -C "$repo" status --short)
   # `if`, not `&&`: as the last statement it'd return 1 on a clean tree → set -e abort
