@@ -83,6 +83,14 @@ fetch_glow() {
 }
 vendor glow "$(latest charmbracelet/glow)" fetch_glow
 
+# lazygit: the image's /usr/local/bin one lags the Mac's brew (0.59 ignores gui.theme.authorColors); static Go
+fetch_lazygit() {
+  dl "$1" jesseduffield/lazygit 'lazygit_*_linux_x86_64.tar.gz'
+  tar -xzf "$TMPDIR"/lazygit_*_linux_x86_64.tar.gz -C "$TMPDIR" lazygit
+  cp "$TMPDIR/lazygit" "$DOTS_LINUX/vendor/bin/lazygit"
+}
+vendor lazygit "$(latest jesseduffield/lazygit)" fetch_lazygit
+
 # oh-my-posh: zsh prompt (zen.toml); bare static binary
 fetch_posh() {
   dl "$1" JanDeDobbeleer/oh-my-posh 'posh-linux-amd64'
@@ -184,7 +192,7 @@ fetch_roslyn() {
 vendor roslyn-language-server "$(gh api repos/mason-org/mason-registry/contents/packages/roslyn-language-server/package.yaml \
   --jq .content | base64 -d | sed -n 's/.*pkg:nuget\/roslyn-language-server@//p')" fetch_roslyn
 
-chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,oh-my-posh,tmux,rsvg-convert,gopls} "$IM/bin"/*
+chmod +x "$DOTS_LINUX/vendor/bin"/{eza,zoxide,yazi,ya,fzf,glow,lazygit,oh-my-posh,tmux,rsvg-convert,gopls} "$IM/bin"/*
 
 # SKIP=gitleaks: vendor/ is all third-party bytes (SHAs, example IPs trip false
 # positives). Pathspec-scoped so config commits are still scanned. No push here.
