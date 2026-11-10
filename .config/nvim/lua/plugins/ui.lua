@@ -303,6 +303,7 @@ return {
 			image = { -- inline image preview (kitty graphics; needs chafa/imagemagick)
 				enabled = true,
 				convert = { magick = { png = { "{src}[0]", "-scale", PNG_MAX .. "x" .. PNG_MAX .. ">" } } },
+				math = { enabled = false }, -- don't render $…$ as LaTeX images
 			},
 			-- indent guides + current scope
 			indent = { indent = { char = "▏" }, scope = { char = "▏" } },
