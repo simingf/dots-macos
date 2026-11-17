@@ -328,6 +328,54 @@ return {
 					return err(self)
 				end
 			end
+			-- • progress()'s spinner timer stops only once the placement is ready, and a closed
+			--   one never is: an image closed mid-load (explorer preview) spins "identify
+			--   loading …" over the buffer forever, wiping the next placement's image. Same
+			--   spinner, also stopped on close, updating its own extmark instead of the namespace
+			local ns
+			for i = 1, 50 do
+				local n, v = debug.getupvalue(P.progress, i)
+				if n == nil or n == "ns" then
+					ns = v
+					break
+				end
+			end
+			if ns then
+				function P:progress()
+					if self.opts.inline or self:ready() then
+						return
+					end
+					vim.bo[self.buf].modifiable = true
+					vim.api.nvim_buf_set_lines(self.buf, 0, -1, false, {})
+					vim.bo[self.buf].modifiable = false
+					local timer, eid = assert(vim.uv.new_timer()), nil
+					timer:start(
+						0,
+						80,
+						vim.schedule_wrap(function()
+							local valid = vim.api.nvim_buf_is_valid(self.buf)
+							if self.closed or self:ready() or self.img:failed() or not valid then
+								timer:stop()
+								if not timer:is_closing() then
+									timer:close()
+								end
+								if self.closed and valid and eid then
+									pcall(vim.api.nvim_buf_del_extmark, self.buf, ns, eid)
+								end
+								return
+							end
+							eid = vim.api.nvim_buf_set_extmark(self.buf, ns, 0, 0, {
+								id = eid,
+								virt_text = {
+									{ Snacks.util.spinner(), "SnacksImageSpinner" },
+									{ " " },
+									{ self.img._convert:current().name .. " loading …", "SnacksImageLoading" },
+								},
+							})
+						end)
+					)
+				end
+			end
 			-- • fit() only shrinks: scale to the largest aspect-kept size the window holds
 			--   (WinResized re-runs update())
 			local state = P.state

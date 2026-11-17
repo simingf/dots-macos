@@ -45,13 +45,15 @@ detects "tree focused" by filetype **`snacks_picker_list`** (snacks `picker/core
 - **Health check covers:** `picker.get` / `picker.util.path`; not the filetype.
 
 ### snacks image patches — `lua/plugins/ui.lua`
-The snacks `config` monkey-patches `snacks.image.placement` (`update`, `error`, `state`),
+The snacks `config` monkey-patches `snacks.image.placement` (`update`, `error`, `state`, and
+replaces `progress`, reading the module's `ns` upvalue and the `closed` / `img._convert` fields),
 `snacks.image.convert.convert`, the private `Convert` class (fetched as an upvalue of
 `convert`; `resolve` / `_resolve` / `ft`), and `snacks.image.image.new`; uses `util.dim` and
 `terminal.size`.
 - **Failure mode:** standalone images go blank after leaving the window, show "Image
   Conversion Failed" without magick, don't fill the window, keep stale pixels after an
-  overwrite, or big PNGs go out full size.
+  overwrite, big PNGs go out full size, or a placement closed mid-load spins "loading" forever.
+  If `ns` isn't found the `progress` patch is skipped (upstream behavior).
 - **Health check covers:** those functions existing, and `Convert._resolve` / `ft`.
 
 ### bufferline Tabpage wrap — `lua/plugins/ui.lua`

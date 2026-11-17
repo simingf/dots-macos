@@ -74,7 +74,7 @@ local checks = {
 				return "snacks.image.placement not require-able"
 			end
 			local gone = {}
-			for _, f in ipairs({ "update", "error", "state", "wins", "hide", "show" }) do
+			for _, f in ipairs({ "update", "error", "state", "wins", "hide", "show", "progress" }) do
 				if type(P[f]) ~= "function" then
 					gone[#gone + 1] = f
 				end
