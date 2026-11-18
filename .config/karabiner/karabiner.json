@@ -9548,23 +9548,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -9588,23 +9571,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -9630,23 +9596,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -9670,23 +9619,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -9712,23 +9644,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -9752,23 +9667,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -9794,23 +9692,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -9834,23 +9715,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -9876,23 +9740,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -9916,23 +9763,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -9958,23 +9788,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -9998,23 +9811,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -10040,23 +9836,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -10080,23 +9859,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -10122,23 +9884,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -10162,23 +9907,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -10204,23 +9932,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -10244,23 +9955,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -10286,23 +9980,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -10326,23 +10003,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
@@ -10368,23 +10028,6 @@
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
                                         ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
-                                        ]
                                     }
                                 ],
                                 "from": {
@@ -10408,23 +10051,6 @@
                                         "type": "frontmost_application_if",
                                         "bundle_identifiers": [
                                             "^com\\.roblox\\.RobloxPlayer$"
-                                        ]
-                                    },
-                                    {
-                                        "type": "device_unless",
-                                        "identifiers": [
-                                            {
-                                                "vendor_id": 1133,
-                                                "product_id": 49948
-                                            },
-                                            {
-                                                "vendor_id": 51984,
-                                                "product_id": 5462
-                                            },
-                                            {
-                                                "vendor_id": 12771,
-                                                "product_id": 4930
-                                            }
                                         ]
                                     }
                                 ],
