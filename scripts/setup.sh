@@ -280,7 +280,8 @@ mkdir -p "$(dirname "$alfred_prefs")"
 cat > "$alfred_prefs" <<AJSON
 {
   "current" : "$DOTS/.config/alfred/Alfred.alfredpreferences",
-  "localhash" : ""
+  "localhash" : "",
+  "syncfolders" : { "6" : "$DOTS/.config/alfred" }
 }
 AJSON
 
